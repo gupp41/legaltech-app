@@ -194,7 +194,7 @@ Be specific to the content provided and give practical legal insights based on w
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4o-mini',
+        model: 'openai/gpt-5-nano',
         messages: [
           {
             role: 'system',
