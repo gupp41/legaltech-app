@@ -6,7 +6,7 @@ import { FileUpload } from "@/components/file-upload"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Download, Trash2, BarChart3, Brain, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
+import { FileText, Download, Trash2, BarChart3, Brain, ChevronLeft, ChevronRight, RefreshCw, Database } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { extractTextFromDocument, truncateText } from "@/lib/document-extractor"
 
@@ -201,6 +201,25 @@ export default function Dashboard() {
         setDocuments([])
       } else {
         console.log('Documents fetched:', documents)
+        console.log('User ID filter:', user.id)
+        console.log('Total documents in result:', documents?.length || 0)
+        
+        // Debug: Check if there are documents with different user IDs
+        const { data: allDocuments, error: allError } = await supabase
+          .from('documents')
+          .select('id, user_id, filename')
+          .order('created_at', { ascending: false })
+        
+        if (!allError && allDocuments) {
+          console.log('All documents in table:', allDocuments)
+          console.log('Documents by user ID:')
+          const byUser = allDocuments.reduce((acc, doc) => {
+            acc[doc.user_id] = (acc[doc.user_id] || 0) + 1
+            return acc
+          }, {} as Record<string, number>)
+          console.log(byUser)
+        }
+        
         setDocuments(documents || [])
       }
     } catch (error) {
@@ -276,6 +295,68 @@ export default function Dashboard() {
     return analyses.filter(analysis => analysis.document_id === currentDoc.id)
   }
 
+  const syncStorageWithDatabase = async () => {
+    try {
+      console.log('Syncing storage bucket with database...')
+      
+      // Get all files in storage bucket
+      const { data: storageFiles, error: storageError } = await supabase.storage
+        .from('documents')
+        .list('', { limit: 1000 })
+      
+      if (storageError) {
+        console.error('Error listing storage files:', storageError)
+        return
+      }
+      
+      console.log('Storage files found:', storageFiles)
+      
+      // Get all documents from database
+      const { data: dbDocuments, error: dbError } = await supabase
+        .from('documents')
+        .select('id, storage_path, filename')
+        .eq('user_id', user.id)
+      
+      if (dbError) {
+        console.error('Error fetching database documents:', dbError)
+        return
+      }
+      
+      console.log('Database documents:', dbDocuments)
+      
+      // Find orphaned storage files (files not in database)
+      const dbPaths = new Set(dbDocuments.map(doc => doc.storage_path))
+      const orphanedFiles = storageFiles.filter(file => {
+        const fullPath = `${user.id}/${file.name}`
+        return !dbPaths.has(fullPath)
+      })
+      
+      console.log('Orphaned storage files:', orphanedFiles)
+      
+      // Clean up orphaned files
+      if (orphanedFiles.length > 0) {
+        const filesToRemove = orphanedFiles.map(file => `${user.id}/${file.name}`)
+        console.log('Removing orphaned files:', filesToRemove)
+        
+        const { error: removeError } = await supabase.storage
+          .from('documents')
+          .remove(filesToRemove)
+        
+        if (removeError) {
+          console.error('Error removing orphaned files:', removeError)
+        } else {
+          console.log('Orphaned files removed successfully')
+        }
+      }
+      
+      // Refresh documents list
+      fetchDocuments()
+      
+    } catch (error) {
+      console.error('Error syncing storage with database:', error)
+    }
+  }
+
   const toggleAnalysisExpansion = (analysisId: string) => {
     setExpandedAnalyses(prev => {
       const newSet = new Set(prev)
@@ -306,8 +387,40 @@ export default function Dashboard() {
         console.error('User ID not available for delete operation')
         return
       }
+
+      // Get the document first to get the storage path
+      const { data: document, error: fetchError } = await supabase
+        .from('documents')
+        .select('storage_path')
+        .eq('id', documentId)
+        .eq('user_id', user.id)
+        .single()
+
+      if (fetchError) {
+        console.error('Error fetching document for deletion:', fetchError)
+        return
+      }
+
+      // Delete from storage bucket first
+      if (document?.storage_path) {
+        console.log('Deleting file from storage:', document.storage_path)
+        
+        // Extract the file path from the storage_path
+        const filePath = document.storage_path.split('/').slice(-2).join('/') // Get user-id/filename
+        
+        const { error: storageError } = await supabase.storage
+          .from('documents')
+          .remove([filePath])
+        
+        if (storageError) {
+          console.error('Storage deletion error:', storageError)
+          // Continue with database deletion even if storage fails
+        } else {
+          console.log('File deleted from storage successfully')
+        }
+      }
       
-      // Use Supabase client directly instead of API route
+      // Delete from database
       const { error } = await supabase
         .from('documents')
         .delete()
@@ -317,7 +430,7 @@ export default function Dashboard() {
       if (error) {
         console.error('Supabase delete error:', error)
       } else {
-        console.log('Document deleted successfully')
+        console.log('Document deleted successfully from database')
         fetchDocuments() // Refresh the list
       }
     } catch (error) {
@@ -891,6 +1004,15 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
                               >
                                 <RefreshCw className="h-3 w-3 mr-1" />
                                 Refresh
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={syncStorageWithDatabase}
+                                className="text-xs"
+                              >
+                                <Database className="h-3 w-3 mr-1" />
+                                Sync Storage
                               </Button>
                               {realTimeSyncActive && (
                                 <div className="flex items-center space-x-1 text-xs text-green-600">
