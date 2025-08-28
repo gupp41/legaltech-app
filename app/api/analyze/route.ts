@@ -85,7 +85,12 @@ export async function POST(request: NextRequest) {
     // Analysis record is already created on client-side, we just need the ID
     const analysisId = documentData.analysisId || 'temp-id'
     
-    console.log('Using existing analysis record:', analysisId)
+    console.log('🔍 Analysis ID details:', {
+      analysisId,
+      documentDataKeys: Object.keys(documentData),
+      hasAnalysisId: !!documentData.analysisId,
+      documentDataAnalysisId: documentData.analysisId
+    })
     
     // If we have a file, extract text from it server-side
     let extractedText = document.documentContent || ''
@@ -309,6 +314,12 @@ Be professional, thorough, and provide practical legal insights. Use clear langu
                   const data = line.slice(6)
                   if (data === '[DONE]') {
                     // Analysis complete, update database
+                    console.log('🎯 Updating analysis record in database:', {
+                      analysisId,
+                      fullResponseLength: fullResponse.length,
+                      documentData: documentData
+                    })
+                    
                     const { error: updateError } = await supabase
                       .from('analyses')
                       .update({
@@ -323,7 +334,11 @@ Be professional, thorough, and provide practical legal insights. Use clear langu
                       .eq('id', analysisId)
 
                     if (updateError) {
-                      console.error('Failed to update analysis record:', updateError)
+                      console.error('❌ Failed to update analysis record:', updateError)
+                      console.error('Analysis ID used:', analysisId)
+                      console.error('Document data:', documentData)
+                    } else {
+                      console.log('✅ Analysis record updated successfully in database')
                     }
 
                     controller.enqueue(`data: ${JSON.stringify({ done: true, fullResponse })}\n\n`)
