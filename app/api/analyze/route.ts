@@ -209,6 +209,9 @@ Be specific to the content provided and give practical legal insights based on w
     
     if (wantsStreaming) {
       console.log('🚀 Starting streaming response...')
+      console.log('🚨 CRITICAL: About to start streaming for analysisId:', analysisId)
+      console.log('🚨 CRITICAL: Document data available:', !!documentData)
+      console.log('🚨 CRITICAL: File available:', !!file)
       // Return streaming response
       const stream = new ReadableStream({
         async start(controller) {

@@ -489,6 +489,26 @@ export default function Dashboard() {
               
               if (data.done) {
                 console.log('✅ Streaming analysis completed')
+                console.log('🚨 CRITICAL: Analysis completed with full response length:', fullResponse.length)
+                
+                // Store the completed analysis locally so it doesn't disappear
+                const completedAnalysis = {
+                  id: `temp-${Date.now()}`,
+                  document_id: documentId,
+                  user_id: user.id,
+                  analysis_type: 'contract_review',
+                  status: 'completed',
+                  results: {
+                    analysis: fullResponse,
+                    model: 'gpt-5-nano',
+                    provider: 'Vercel AI Gateway'
+                  },
+                  created_at: new Date().toISOString(),
+                  completed_at: new Date().toISOString()
+                }
+                
+                console.log('🚨 CRITICAL: Storing completed analysis locally:', completedAnalysis.id)
+                
                 // Clear streaming state
                 setStreamingAnalyses(prev => {
                   const newMap = new Map(prev)
@@ -503,7 +523,10 @@ export default function Dashboard() {
                   return newSet
                 })
                 
-                // Refresh analyses to show the completed result
+                // Add the completed analysis to local state immediately
+                setAnalyses(prev => [completedAnalysis, ...prev])
+                
+                // Also try to refresh from database
                 fetchAnalyses()
                 return
               }
