@@ -45,6 +45,12 @@ export async function POST(request: NextRequest) {
       try {
         documentData = JSON.parse(documentDataString)
         console.log('✅ Document data parsed successfully')
+        console.log('🔍 Parsed documentData:', {
+          id: documentData.id,
+          original_filename: documentData.original_filename,
+          analysisId: documentData.analysisId,
+          keys: Object.keys(documentData)
+        })
       } catch (parseError) {
         console.error('❌ Failed to parse documentData JSON:', parseError)
         console.log('Raw documentData string:', documentDataString)

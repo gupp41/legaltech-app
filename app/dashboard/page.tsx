@@ -421,6 +421,13 @@ export default function Dashboard() {
         documentContent: '' // Will be filled by server-side extraction
       }
       
+      console.log('🔍 Document data being sent:', {
+        documentId,
+        analysisId: analysis.id,
+        documentDataKeys: Object.keys(documentData),
+        documentDataString: JSON.stringify(documentData)
+      })
+      
       formData.append('documentData', JSON.stringify(documentData))
 
       console.log('📤 Calling streaming API with FormData containing file')
