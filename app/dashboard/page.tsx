@@ -6,7 +6,7 @@ import { FileUpload } from "@/components/file-upload"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Download, Trash2, BarChart3, Brain, ChevronLeft, ChevronRight } from "lucide-react"
+import { FileText, Download, Trash2, BarChart3, Brain, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { extractTextFromDocument, truncateText } from "@/lib/document-extractor"
 
@@ -33,6 +33,7 @@ export default function Dashboard() {
   const [showDocumentDetail, setShowDocumentDetail] = useState(false)
   const [expandedAnalyses, setExpandedAnalyses] = useState<Set<string>>(new Set())
   const [analyzingDocuments, setAnalyzingDocuments] = useState<Set<string>>(new Set())
+  const [realTimeSyncActive, setRealTimeSyncActive] = useState(false)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -73,6 +74,61 @@ export default function Dashboard() {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  // Real-time synchronization with Supabase
+  useEffect(() => {
+    if (!user?.id) return
+
+    console.log('Setting up real-time subscriptions for user:', user.id)
+
+    // Subscribe to documents table changes
+    const documentsSubscription = supabase
+      .channel('documents-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'documents',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Documents real-time change:', payload)
+          fetchDocuments() // Refresh documents when changes occur
+        }
+      )
+      .subscribe((status) => {
+        console.log('Documents subscription status:', status)
+        if (status === 'SUBSCRIBED') {
+          setRealTimeSyncActive(true)
+        }
+      })
+
+    // Subscribe to analyses table changes
+    const analysesSubscription = supabase
+      .channel('analyses-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'analyses',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Analyses real-time change:', payload)
+          fetchAnalyses() // Refresh analyses when changes occur
+        }
+      )
+      .subscribe()
+
+    // Cleanup subscriptions
+    return () => {
+      console.log('Cleaning up real-time subscriptions')
+      documentsSubscription.unsubscribe()
+      analysesSubscription.unsubscribe()
+    }
+  }, [user?.id])
 
   const checkUser = async () => {
     console.log('Checking user authentication...')
@@ -818,10 +874,32 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
                 <Card>
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center space-x-2">
-                        <FileText className="h-5 w-5" />
-                        <span>Document {currentDocumentIndex + 1} of {documents.length}</span>
-                      </CardTitle>
+                                              <CardTitle className="flex items-center space-x-2">
+                          <FileText className="h-5 w-5" />
+                          <span>Document {currentDocumentIndex + 1} of {documents.length}</span>
+                        </CardTitle>
+                        <div className="flex items-center space-x-2">
+                                                      <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  fetchDocuments()
+                                  fetchAnalyses()
+                                }}
+                                className="text-xs"
+                              >
+                                <RefreshCw className="h-3 w-3 mr-1" />
+                                Refresh
+                              </Button>
+                              {realTimeSyncActive && (
+                                <div className="flex items-center space-x-1 text-xs text-green-600">
+                                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                  <span>Live Sync</span>
+                                </div>
+                              )}
+                            </div>
+                        </div>
                       <div className="flex items-center space-x-2">
                         <Button
                           variant="outline"
