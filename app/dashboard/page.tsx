@@ -360,13 +360,15 @@ export default function Dashboard() {
 
   const handleStreamingAnalysis = async (documentId: string) => {
     try {
-      console.log('Starting streaming analysis for document:', documentId)
+      console.log('🚀 Starting streaming analysis for document:', documentId)
       
       // Get the document object
       const document = documents.find(doc => doc.id === documentId)
       if (!document) {
         throw new Error('Document not found')
       }
+
+      console.log('📄 Document found:', document.filename)
 
       // Create analysis record in database first
       const { data: analysis, error: analysisError } = await supabase
@@ -384,7 +386,7 @@ export default function Dashboard() {
         throw new Error('Failed to create analysis record: ' + analysisError.message)
       }
       
-      console.log('Analysis record created:', analysis.id)
+      console.log('✅ Analysis record created:', analysis.id)
 
       // Prepare document data for analysis
       const documentDataForAnalysis = {
@@ -394,6 +396,8 @@ export default function Dashboard() {
         file_size: document.file_size,
         analysisId: analysis.id
       }
+
+      console.log('📤 Calling streaming API with data:', documentDataForAnalysis)
 
       // Call streaming API
       const response = await fetch('/api/analyze', {
@@ -410,8 +414,13 @@ export default function Dashboard() {
         })
       })
 
+      console.log('📡 API Response status:', response.status)
+      console.log('📡 API Response headers:', Object.fromEntries(response.headers.entries()))
+
       if (!response.ok) {
-        throw new Error(`Streaming API failed: ${response.status}`)
+        const errorText = await response.text()
+        console.error('❌ API Error:', errorText)
+        throw new Error(`Streaming API failed: ${response.status} - ${errorText}`)
       }
 
       const reader = response.body?.getReader()
@@ -419,26 +428,39 @@ export default function Dashboard() {
         throw new Error('No response body for streaming')
       }
 
+      console.log('📖 Starting to read streaming response...')
       let fullResponse = ''
+      let chunkCount = 0
 
       while (true) {
         const { done, value } = await reader.read()
-        if (done) break
+        chunkCount++
+        
+        if (done) {
+          console.log('✅ Stream reading completed after', chunkCount, 'chunks')
+          break
+        }
 
         const chunk = new TextDecoder().decode(value)
+        console.log(`📦 Chunk ${chunkCount}:`, chunk.substring(0, 100) + '...')
+
         const lines = chunk.split('\n')
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
+            console.log('📝 Processing line:', line.substring(0, 100) + '...')
+            
             try {
               const data = JSON.parse(line.slice(6))
+              console.log('🔍 Parsed data:', data)
               
               if (data.error) {
+                console.error('❌ Stream error:', data.error)
                 throw new Error(data.error)
               }
               
               if (data.done) {
-                console.log('Streaming analysis completed')
+                console.log('✅ Streaming analysis completed')
                 // Clear streaming state
                 setStreamingAnalyses(prev => {
                   const newMap = new Map(prev)
@@ -460,17 +482,19 @@ export default function Dashboard() {
               
               if (data.content) {
                 fullResponse += data.content
+                console.log('📝 Content received, total length:', fullResponse.length)
                 // Update streaming content in real-time
                 setStreamingAnalyses(prev => new Map(prev).set(documentId, fullResponse))
               }
             } catch (e) {
+              console.warn('⚠️ JSON parse error:', e, 'for line:', line)
               // Skip malformed JSON
             }
           }
         }
       }
     } catch (error) {
-      console.error('Streaming analysis error:', error)
+      console.error('❌ Streaming analysis error:', error)
       throw error
     }
   }

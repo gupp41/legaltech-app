@@ -190,11 +190,23 @@ Be specific to the content provided and give practical legal insights based on w
     // Check if client wants streaming
     const wantsStreaming = request.headers.get('accept')?.includes('text/event-stream')
     
+    console.log('🎯 Streaming check:', {
+      acceptHeader: request.headers.get('accept'),
+      wantsStreaming,
+      contentType: request.headers.get('content-type')
+    })
+    
     if (wantsStreaming) {
+      console.log('🚀 Starting streaming response...')
       // Return streaming response
       const stream = new ReadableStream({
         async start(controller) {
           try {
+            console.log('🔄 Creating streaming response...')
+            
+            // First, send a test message to verify streaming works
+            controller.enqueue(`data: ${JSON.stringify({ content: "Starting AI analysis...\n\n" })}\n\n`)
+            
             const response = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
               method: 'POST',
               headers: {
