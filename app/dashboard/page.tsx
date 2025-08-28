@@ -871,6 +871,8 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
                   const currentDoc = getCurrentDocument()
                   const currentAnalyses = getCurrentDocumentAnalyses()
                   
+
+                  
                   if (!currentDoc || currentAnalyses.length === 0) return null
                   
                   return (
@@ -898,9 +900,18 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
                                   </span>
                                 </div>
                               </div>
-                              {analysis.results && Object.keys(analysis.results).length > 0 ? (
+
+                              
+                              {/* Display analysis content */}
+                              {analysis.results?.analysis ? (
                                 <div className="prose prose-sm max-w-none">
-                                  <div dangerouslySetInnerHTML={{ __html: analysis.results.content || '' }} />
+                                  <div dangerouslySetInnerHTML={{ __html: analysis.results.analysis }} />
+                                </div>
+                              ) : analysis.results && Object.keys(analysis.results).length > 0 ? (
+                                <div className="prose prose-sm max-w-none">
+                                  <pre className="whitespace-pre-wrap">
+                                    {JSON.stringify(analysis.results, null, 2)}
+                                  </pre>
                                 </div>
                               ) : (
                                 <p className="text-slate-500">Analysis in progress...</p>
