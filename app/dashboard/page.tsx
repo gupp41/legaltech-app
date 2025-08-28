@@ -410,10 +410,18 @@ export default function Dashboard() {
       formData.append('documentId', documentId)
       formData.append('analysisType', 'contract_review')
       formData.append('userId', user.id)
-      formData.append('analysisId', analysis.id)
-      formData.append('original_filename', document.filename || 'document')
-      formData.append('file_type', document.file_type || 'application/octet-stream')
-      formData.append('file_size', document.file_size.toString())
+      
+      // Create documentData object as expected by the API
+      const documentData = {
+        id: document.id,
+        original_filename: document.filename || 'document',
+        file_type: document.file_type || 'application/octet-stream',
+        file_size: document.file_size,
+        analysisId: analysis.id,
+        documentContent: '' // Will be filled by server-side extraction
+      }
+      
+      formData.append('documentData', JSON.stringify(documentData))
 
       console.log('📤 Calling streaming API with FormData containing file')
 
