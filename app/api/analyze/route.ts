@@ -207,6 +207,48 @@ Be specific to the content provided and give practical legal insights based on w
             // First, send a test message to verify streaming works
             controller.enqueue(`data: ${JSON.stringify({ content: "Starting AI analysis...\n\n" })}\n\n`)
             
+            // Extract text from the uploaded file
+            let extractedText = ''
+            if (file) {
+              console.log('📄 Processing uploaded file for streaming analysis...')
+              try {
+                if (file.type.includes('docx') || file.type.includes('word')) {
+                  console.log('🎯 Using Mammoth for DOCX text extraction...')
+                  const arrayBuffer = await file.arrayBuffer()
+                  const buffer = Buffer.from(arrayBuffer)
+                  const result = await mammoth.extractRawText({ buffer })
+                  extractedText = result.value || 'No text extracted from DOCX'
+                  console.log('✅ DOCX text extracted, length:', extractedText.length)
+                } else if (file.type.includes('text/')) {
+                  extractedText = await file.text()
+                  console.log('✅ Text file content extracted, length:', extractedText.length)
+                } else {
+                  extractedText = `File type ${file.type} not supported for text extraction`
+                }
+              } catch (extractionError) {
+                console.error('❌ Text extraction failed:', extractionError)
+                extractedText = `Error extracting text: ${extractionError.message}`
+              }
+            } else {
+              extractedText = 'No file uploaded for analysis'
+            }
+            
+            // Create the prompt for streaming analysis
+            const streamingPrompt = `Please analyze this legal document: ${file?.name || 'Unknown'} (${file?.type || 'Unknown type'}, ${file?.size || 0} bytes).
+
+DOCUMENT CONTENT:
+${extractedText}
+
+Please provide a comprehensive legal analysis of the ACTUAL CONTENT of this document, not general advice. Focus on:
+
+1. **Key Terms & Conditions**: Identify and explain the specific contractual terms found in this document
+2. **Potential Risks & Red Flags**: Highlight concerning clauses, unusual terms, or potential legal issues specific to this contract
+3. **Compliance Considerations**: Note any regulatory or compliance requirements mentioned in this document
+4. **Recommendations**: Provide actionable advice for improvement or negotiation based on the actual content
+5. **Summary**: Brief overview of this specific document's purpose and key obligations
+
+Be specific to the content provided and give practical legal insights based on what's actually in this document.`
+
             const response = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
               method: 'POST',
               headers: {
@@ -232,7 +274,7 @@ Be professional, thorough, and provide practical legal insights. Use clear langu
                   },
                   {
                     role: 'user',
-                    content: userPrompt
+                    content: streamingPrompt
                   }
                 ],
                 stream: true

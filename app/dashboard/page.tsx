@@ -388,30 +388,43 @@ export default function Dashboard() {
       
       console.log('✅ Analysis record created:', analysis.id)
 
-      // Prepare document data for analysis
-      const documentDataForAnalysis = {
-        id: document.id,
-        original_filename: document.filename,
-        file_type: document.file_type,
-        file_size: document.file_size,
-        analysisId: analysis.id
+      // Get the actual file content from Supabase storage
+      if (!document.storage_path) {
+        throw new Error('Document has no storage path')
       }
+      
+      console.log('📥 Fetching file content from storage...')
+      const { data: fileBlob, error: fileError } = await supabase.storage
+        .from('documents')
+        .download(document.storage_path)
+      
+      if (fileError) {
+        throw new Error('Failed to fetch file from storage: ' + fileError.message)
+      }
+      
+      console.log('✅ File fetched from storage, size:', fileBlob.size)
 
-      console.log('📤 Calling streaming API with data:', documentDataForAnalysis)
+      // Create FormData with the actual file
+      const formData = new FormData()
+      formData.append('file', fileBlob, document.filename || 'document')
+      formData.append('documentId', documentId)
+      formData.append('analysisType', 'contract_review')
+      formData.append('userId', user.id)
+      formData.append('analysisId', analysis.id)
+      formData.append('original_filename', document.filename || 'document')
+      formData.append('file_type', document.file_type || 'application/octet-stream')
+      formData.append('file_size', document.file_size.toString())
 
-      // Call streaming API
+      console.log('📤 Calling streaming API with FormData containing file')
+
+      // Call streaming API with FormData
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: {
           'Accept': 'text/event-stream',
-          'Content-Type': 'application/json',
+          // Don't set Content-Type for FormData - browser sets it automatically
         },
-        body: JSON.stringify({
-          documentId,
-          analysisType: 'contract_review',
-          userId: user.id,
-          documentData: documentDataForAnalysis
-        })
+        body: formData
       })
 
       console.log('📡 API Response status:', response.status)
