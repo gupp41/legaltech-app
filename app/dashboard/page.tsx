@@ -6,7 +6,7 @@ import { FileUpload } from "@/components/file-upload"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Download, Trash2, BarChart3, Brain } from "lucide-react"
+import { FileText, Download, Trash2, BarChart3, Brain, ChevronLeft, ChevronRight } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { extractTextFromDocument, truncateText } from "@/lib/document-extractor"
 
@@ -27,6 +27,10 @@ export default function Dashboard() {
   const [analyses, setAnalyses] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
+  
+  // New state for single document view
+  const [currentDocumentIndex, setCurrentDocumentIndex] = useState(0)
+  const [showDocumentDetail, setShowDocumentDetail] = useState(false)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -183,6 +187,35 @@ export default function Dashboard() {
 
   const handleUploadComplete = (file: any) => {
     fetchDocuments() // Refresh the list
+  }
+
+  // Navigation functions for single document view
+  const goToNextDocument = () => {
+    if (currentDocumentIndex < documents.length - 1) {
+      setCurrentDocumentIndex(currentDocumentIndex + 1)
+    }
+  }
+
+  const goToPreviousDocument = () => {
+    if (currentDocumentIndex > 0) {
+      setCurrentDocumentIndex(currentDocumentIndex - 1)
+    }
+  }
+
+  const goToDocument = (index: number) => {
+    if (index >= 0 && index < documents.length) {
+      setCurrentDocumentIndex(index)
+    }
+  }
+
+  const getCurrentDocument = () => {
+    return documents[currentDocumentIndex] || null
+  }
+
+  const getCurrentDocumentAnalyses = () => {
+    const currentDoc = getCurrentDocument()
+    if (!currentDoc) return []
+    return analyses.filter(analysis => analysis.document_id === currentDoc.id)
   }
 
   const handleDelete = async (documentId: string) => {
@@ -717,150 +750,174 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
             </div>
           </div>
 
-          {/* Documents List */}
+          {/* Single Document View */}
           <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5" />
-                  <span>Your Documents</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {documents.length === 0 ? (
-                  <div className="text-center py-8">
-                    <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                    <p className="text-slate-600">No documents uploaded yet</p>
-                    <p className="text-sm text-slate-500">Upload your first legal document to get started</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {documents.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50"
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className="flex-shrink-0">
-                            <FileText className="h-8 w-8 text-blue-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-900 truncate">{doc.filename}</p>
-                            <div className="flex items-center space-x-4 mt-1">
-                              <Badge className={getStatusColor(doc.status)}>{doc.status}</Badge>
-                              <Badge variant="outline">{doc.document_type}</Badge>
-                              <span className="text-xs text-slate-500">{formatFileSize(doc.file_size)}</span>
-                              <span className="text-xs text-slate-500">
-                                {formatDistanceToNow(new Date(doc.created_at), { addSuffix: true })}
-                              </span>
+            {documents.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                  <p className="text-slate-600">No documents uploaded yet</p>
+                  <p className="text-sm text-slate-500">Upload your first legal document to get started</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-6">
+                {/* Document Navigation */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center space-x-2">
+                        <FileText className="h-5 w-5" />
+                        <span>Document {currentDocumentIndex + 1} of {documents.length}</span>
+                      </CardTitle>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={goToPreviousDocument}
+                          disabled={currentDocumentIndex === 0}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          Previous
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={goToNextDocument}
+                          disabled={currentDocumentIndex === documents.length - 1}
+                        >
+                          Next
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Document Thumbnails */}
+                    <div className="flex space-x-2 mb-4 overflow-x-auto pb-2">
+                      {documents.map((doc, index) => (
+                        <button
+                          key={doc.id}
+                          onClick={() => goToDocument(index)}
+                          className={`flex-shrink-0 p-3 border rounded-lg transition-colors ${
+                            index === currentDocumentIndex
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <FileText className={`h-6 w-6 ${
+                            index === currentDocumentIndex ? 'text-blue-600' : 'text-slate-400'
+                          }`} />
+                          <p className="text-xs mt-1 truncate w-16 text-center">
+                            {doc.filename.length > 16 ? doc.filename.substring(0, 13) + '...' : doc.filename}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Current Document Details */}
+                    {(() => {
+                      const currentDoc = getCurrentDocument()
+                      if (!currentDoc) return null
+                      
+                      return (
+                        <div className="border border-slate-200 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center space-x-4">
+                              <div className="flex-shrink-0">
+                                <FileText className="h-10 w-10 text-blue-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-lg font-medium text-slate-900">{currentDoc.filename}</h3>
+                                <div className="flex items-center space-x-4 mt-2">
+                                  <Badge className={getStatusColor(currentDoc.status)}>{currentDoc.status}</Badge>
+                                  <Badge variant="outline">{currentDoc.document_type}</Badge>
+                                  <span className="text-sm text-slate-500">{formatFileSize(currentDoc.file_size)}</span>
+                                  <span className="text-sm text-slate-500">
+                                    {formatDistanceToNow(new Date(currentDoc.created_at), { addSuffix: true })}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Button 
+                                onClick={() => handleAnalyze(currentDoc.id)}
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                <Brain className="h-4 w-4 mr-2" />
+                                Analyze with AI
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => window.open(currentDoc.file_url, "_blank")}>
+                                <Download className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDelete(currentDoc.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => handleAnalyze(doc.id)}
-                            className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-                          >
-                            <Brain className="h-4 w-4 mr-1" />
-                            Analyze
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => window.open(doc.file_url, "_blank")}>
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(doc.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                      )
+                    })()}
+                  </CardContent>
+                </Card>
+
+                {/* Current Document Analyses */}
+                {(() => {
+                  const currentDoc = getCurrentDocument()
+                  const currentAnalyses = getCurrentDocumentAnalyses()
+                  
+                  if (!currentDoc || currentAnalyses.length === 0) return null
+                  
+                  return (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <Brain className="h-5 w-5" />
+                          <span>AI Analysis Results for "{currentDoc.filename}"</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {currentAnalyses.map((analysis) => (
+                            <div
+                              key={analysis.id}
+                              className="border border-slate-200 rounded-lg p-4"
+                            >
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center space-x-2">
+                                  <Badge className={getStatusColor(analysis.status)}>
+                                    {analysis.status}
+                                  </Badge>
+                                  <span className="text-sm text-slate-500">
+                                    {formatDistanceToNow(new Date(analysis.created_at), { addSuffix: true })}
+                                  </span>
+                                </div>
+                              </div>
+                              {analysis.results && Object.keys(analysis.results).length > 0 ? (
+                                <div className="prose prose-sm max-w-none">
+                                  <div dangerouslySetInnerHTML={{ __html: analysis.results.content || '' }} />
+                                </div>
+                              ) : (
+                                <p className="text-slate-500">Analysis in progress...</p>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      </CardContent>
+                    </Card>
+                  )
+                })()}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Analysis Results Section */}
-        <div className="mt-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Brain className="h-5 w-5" />
-                <span>AI Analysis Results</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {analyses.length === 0 ? (
-                <div className="text-center py-8">
-                  <Brain className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                  <p className="text-slate-600">No analysis results yet</p>
-                  <p className="text-sm text-slate-500">Click "Analyze" on any document to get AI insights</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {analyses.map((analysis) => (
-                    <div
-                      key={analysis.id}
-                      className="border border-slate-200 rounded-lg p-4"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-2">
-                          <Badge className={getStatusColor(analysis.status)}>
-                            {analysis.status}
-                          </Badge>
-                          <Badge variant="outline">{analysis.analysis_type}</Badge>
-                          {analysis.results?.provider && (
-                            <Badge variant="secondary" className="text-xs">
-                              {analysis.results.provider}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <span className="text-sm text-slate-500 block">
-                            {formatDistanceToNow(new Date(analysis.created_at), { addSuffix: true })}
-                          </span>
-                          {analysis.results?.tokens_used && (
-                            <span className="text-xs text-slate-400 block">
-                              {analysis.results.tokens_used} tokens
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {analysis.status === 'completed' && analysis.results?.analysis && (
-                        <div className="bg-slate-50 p-3 rounded border">
-                          <pre className="text-sm text-slate-700 whitespace-pre-wrap font-sans">
-                            {analysis.results.analysis}
-                          </pre>
-                        </div>
-                      )}
-                      
-                      {analysis.status === 'processing' && (
-                        <div className="flex items-center space-x-2 text-slate-600">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                          <span>Processing analysis...</span>
-                        </div>
-                      )}
-                      
-                      {analysis.status === 'failed' && (
-                        <div className="text-red-600 text-sm">
-                          Analysis failed. Please try again.
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+
       </div>
     </div>
   )
