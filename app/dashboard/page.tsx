@@ -34,6 +34,7 @@ export default function Dashboard() {
   const [expandedAnalyses, setExpandedAnalyses] = useState<Set<string>>(new Set())
   const [analyzingDocuments, setAnalyzingDocuments] = useState<Set<string>>(new Set())
   const [realTimeSyncActive, setRealTimeSyncActive] = useState(false)
+  const [streamingAnalyses, setStreamingAnalyses] = useState<Map<string, string>>(new Map())
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -357,6 +358,123 @@ export default function Dashboard() {
     }
   }
 
+  const handleStreamingAnalysis = async (documentId: string) => {
+    try {
+      console.log('Starting streaming analysis for document:', documentId)
+      
+      // Get the document object
+      const document = documents.find(doc => doc.id === documentId)
+      if (!document) {
+        throw new Error('Document not found')
+      }
+
+      // Create analysis record in database first
+      const { data: analysis, error: analysisError } = await supabase
+        .from('analyses')
+        .insert({
+          document_id: documentId,
+          user_id: user.id,
+          analysis_type: 'contract_review',
+          status: 'processing'
+        })
+        .select()
+        .single()
+      
+      if (analysisError) {
+        throw new Error('Failed to create analysis record: ' + analysisError.message)
+      }
+      
+      console.log('Analysis record created:', analysis.id)
+
+      // Prepare document data for analysis
+      const documentDataForAnalysis = {
+        id: document.id,
+        original_filename: document.filename,
+        file_type: document.file_type,
+        file_size: document.file_size,
+        analysisId: analysis.id
+      }
+
+      // Call streaming API
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Accept': 'text/event-stream',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          documentId,
+          analysisType: 'contract_review',
+          userId: user.id,
+          documentData: documentDataForAnalysis
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Streaming API failed: ${response.status}`)
+      }
+
+      const reader = response.body?.getReader()
+      if (!reader) {
+        throw new Error('No response body for streaming')
+      }
+
+      let fullResponse = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = new TextDecoder().decode(value)
+        const lines = chunk.split('\n')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6))
+              
+              if (data.error) {
+                throw new Error(data.error)
+              }
+              
+              if (data.done) {
+                console.log('Streaming analysis completed')
+                // Clear streaming state
+                setStreamingAnalyses(prev => {
+                  const newMap = new Map(prev)
+                  newMap.delete(documentId)
+                  return newMap
+                })
+                
+                // Clear loading state
+                setAnalyzingDocuments(prev => {
+                  const newSet = new Set(prev)
+                  newSet.delete(documentId)
+                  return newSet
+                })
+                
+                // Refresh analyses to show the completed result
+                fetchAnalyses()
+                return
+              }
+              
+              if (data.content) {
+                fullResponse += data.content
+                // Update streaming content in real-time
+                setStreamingAnalyses(prev => new Map(prev).set(documentId, fullResponse))
+              }
+            } catch (e) {
+              // Skip malformed JSON
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Streaming analysis error:', error)
+      throw error
+    }
+  }
+
   const toggleAnalysisExpansion = (analysisId: string) => {
     setExpandedAnalyses(prev => {
       const newSet = new Set(prev)
@@ -443,9 +561,21 @@ export default function Dashboard() {
 
     // Set loading state
     setAnalyzingDocuments(prev => new Set(prev).add(documentId))
+    
+    // Initialize streaming content
+    setStreamingAnalyses(prev => new Map(prev).set(documentId, ''))
 
     try {
       console.log('Starting AI analysis for document:', documentId)
+      
+      // Try streaming first, fallback to regular if it fails
+      try {
+        await handleStreamingAnalysis(documentId)
+        return // Exit early if streaming succeeds
+      } catch (streamingError) {
+        console.warn('Streaming failed, falling back to regular analysis:', streamingError)
+        // Continue with regular analysis
+      }
       
       // Check if user ID is available
       if (!user?.id) {
@@ -1182,16 +1312,27 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
                             </div>
                           )}
 
-                          {/* Show loading indicator if analysis is in progress */}
+                          {/* Show streaming analysis or loading indicator */}
                           {analyzingDocuments.has(currentDoc?.id || '') && (
                             <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
-                              <div className="flex items-center space-x-3">
+                              <div className="flex items-center space-x-3 mb-3">
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
                                 <div>
                                   <p className="text-sm font-medium text-blue-900">AI Analysis in Progress</p>
-                                  <p className="text-xs text-blue-700">Please wait while we analyze your document...</p>
+                                  <p className="text-xs text-blue-700">Analyzing your document in real-time...</p>
                                 </div>
                               </div>
+                              
+                              {/* Show streaming content if available */}
+                              {streamingAnalyses.has(currentDoc?.id || '') && (
+                                <div className="mt-3 pt-3 border-t border-blue-200">
+                                  <p className="text-xs text-blue-700 mb-2">Live Analysis:</p>
+                                  <div className="whitespace-pre-wrap text-sm text-blue-900 bg-white p-3 rounded border max-h-96 overflow-y-auto">
+                                    {streamingAnalyses.get(currentDoc?.id || '') || ''}
+                                    <span className="animate-pulse">▋</span>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
 

@@ -187,19 +187,27 @@ Be specific to the content provided and give practical legal insights based on w
     
     console.log('Full user prompt being sent to LLM:', userPrompt)
     
-    const response = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.AI_GATEWAY_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'openai/gpt-5-nano',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a legal AI assistant specializing in contract analysis and legal document review. 
-            
+    // Check if client wants streaming
+    const wantsStreaming = request.headers.get('accept')?.includes('text/event-stream')
+    
+    if (wantsStreaming) {
+      // Return streaming response
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            const response = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${process.env.AI_GATEWAY_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'openai/gpt-5-nano',
+                messages: [
+                  {
+                    role: 'system',
+                    content: `You are a legal AI assistant specializing in contract analysis and legal document review. 
+                    
 Your task is to analyze legal documents and provide professional insights on:
 
 1. **Key Terms & Conditions**: Identify and explain the main contractual terms
@@ -209,47 +217,160 @@ Your task is to analyze legal documents and provide professional insights on:
 5. **Summary**: Brief overview of the document's purpose and key obligations
 
 Be professional, thorough, and provide practical legal insights. Use clear language and structure your response with headings.`
-          },
-          {
-            role: 'user',
-            content: userPrompt
+                  },
+                  {
+                    role: 'user',
+                    content: userPrompt
+                  }
+                ],
+                stream: true
+              })
+            })
+
+            if (!response.ok) {
+              const errorText = await response.text()
+              controller.enqueue(`data: ${JSON.stringify({ error: "AI analysis failed: " + errorText })}\n\n`)
+              controller.close()
+              return
+            }
+
+            const reader = response.body?.getReader()
+            if (!reader) {
+              controller.enqueue(`data: ${JSON.stringify({ error: "No response body" })}\n\n`)
+              controller.close()
+              return
+            }
+
+            let fullResponse = ''
+            
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
+
+              const chunk = new TextDecoder().decode(value)
+              const lines = chunk.split('\n')
+              
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6)
+                  if (data === '[DONE]') {
+                    // Analysis complete, update database
+                    const { error: updateError } = await supabase
+                      .from('analyses')
+                      .update({
+                        status: 'completed',
+                        results: {
+                          analysis: fullResponse,
+                          model: 'gpt-5-nano',
+                          provider: 'Vercel AI Gateway'
+                        },
+                        completed_at: new Date().toISOString()
+                      })
+                      .eq('id', analysisId)
+
+                    if (updateError) {
+                      console.error('Failed to update analysis record:', updateError)
+                    }
+
+                    controller.enqueue(`data: ${JSON.stringify({ done: true, fullResponse })}\n\n`)
+                    controller.close()
+                    return
+                  }
+
+                  try {
+                    const parsed = JSON.parse(data)
+                    if (parsed.choices?.[0]?.delta?.content) {
+                      const content = parsed.choices[0].delta.content
+                      fullResponse += content
+                      controller.enqueue(`data: ${JSON.stringify({ content, partial: fullResponse })}\n\n`)
+                    }
+                  } catch (e) {
+                    // Skip malformed JSON
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Streaming error:', error)
+            controller.enqueue(`data: ${JSON.stringify({ error: "Streaming failed: " + error })}\n\n`)
+            controller.close()
           }
-        ],
-        stream: false
-      })
-    })
-    
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Vercel AI Gateway error:', errorText)
-      
-      return NextResponse.json(
-        { error: "AI analysis failed: " + errorText },
-        { status: 500 }
-      )
-    }
-    
-    const data = await response.json()
-    const analysisResult = data.choices[0]?.message?.content || 'Analysis failed - no content received'
-    
-    console.log('Vercel AI Gateway analysis completed successfully')
-    console.log('Token usage:', data.usage?.total_tokens || 0)
-    console.log('Model used:', data.model)
-    
-    // Return the analysis results for client-side update
-    return NextResponse.json({
-      success: true,
-      analysis: {
-        id: analysisId,
-        status: 'completed',
-        results: {
-          analysis: analysisResult,
-          model: data.model || 'gpt-4o-mini',
-          tokens_used: data.usage?.total_tokens || 0,
-          provider: 'Vercel AI Gateway'
         }
+      })
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      })
+    } else {
+      // Non-streaming response (existing behavior)
+      const response = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.AI_GATEWAY_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'openai/gpt-5-nano',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a legal AI assistant specializing in contract analysis and legal document review. 
+              
+Your task is to analyze legal documents and provide professional insights on:
+
+1. **Key Terms & Conditions**: Identify and explain the main contractual terms
+2. **Potential Risks & Red Flags**: Highlight concerning clauses, unusual terms, or potential legal issues
+3. **Compliance Considerations**: Note any regulatory or compliance requirements
+4. **Recommendations**: Provide actionable advice for improvement or negotiation
+5. **Summary**: Brief overview of the document's purpose and key obligations
+
+Be professional, thorough, and provide practical legal insights. Use clear language and structure your response with headings.`
+            },
+            {
+              role: 'user',
+              content: userPrompt
+            }
+          ],
+          stream: false
+        })
+      })
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Vercel AI Gateway error:', errorText)
+        
+        return NextResponse.json(
+          { error: "AI analysis failed: " + errorText },
+          { status: 500 }
+        )
       }
-    })
+      
+      const data = await response.json()
+      const analysisResult = data.choices[0]?.message?.content || 'Analysis failed - no content received'
+      
+      console.log('Vercel AI Gateway analysis completed successfully')
+      console.log('Token usage:', data.usage?.total_tokens || 0)
+      console.log('Model used:', data.model)
+      
+      // Return the analysis results for client-side update
+      return NextResponse.json({
+        success: true,
+        analysis: {
+          id: analysisId,
+          status: 'completed',
+          results: {
+            analysis: analysisResult,
+            model: data.model || 'gpt-5-nano',
+            tokens_used: data.usage?.total_tokens || 0,
+            provider: 'Vercel AI Gateway'
+          }
+        }
+      })
+    }
     
   } catch (error) {
     console.error('Analysis API error:', error)
