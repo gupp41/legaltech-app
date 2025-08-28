@@ -32,6 +32,7 @@ export default function Dashboard() {
   const [currentDocumentIndex, setCurrentDocumentIndex] = useState(0)
   const [showDocumentDetail, setShowDocumentDetail] = useState(false)
   const [expandedAnalyses, setExpandedAnalyses] = useState<Set<string>>(new Set())
+  const [analyzingDocuments, setAnalyzingDocuments] = useState<Set<string>>(new Set())
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -270,6 +271,9 @@ export default function Dashboard() {
 
   const handleAnalyze = async (documentId: string) => {
     if (!confirm("Analyze this document with AI?")) return
+
+    // Set loading state
+    setAnalyzingDocuments(prev => new Set(prev).add(documentId))
 
     try {
       console.log('Starting AI analysis for document:', documentId)
@@ -580,6 +584,13 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
                   alert('Document analysis completed successfully! Check the analyses tab for results.')
                 }
                 
+                // Clear loading state
+                setAnalyzingDocuments(prev => {
+                  const newSet = new Set(prev)
+                  newSet.delete(documentId)
+                  return newSet
+                })
+                
                 return // Exit early since we handled the response
               }
             } catch (fileError) {
@@ -634,6 +645,13 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
           throw new Error('AI analysis failed: ' + (data.error || 'Unknown error'))
         }
         
+        // Clear loading state
+        setAnalyzingDocuments(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(documentId)
+          return newSet
+        })
+        
       } catch (error) {
         console.error('AI Gateway error:', error)
         
@@ -649,9 +667,23 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
         throw new Error('AI analysis failed: ' + (error instanceof Error ? error.message : 'Unknown error'))
       }
       
+      // Clear loading state on error
+      setAnalyzingDocuments(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(documentId)
+        return newSet
+      })
+      
     } catch (error) {
       console.error("Error analyzing document:", error)
       alert('Analysis failed: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      
+      // Clear loading state on error
+      setAnalyzingDocuments(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(documentId)
+        return newSet
+      })
     }
   }
 
@@ -862,10 +894,20 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
                             <div className="flex items-center space-x-2">
                               <Button 
                                 onClick={() => handleAnalyze(currentDoc.id)}
-                                className="bg-green-600 hover:bg-green-700 text-white"
+                                disabled={analyzingDocuments.has(currentDoc.id)}
+                                className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
                               >
-                                <Brain className="h-4 w-4 mr-2" />
-                                Analyze with AI
+                                {analyzingDocuments.has(currentDoc.id) ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-white"></div>
+                                    Analyzing...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Brain className="h-4 w-4 mr-2" />
+                                    Analyze with AI
+                                  </>
+                                )}
                               </Button>
                               <Button variant="outline" size="sm" onClick={() => window.open(currentDoc.file_url, "_blank")}>
                                 <Download className="h-4 w-4" />
@@ -937,6 +979,19 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
                               ) : (
                                 <p className="text-slate-500">Analysis in progress...</p>
                               )}
+                            </div>
+                          )}
+
+                          {/* Show loading indicator if analysis is in progress */}
+                          {analyzingDocuments.has(currentDoc?.id || '') && (
+                            <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                              <div className="flex items-center space-x-3">
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                                <div>
+                                  <p className="text-sm font-medium text-blue-900">AI Analysis in Progress</p>
+                                  <p className="text-xs text-blue-700">Please wait while we analyze your document...</p>
+                                </div>
+                              </div>
                             </div>
                           )}
 
