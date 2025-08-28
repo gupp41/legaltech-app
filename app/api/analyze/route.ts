@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server"
 import mammoth from "mammoth"
 
 export async function POST(request: NextRequest) {
+  console.log('🚨 ANALYZE API ROUTE ENTRY POINT REACHED')
+  
   try {
     console.log('=== ANALYZE API CALLED ===')
     console.log('Request headers:', Object.fromEntries(request.headers.entries()))
@@ -451,7 +453,8 @@ Be professional, thorough, and provide practical legal insights. Use clear langu
     }
     
   } catch (error) {
-    console.error('Analysis API error:', error)
+    console.error('🚨 CRITICAL ERROR in analyze API:', error)
+    console.error('🚨 Error stack:', error.stack)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
