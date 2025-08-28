@@ -31,6 +31,7 @@ export default function Dashboard() {
   // New state for single document view
   const [currentDocumentIndex, setCurrentDocumentIndex] = useState(0)
   const [showDocumentDetail, setShowDocumentDetail] = useState(false)
+  const [expandedAnalyses, setExpandedAnalyses] = useState<Set<string>>(new Set())
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -216,6 +217,25 @@ export default function Dashboard() {
     const currentDoc = getCurrentDocument()
     if (!currentDoc) return []
     return analyses.filter(analysis => analysis.document_id === currentDoc.id)
+  }
+
+  const toggleAnalysisExpansion = (analysisId: string) => {
+    setExpandedAnalyses(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(analysisId)) {
+        newSet.delete(analysisId)
+      } else {
+        newSet.add(analysisId)
+      }
+      return newSet
+    })
+  }
+
+  const getLatestAnalysis = (analyses: any[]) => {
+    if (analyses.length === 0) return null
+    return analyses.sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )[0]
   }
 
   const handleDelete = async (documentId: string) => {
@@ -870,8 +890,7 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
                 {(() => {
                   const currentDoc = getCurrentDocument()
                   const currentAnalyses = getCurrentDocumentAnalyses()
-                  
-
+                  const latestAnalysis = getLatestAnalysis(currentAnalyses)
                   
                   if (!currentDoc || currentAnalyses.length === 0) return null
                   
@@ -881,43 +900,116 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
                         <CardTitle className="flex items-center space-x-2">
                           <Brain className="h-5 w-5" />
                           <span>AI Analysis Results for "{currentDoc.filename}"</span>
+                          {currentAnalyses.length > 1 && (
+                            <Badge variant="outline" className="ml-2">
+                              {currentAnalyses.length} analyses
+                            </Badge>
+                          )}
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
-                          {currentAnalyses.map((analysis) => (
-                            <div
-                              key={analysis.id}
-                              className="border border-slate-200 rounded-lg p-4"
-                            >
+                          {/* Show latest analysis by default */}
+                          {latestAnalysis && (
+                            <div className="border border-slate-200 rounded-lg p-4">
                               <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center space-x-2">
-                                  <Badge className={getStatusColor(analysis.status)}>
-                                    {analysis.status}
+                                  <Badge className={getStatusColor(latestAnalysis.status)}>
+                                    {latestAnalysis.status}
                                   </Badge>
                                   <span className="text-sm text-slate-500">
-                                    {formatDistanceToNow(new Date(analysis.created_at), { addSuffix: true })}
+                                    Latest analysis - {formatDistanceToNow(new Date(latestAnalysis.created_at), { addSuffix: true })}
                                   </span>
                                 </div>
                               </div>
-
                               
-                              {/* Display analysis content */}
-                              {analysis.results?.analysis ? (
-                                <div className="prose prose-sm max-w-none">
-                                  <div dangerouslySetInnerHTML={{ __html: analysis.results.analysis }} />
+                              {/* Display analysis content with proper formatting */}
+                              {latestAnalysis.results?.analysis ? (
+                                <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                                  {latestAnalysis.results.analysis}
                                 </div>
-                              ) : analysis.results && Object.keys(analysis.results).length > 0 ? (
+                              ) : latestAnalysis.results && Object.keys(latestAnalysis.results).length > 0 ? (
                                 <div className="prose prose-sm max-w-none">
                                   <pre className="whitespace-pre-wrap">
-                                    {JSON.stringify(analysis.results, null, 2)}
+                                    {JSON.stringify(latestAnalysis.results, null, 2)}
                                   </pre>
                                 </div>
                               ) : (
                                 <p className="text-slate-500">Analysis in progress...</p>
                               )}
                             </div>
-                          ))}
+                          )}
+
+                          {/* Show other analyses if expanded */}
+                          {currentAnalyses.length > 1 && (
+                            <div className="border-t pt-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="text-sm font-medium text-slate-700">Previous Analyses</h4>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const allIds = currentAnalyses.map(a => a.id)
+                                    if (expandedAnalyses.size === allIds.length) {
+                                      setExpandedAnalyses(new Set())
+                                    } else {
+                                      setExpandedAnalyses(new Set(allIds))
+                                    }
+                                  }}
+                                >
+                                  {expandedAnalyses.size === currentAnalyses.length ? 'Collapse All' : 'Expand All'}
+                                </Button>
+                              </div>
+                              
+                              <div className="space-y-3">
+                                {currentAnalyses
+                                  .filter(analysis => analysis.id !== latestAnalysis?.id)
+                                  .map((analysis) => (
+                                    <div
+                                      key={analysis.id}
+                                      className="border border-slate-200 rounded-lg p-3"
+                                    >
+                                      <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center space-x-2">
+                                          <Badge className={getStatusColor(analysis.status)}>
+                                            {analysis.status}
+                                          </Badge>
+                                          <span className="text-sm text-slate-500">
+                                            {formatDistanceToNow(new Date(analysis.created_at), { addSuffix: true })}
+                                          </span>
+                                        </div>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => toggleAnalysisExpansion(analysis.id)}
+                                        >
+                                          {expandedAnalyses.has(analysis.id) ? 'Collapse' : 'Expand'}
+                                        </Button>
+                                      </div>
+                                      
+                                      {/* Show analysis content only if expanded */}
+                                      {expandedAnalyses.has(analysis.id) && (
+                                        <div className="mt-3 pt-3 border-t">
+                                          {analysis.results?.analysis ? (
+                                            <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                                              {analysis.results.analysis}
+                                            </div>
+                                          ) : analysis.results && Object.keys(analysis.results).length > 0 ? (
+                                            <div className="prose prose-sm max-w-none">
+                                              <pre className="whitespace-pre-wrap">
+                                                {JSON.stringify(analysis.results, null, 2)}
+                                              </pre>
+                                            </div>
+                                          ) : (
+                                            <p className="text-slate-500">Analysis in progress...</p>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
