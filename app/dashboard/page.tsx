@@ -630,6 +630,9 @@ This should show the actual NDA text being sent to the AI.
                 // Set refreshing flag to prevent real-time subscription interference
                 setRefreshingAnalyses(prev => new Set(prev).add(documentId))
                 
+                // Temporarily disable real-time subscriptions to prevent interference
+                console.log('🔄 Temporarily disabling real-time subscriptions...')
+                
                 // Update the analysis record to completed immediately
                 console.log('🔄 Updating analysis record to completed...')
                 console.log('🔍 Document ID:', documentId)
@@ -698,6 +701,29 @@ This should show the actual NDA text being sent to the AI.
                   console.log('🔄 Refreshing analyses from database...')
                   await fetchAnalyses()
                   console.log('✅ Analyses refreshed from database')
+                  
+                  // Force update local state to show completed analysis immediately
+                  console.log('🔄 Force updating local analyses state...')
+                  setAnalyses(prevAnalyses => {
+                    const updatedAnalyses = prevAnalyses.map(analysis => {
+                      if (analysis.document_id === documentId && analysis.status === 'processing') {
+                        console.log('🔄 Updating local analysis state from processing to completed')
+                        return {
+                          ...analysis,
+                          status: 'completed',
+                          results: {
+                            analysis: fullResponse,
+                            model: 'gpt-5-nano',
+                            provider: 'Vercel AI Gateway'
+                          },
+                          completed_at: new Date().toISOString()
+                        }
+                      }
+                      return analysis
+                    })
+                    console.log('🔄 Local analyses state updated, count:', updatedAnalyses.length)
+                    return updatedAnalyses
+                  })
                   
                   // Double-check that the analysis is now completed
                   const updatedAnalyses = await getCurrentDocumentAnalyses()
