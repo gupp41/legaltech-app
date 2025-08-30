@@ -632,13 +632,22 @@ This should show the actual NDA text being sent to the AI.
                 
                 // Update the analysis record to completed immediately
                 console.log('🔄 Updating analysis record to completed...')
+                console.log('🔍 Document ID:', documentId)
+                console.log('🔍 Full response length:', fullResponse.length)
+                
                 try {
                   // Find the analysis record for this document
                   const currentAnalyses = await getCurrentDocumentAnalyses()
+                  console.log('🔍 Current analyses found:', currentAnalyses.length)
+                  console.log('🔍 Current analyses:', currentAnalyses.map(a => ({ id: a.id, document_id: a.document_id, status: a.status })))
+                  
                   const existingAnalysis = currentAnalyses.find(a => a.document_id === documentId && a.status === 'processing')
+                  console.log('🔍 Existing processing analysis:', existingAnalysis ? { id: existingAnalysis.id, status: existingAnalysis.status } : 'None found')
                   
                   if (existingAnalysis) {
                     console.log('🔄 Found processing analysis, updating to completed...')
+                    console.log('🔍 Updating analysis ID:', existingAnalysis.id)
+                    
                     const { error: updateError } = await supabase
                       .from('analyses')
                       .update({
@@ -654,11 +663,14 @@ This should show the actual NDA text being sent to the AI.
                     
                     if (updateError) {
                       console.error('❌ Failed to update analysis record:', updateError)
+                      console.error('🔍 Update error details:', updateError)
                     } else {
                       console.log('✅ Analysis record updated to completed successfully')
                     }
                   } else {
                     console.log('🔄 No processing analysis found, creating completed record...')
+                    console.log('🔍 Creating new analysis for document:', documentId)
+                    
                     const { error: createError } = await supabase
                       .from('analyses')
                       .insert({
@@ -676,17 +688,28 @@ This should show the actual NDA text being sent to the AI.
                     
                     if (createError) {
                       console.error('❌ Failed to create analysis record:', createError)
+                      console.error('🔍 Create error details:', createError)
                     } else {
                       console.log('✅ Analysis record created successfully')
                     }
                   }
                   
                   // Refresh analyses to show the updated record
+                  console.log('🔄 Refreshing analyses from database...')
                   await fetchAnalyses()
                   console.log('✅ Analyses refreshed from database')
                   
+                  // Double-check that the analysis is now completed
+                  const updatedAnalyses = await getCurrentDocumentAnalyses()
+                  const completedAnalysis = updatedAnalyses.find(a => a.document_id === documentId && a.status === 'completed')
+                  console.log('🔍 Verification - completed analysis found:', completedAnalysis ? 'Yes' : 'No')
+                  if (completedAnalysis) {
+                    console.log('🔍 Completed analysis details:', { id: completedAnalysis.id, status: completedAnalysis.status })
+                  }
+                  
                 } catch (error) {
                   console.error('❌ Error updating analysis record:', error)
+                  console.error('🔍 Full error details:', error)
                 } finally {
                   // Clear refreshing flag
                   setRefreshingAnalyses(prev => {
