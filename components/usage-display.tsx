@@ -121,16 +121,44 @@ export function UsageDisplay({ userId }: { userId: string }) {
     try {
       setLoading(true)
       
-      // Fetch usage data from the view
-      const { data, error } = await supabase
+      // First, try to fetch from the view (if schema exists)
+      let { data, error } = await supabase
         .from('user_subscription_status')
         .select('*')
         .eq('user_id', userId)
         .single()
 
       if (error) {
-        console.error('Error fetching usage data:', error)
-        setError('Failed to load usage data')
+        console.log('View not found, trying fallback approach:', error.message)
+        
+        // Fallback: Try to get basic user info and create mock data
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('current_plan, plan_start_date')
+          .eq('id', userId)
+          .single()
+
+        if (userError) {
+          console.error('Error fetching user data:', userError)
+          // Create default free plan data
+          setUsageData({
+            current_plan: 'free',
+            documents_uploaded: 0,
+            analyses_performed: 0,
+            storage_used_bytes: 0,
+            text_extractions: 0
+          })
+          return
+        }
+
+        // Create mock usage data based on user plan
+        setUsageData({
+          current_plan: userData?.current_plan || 'free',
+          documents_uploaded: 0,
+          analyses_performed: 0,
+          storage_used_bytes: 0,
+          text_extractions: 0
+        })
         return
       }
 
@@ -303,6 +331,16 @@ export function UsageDisplay({ userId }: { userId: string }) {
             </div>
           </div>
         )}
+
+        {/* Database Setup Notice */}
+        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+          <div className="flex items-center gap-2 text-yellow-700 text-sm">
+            <AlertCircle className="h-4 w-4" />
+            <span>
+              <strong>Database Setup Required:</strong> To enable full usage tracking, run the subscription schema script in your Supabase dashboard.
+            </span>
+          </div>
+        </div>
 
         {/* Refresh Button */}
         <button 
