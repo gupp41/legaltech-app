@@ -444,6 +444,25 @@ export default function Dashboard() {
       }
       
       console.log('✅ Analysis record created:', analysis.id)
+      
+      // Verify the analysis record is visible by fetching it back
+      const { data: verifyAnalysis, error: verifyError } = await supabase
+        .from('analyses')
+        .select('id, status, document_id, user_id')
+        .eq('id', analysis.id)
+        .single()
+      
+      if (verifyError || !verifyAnalysis) {
+        console.error('❌ Analysis record not visible after creation:', verifyError)
+        throw new Error('Analysis record not visible after creation - RLS policy issue')
+      }
+      
+      console.log('✅ Analysis record verified as visible:', verifyAnalysis)
+      
+      // Small delay to ensure database transaction is fully committed
+      console.log('⏳ Waiting for database transaction to commit...')
+      await new Promise(resolve => setTimeout(resolve, 500))
+      console.log('✅ Database transaction should be committed')
 
       // Get the actual file content from Supabase storage
       if (!document.storage_path) {
