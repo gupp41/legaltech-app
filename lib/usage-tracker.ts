@@ -78,18 +78,39 @@ export class UsageTracker {
    * Get plan limits for a user
    */
   async getPlanLimits(userId: string): Promise<UsageLimits> {
-    const { data: user, error } = await this.supabase
-      .from('users')
+    console.log('🔍 DEBUG: Getting plan limits for user:', userId)
+    
+    // First try to get from profiles table
+    const { data: profile, error: profileError } = await this.supabase
+      .from('profiles')
       .select('current_plan')
       .eq('id', userId)
       .single()
 
-    if (error) {
-      console.error('Error fetching user plan:', error)
-      return this.getDefaultLimits()
+    if (profileError) {
+      console.log('🔍 DEBUG: Profile query failed, trying subscriptions table:', profileError)
+      
+      // Fallback to subscriptions table
+      const { data: subscription, error: subError } = await this.supabase
+        .from('subscriptions')
+        .select('plan_type')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single()
+
+      if (subError) {
+        console.log('🔍 DEBUG: Subscription query also failed:', subError)
+        console.log('🔍 DEBUG: Using default free plan limits')
+        return this.getDefaultLimits()
+      }
+
+      const plan = subscription?.plan_type || 'free'
+      console.log('🔍 DEBUG: Got plan from subscriptions:', plan)
+      return this.getLimitsForPlan(plan)
     }
 
-    const plan = user?.current_plan || 'free'
+    const plan = profile?.current_plan || 'free'
+    console.log('🔍 DEBUG: Got plan from profiles:', plan)
     return this.getLimitsForPlan(plan)
   }
 
@@ -101,10 +122,15 @@ export class UsageTracker {
     action: 'upload' | 'analysis' | 'extraction',
     additionalStorage?: number
   ): Promise<UsageCheckResult> {
+    console.log('🔍 DEBUG: checkUsage called', { userId, action, additionalStorage })
+    
     const [currentUsage, limits] = await Promise.all([
       this.getCurrentMonthUsage(userId),
       this.getPlanLimits(userId)
     ])
+
+    console.log('🔍 DEBUG: Current usage:', currentUsage)
+    console.log('🔍 DEBUG: Plan limits:', limits)
 
     const warnings: string[] = []
     const errors: string[] = []
@@ -139,6 +165,17 @@ export class UsageTracker {
     // Check storage (for uploads)
     if (action === 'upload' && additionalStorage) {
       const newTotalStorage = currentUsage.storageUsedBytes + additionalStorage
+      console.log('🔍 DEBUG: Storage check', {
+        currentStorage: currentUsage.storageUsedBytes,
+        additionalStorage,
+        newTotalStorage,
+        maxStorage: limits.maxStorageBytes,
+        currentStorageMB: (currentUsage.storageUsedBytes / (1024 * 1024)).toFixed(2),
+        additionalStorageMB: (additionalStorage / (1024 * 1024)).toFixed(2),
+        newTotalStorageMB: (newTotalStorage / (1024 * 1024)).toFixed(2),
+        maxStorageMB: (limits.maxStorageBytes / (1024 * 1024)).toFixed(2)
+      })
+      
       if (newTotalStorage > limits.maxStorageBytes) {
         errors.push(`Storage limit exceeded: ${this.formatBytes(newTotalStorage)}/${this.formatBytes(limits.maxStorageBytes)}`)
       } else if (newTotalStorage > limits.maxStorageBytes * 0.8) {
@@ -203,14 +240,12 @@ export class UsageTracker {
         break
     }
 
-    // Upsert the usage record
+    // Update the existing usage record
     const { error } = await this.supabase
       .from('usage_tracking')
-      .upsert({
-        user_id: userId,
-        month_year: currentMonth,
-        ...updates
-      })
+      .update(updates)
+      .eq('user_id', userId)
+      .eq('month_year', currentMonth)
 
     if (error) {
       console.error('Error updating usage:', error)

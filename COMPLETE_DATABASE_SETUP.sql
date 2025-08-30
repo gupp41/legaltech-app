@@ -289,7 +289,8 @@ SELECT
     COALESCE(ut.text_extractions, 0) as text_extractions
 FROM public.profiles p
 LEFT JOIN public.subscriptions s ON p.id = s.user_id AND s.status = 'active'
-LEFT JOIN public.usage_tracking ut ON p.id = ut.user_id AND ut.month_year = TO_CHAR(NOW(), 'YYYY-MM');
+LEFT JOIN public.usage_tracking ut ON p.id = ut.user_id AND ut.month_year = TO_CHAR(NOW(), 'YYYY-MM')
+WHERE p.id IS NOT NULL; -- Ensure we only get valid profiles
 
 -- Grant access to the view
 GRANT SELECT ON user_subscription_status TO authenticated;

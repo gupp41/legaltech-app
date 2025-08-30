@@ -52,6 +52,7 @@ export async function updateSession(request: NextRequest) {
   // For API routes, always allow through but ensure cookies are set
   if (request.nextUrl.pathname.startsWith("/api")) {
     console.log('API route detected, allowing through with cookies')
+    // Ensure the response has the proper cookies for API authentication
     return supabaseResponse
   }
 

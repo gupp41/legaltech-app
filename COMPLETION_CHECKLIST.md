@@ -28,10 +28,10 @@ GROK_API_KEY=your_grok_api_key
 ```
 
 ### 2. Supabase Setup
-- [ ] Create Supabase project
-- [ ] Run `scripts/001_create_database_schema.sql`
-- [ ] Run `scripts/002_add_sharing_table.sql`
-- [ ] Configure auth redirect URLs:
+- [x] Create Supabase project
+- [x] Run `COMPLETE_DATABASE_SETUP.sql` (includes all subscription tables)
+- [x] Run `FIX_USAGE_DISPLAY.sql` (fixes usage data initialization)
+- [x] Configure auth redirect URLs:
   - `http://localhost:3000/auth/callback`
   - `http://localhost:3000/dashboard`
   - `http://localhost:3000/auth/login`

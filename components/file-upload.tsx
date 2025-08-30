@@ -32,96 +32,51 @@ export function FileUpload({ onUploadComplete, className }: FileUploadProps) {
       setUploadStatus("idle")
       setErrorMessage("")
 
-      try {
-        const supabase = createClient()
-        
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-          throw new Error("User not authenticated")
-        }
-
-        // Simulate progress
-        const progressInterval = setInterval(() => {
-          setUploadProgress((prev) => Math.min(prev + 10, 90))
-        }, 200)
-
-        // Upload file to Supabase Storage
-        const fileName = `${user.id}/${Date.now()}-${file.name}`
-        console.log('Attempting to upload with filename:', fileName)
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('documents')
-          .upload(fileName, file)
-
-        if (uploadError) {
-          throw new Error(uploadError.message)
-        }
-
-        // Use the actual path from the upload response to ensure accuracy
-        // uploadData.path should contain the exact path used in storage
-        const actualStoragePath = uploadData.path || fileName
-        console.log('Upload successful, actual storage path:', actualStoragePath)
-        console.log('Original filename vs actual path:', { fileName, actualStoragePath })
-        console.log('Full upload response:', uploadData)
-        
-        // Store the storage path (not public URL) for secure access
-        const storagePath = actualStoragePath
-        console.log('Storage path stored (not public URL):', storagePath)
-        
-        // Note: We no longer use getPublicUrl() - files are private
-        // Access will be controlled via signed URLs in the API
-        
-        // Double-check: verify the file actually exists at this path
-        try {
-          const { data: fileCheck, error: checkError } = await supabase.storage
-            .from('documents')
-            .list(actualStoragePath.split('/').slice(0, -1).join('/'))
+              try {
+          // Get current session token
+          const supabase = createClient()
+          const { data: { session } } = await supabase.auth.getSession()
           
-          if (checkError) {
-            console.warn('Could not verify file existence:', checkError)
-          } else {
-            const fileNameOnly = actualStoragePath.split('/').pop()
-            const fileExists = fileCheck.some(f => f.name === fileNameOnly)
-            console.log('File existence check:', { fileNameOnly, fileExists, availableFiles: fileCheck.map(f => f.name) })
+          if (!session) {
+            throw new Error("No active session found")
           }
-        } catch (checkError) {
-          console.warn('File existence check failed:', checkError)
-        }
-
-        // Store document metadata in database
-        const { data: document, error: dbError } = await supabase
-          .from('documents')
-          .insert({
-            user_id: user.id,
-            filename: file.name,
-            original_filename: file.name,
-            file_size: file.size,
-            file_type: file.type,
-            storage_path: storagePath,
-            upload_status: "completed",
+          
+          // Simulate progress during API upload
+          const progressInterval = setInterval(() => {
+            setUploadProgress((prev) => Math.min(prev + 10, 90))
+          }, 200)
+          
+          // Upload file using the API route (which includes usage tracking)
+          const formData = new FormData()
+          formData.append('file', file)
+          formData.append('documentType', documentType || 'legal_document')
+          
+          console.log('Uploading via API route with file size:', file.size, 'bytes')
+          console.log('Session token:', session.access_token ? 'Present' : 'Missing')
+          
+          const response = await fetch('/api/documents/upload', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include', // Include cookies
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              // Don't set Content-Type for FormData, let the browser set it
+            }
           })
-          .select()
-          .single()
 
-        if (dbError) {
-          throw new Error(dbError.message)
-        }
+          if (!response.ok) {
+            const errorData = await response.json()
+            throw new Error(errorData.error || 'Upload failed')
+          }
 
-        clearInterval(progressInterval)
-        setUploadProgress(100)
-
-        const result = {
-          id: document.id,
-          url: storagePath, // This is now the storage path, not a public URL
-          filename: file.name,
-          size: file.size,
-          type: file.type,
-          storage_path: storagePath,
-        }
-
-        setUploadStatus("success")
-        onUploadComplete?.(result)
+          const result = await response.json()
+          console.log('API upload response:', result)
+          
+          clearInterval(progressInterval)
+          setUploadProgress(100)
+          
+          setUploadStatus("success")
+          onUploadComplete?.(result)
       } catch (error) {
         setUploadStatus("error")
         setErrorMessage(error instanceof Error ? error.message : "Upload failed")

@@ -114,8 +114,40 @@ export function UsageDisplay({ userId }: { userId: string }) {
   useEffect(() => {
     if (userId) {
       fetchUsageData()
+      
+      // Set up real-time subscription to usage_tracking table
+      const usageSubscription = supabase
+        .channel('usage-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'usage_tracking',
+            filter: `user_id=eq.${userId}`
+          },
+          (payload) => {
+            console.log('Usage data changed:', payload)
+            // Refresh usage data when changes occur
+            fetchUsageData()
+          }
+        )
+        .subscribe()
+
+      // Cleanup subscription
+      return () => {
+        usageSubscription.unsubscribe()
+      }
     }
   }, [userId])
+
+  // Expose refresh function to parent component
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // @ts-ignore
+      window.refreshUsageData = fetchUsageData
+    }
+  }, [])
 
   const fetchUsageData = async () => {
     try {
@@ -332,15 +364,7 @@ export function UsageDisplay({ userId }: { userId: string }) {
           </div>
         )}
 
-        {/* Database Setup Notice */}
-        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-          <div className="flex items-center gap-2 text-yellow-700 text-sm">
-            <AlertCircle className="h-4 w-4" />
-            <span>
-              <strong>Database Setup Required:</strong> To enable full usage tracking, run the subscription schema script in your Supabase dashboard.
-            </span>
-          </div>
-        </div>
+
 
         {/* Refresh Button */}
         <button 
