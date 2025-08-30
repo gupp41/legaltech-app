@@ -41,6 +41,7 @@ export default function Dashboard() {
   const [extractedTexts, setExtractedTexts] = useState<Map<string, { text: string; wordCount: number; success: boolean }>>(new Map())
   const [savedExtractions, setSavedExtractions] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'analyses' | 'extractions'>('analyses')
+  const [refreshingAnalyses, setRefreshingAnalyses] = useState<Set<string>>(new Set())
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -125,6 +126,15 @@ export default function Dashboard() {
         },
         (payload) => {
           console.log('Analyses real-time change:', payload)
+          
+          // Check if we're currently refreshing analyses for this document
+          const documentId = (payload.new as any)?.document_id || (payload.old as any)?.document_id
+          if (documentId && refreshingAnalyses.has(documentId)) {
+            console.log('🔄 Skipping real-time refresh for document', documentId, '- manual refresh in progress')
+            return
+          }
+          
+          console.log('🔄 Real-time subscription triggering analyses refresh...')
           fetchAnalyses() // Refresh analyses when changes occur
         }
       )
@@ -169,7 +179,7 @@ export default function Dashboard() {
       analysesSubscription.unsubscribe()
       extractionsSubscription.unsubscribe()
     }
-  }, [user?.id])
+  }, [user?.id, refreshingAnalyses])
 
   const checkUser = async () => {
     console.log('Checking user authentication...')
@@ -571,6 +581,9 @@ This should show the actual NDA text being sent to the AI.
                   return newSet
                 })
                 
+                // Set refreshing flag to prevent real-time subscription interference
+                setRefreshingAnalyses(prev => new Set(prev).add(documentId))
+                
                 // Wait a moment for the database update to complete, then refresh analyses
                 console.log('🔄 Waiting for database update to complete...')
                 setTimeout(async () => {
@@ -580,6 +593,13 @@ This should show the actual NDA text being sent to the AI.
                     console.log('✅ Analyses refreshed from database successfully')
                   } catch (error) {
                     console.error('❌ Failed to refresh analyses:', error)
+                  } finally {
+                    // Clear refreshing flag
+                    setRefreshingAnalyses(prev => {
+                      const newSet = new Set(prev)
+                      newSet.delete(documentId)
+                      return newSet
+                    })
                   }
                 }, 1000)
                 
