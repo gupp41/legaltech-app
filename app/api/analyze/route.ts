@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import mammoth from "mammoth"
-import pdfParse from "pdf-parse"
+import * as pdfjsLib from 'pdfjs-dist'
 
 export async function POST(request: NextRequest) {
   console.log('🚨 ANALYZE API ROUTE ENTRY POINT REACHED')
@@ -163,21 +163,42 @@ File details:
 Note: This may indicate a corrupted or unsupported DOCX format.`
           }
         } else if (file.type.includes('pdf')) {
-          // Use pdf-parse for PDF text extraction
-          console.log('🎯 Using pdf-parse for PDF text extraction...')
+          // Use pdfjs-dist for PDF text extraction
+          console.log('🎯 Using pdfjs-dist for PDF text extraction...')
           
           try {
             const arrayBuffer = await file.arrayBuffer()
-            const buffer = Buffer.from(arrayBuffer)
+            const uint8Array = new Uint8Array(arrayBuffer)
             
-            console.log('Processing PDF with pdf-parse...')
-            const result = await pdfParse(buffer)
+            console.log('Processing PDF with pdfjs-dist...')
             
-            if (result.text) {
-              extractedText = result.text
+            // Load the PDF document
+            const loadingTask = pdfjsLib.getDocument({ data: uint8Array })
+            const pdf = await loadingTask.promise
+            
+            console.log('📊 PDF loaded successfully, pages:', pdf.numPages)
+            
+            let fullText = ''
+            
+            // Extract text from each page
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+              const page = await pdf.getPage(pageNum)
+              const textContent = await page.getTextContent()
+              
+              // Combine text items from the page
+              const pageText = textContent.items
+                .map((item: any) => item.str)
+                .join(' ')
+              
+              fullText += pageText + '\n\n'
+              
+              console.log(`📄 Page ${pageNum} text length:`, pageText.length)
+            }
+            
+            if (fullText.trim()) {
+              extractedText = fullText.trim()
               console.log('✅ PDF text extraction successful, length:', extractedText.length)
               console.log('Text preview:', extractedText.substring(0, 200) + '...')
-              console.log('📊 PDF info:', { pages: result.numpages, version: result.version })
             } else {
               console.warn('PDF extraction returned no text')
               extractedText = `PDF file processed: ${file.name} (${file.size} bytes)
@@ -188,7 +209,8 @@ File details:
 - Name: ${file.name}
 - Type: ${file.type}
 - Size: ${file.size} bytes
-- Status: Processed with pdf-parse, no content found
+- Pages: ${pdf.numPages}
+- Status: Processed with pdfjs-dist, no content found
 
 Note: If this is a scanned PDF, OCR processing would be required.`
             }
@@ -214,10 +236,11 @@ The file has been uploaded successfully and is ready for analysis.
 
 Supported file types: DOCX, PDF, TXT`
         }
-      } catch (extractionError) {
-        console.error('Text extraction failed:', extractionError)
-        extractedText = `File processing error: ${extractionError instanceof Error ? extractionError.message : 'Unknown error'}`
-      }
+              } catch (extractionError) {
+          console.error('Text extraction failed:', extractionError)
+          const errorMessage = extractionError instanceof Error ? extractionError.message : 'Unknown error'
+          extractedText = `File processing error: ${errorMessage}`
+        }
     }
     
     // Call Vercel AI Gateway server-side
@@ -284,13 +307,46 @@ Be specific to the content provided and give practical legal insights based on w
                   extractedText = result.value || 'No text extracted from DOCX'
                   console.log('✅ DOCX text extracted, length:', extractedText.length)
                 } else if (file.type.includes('pdf')) {
-                  console.log('🎯 Using pdf-parse for PDF text extraction...')
-                  const arrayBuffer = await file.arrayBuffer()
-                  const buffer = Buffer.from(arrayBuffer)
-                  const result = await pdfParse(buffer)
-                  extractedText = result.text || 'No text extracted from PDF'
-                  console.log('✅ PDF text extracted, length:', extractedText.length)
-                  console.log('📊 PDF info:', { pages: result.numpages, version: result.version })
+                  console.log('🎯 Using pdfjs-dist for PDF text extraction...')
+                  
+                  try {
+                    const arrayBuffer = await file.arrayBuffer()
+                    const uint8Array = new Uint8Array(arrayBuffer)
+                    
+                    // Load the PDF document
+                    const loadingTask = pdfjsLib.getDocument({ data: uint8Array })
+                    const pdf = await loadingTask.promise
+                    
+                    console.log('📊 PDF loaded successfully, pages:', pdf.numPages)
+                    
+                    let fullText = ''
+                    
+                    // Extract text from each page
+                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                      const page = await pdf.getPage(pageNum)
+                      const textContent = await page.getTextContent()
+                      
+                      // Combine text items from the page
+                      const pageText = textContent.items
+                        .map((item: any) => item.str)
+                        .join(' ')
+                      
+                      fullText += pageText + '\n\n'
+                      
+                      console.log(`📄 Page ${pageNum} text length:`, pageText.length)
+                    }
+                    
+                    if (fullText.trim()) {
+                      extractedText = fullText.trim()
+                      console.log('✅ PDF text extraction successful, length:', extractedText.length)
+                    } else {
+                      extractedText = 'No text extracted from PDF'
+                    }
+                    
+                  } catch (pdfError) {
+                    console.error('❌ PDF processing failed:', pdfError)
+                    extractedText = 'Error processing PDF file'
+                  }
                 } else if (file.type.includes('text/')) {
                   extractedText = await file.text()
                   console.log('✅ Text file content extracted, length:', extractedText.length)
@@ -299,8 +355,7 @@ Be specific to the content provided and give practical legal insights based on w
                 }
               } catch (extractionError) {
                 console.error('❌ Text extraction failed:', extractionError)
-                const errorMessage = extractionError instanceof Error ? extractionError.message : 'Unknown error'
-                extractedText = `Error extracting text: ${errorMessage}`
+                extractedText = `Error extracting text: ${extractionError.message}`
               }
             } else {
               extractedText = 'No file uploaded for analysis'
@@ -429,7 +484,8 @@ Be professional, thorough, and provide practical legal insights. Use clear langu
             }
           } catch (error) {
             console.error('Streaming error:', error)
-            controller.enqueue(`data: ${JSON.stringify({ error: "Streaming failed: " + error })}\n\n`)
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+            controller.enqueue(`data: ${JSON.stringify({ error: "Streaming failed: " + errorMessage })}\n\n`)
             controller.close()
           }
         }
