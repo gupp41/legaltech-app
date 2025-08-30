@@ -134,8 +134,12 @@ export default function Dashboard() {
             return
           }
           
-          console.log('🔄 Real-time subscription triggering analyses refresh...')
-          fetchAnalyses() // Refresh analyses when changes occur
+          // Add a small delay to ensure database transaction is committed
+          console.log('🔄 Real-time subscription detected change, waiting before refresh...')
+          setTimeout(() => {
+            console.log('🔄 Real-time subscription triggering analyses refresh...')
+            fetchAnalyses() // Refresh analyses when changes occur
+          }, 1000) // Wait 1 second for transaction to commit
         }
       )
       .subscribe()
@@ -664,12 +668,13 @@ This should show the actual NDA text being sent to the AI.
                       })
                       .eq('id', existingAnalysis.id)
                     
-                    if (updateError) {
-                      console.error('❌ Failed to update analysis record:', updateError)
-                      console.error('🔍 Update error details:', updateError)
-                    } else {
-                      console.log('✅ Analysis record updated to completed successfully')
-                    }
+                                      if (updateError) {
+                    console.error('❌ Failed to update analysis record:', updateError)
+                    console.error('🔍 Update error details:', updateError)
+                    throw new Error(`Failed to update analysis: ${updateError.message}`)
+                  } else {
+                    console.log('✅ Analysis record updated to completed successfully')
+                  }
                   } else {
                     console.log('🔄 No processing analysis found, creating completed record...')
                     console.log('🔍 Creating new analysis for document:', documentId)
@@ -692,10 +697,15 @@ This should show the actual NDA text being sent to the AI.
                     if (createError) {
                       console.error('❌ Failed to create analysis record:', createError)
                       console.error('🔍 Create error details:', createError)
+                      throw new Error(`Failed to create analysis: ${createError.message}`)
                     } else {
                       console.log('✅ Analysis record created successfully')
                     }
                   }
+                  
+                  // Wait a moment for the database transaction to commit
+                  console.log('🔄 Waiting for database transaction to commit...')
+                  await new Promise(resolve => setTimeout(resolve, 500))
                   
                   // Refresh analyses to show the updated record
                   console.log('🔄 Refreshing analyses from database...')
@@ -725,12 +735,33 @@ This should show the actual NDA text being sent to the AI.
                     return updatedAnalyses
                   })
                   
-                  // Double-check that the analysis is now completed
-                  const updatedAnalyses = await getCurrentDocumentAnalyses()
-                  const completedAnalysis = updatedAnalyses.find(a => a.document_id === documentId && a.status === 'completed')
-                  console.log('🔍 Verification - completed analysis found:', completedAnalysis ? 'Yes' : 'No')
+                  // Double-check that the analysis is now completed with retry logic
+                  console.log('🔍 Verifying analysis completion in database...')
+                  let completedAnalysis = null
+                  let retryCount = 0
+                  const maxRetries = 3
+                  
+                  while (!completedAnalysis && retryCount < maxRetries) {
+                    console.log(`🔍 Verification attempt ${retryCount + 1}/${maxRetries}`)
+                    const updatedAnalyses = await getCurrentDocumentAnalyses()
+                    completedAnalysis = updatedAnalyses.find(a => a.document_id === documentId && a.status === 'completed')
+                    
+                    if (completedAnalysis) {
+                      console.log('✅ Analysis verified as completed in database')
+                      break
+                    }
+                    
+                    retryCount++
+                    if (retryCount < maxRetries) {
+                      console.log(`🔄 Retry ${retryCount}/${maxRetries} - waiting 500ms...`)
+                      await new Promise(resolve => setTimeout(resolve, 500))
+                    }
+                  }
+                  
                   if (completedAnalysis) {
                     console.log('🔍 Completed analysis details:', { id: completedAnalysis.id, status: completedAnalysis.status })
+                  } else {
+                    console.warn('⚠️ Analysis completion verification failed after all retries')
                   }
                   
                 } catch (error) {
