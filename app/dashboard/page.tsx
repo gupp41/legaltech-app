@@ -382,23 +382,25 @@ export default function Dashboard() {
       
       if (!user?.id) return
       
-      const { data: orphanedAnalyses, error } = await supabase
+      // First, check for any analyses with results that aren't completed
+      const { data: analysesWithResults, error: resultsError } = await supabase
         .from('analyses')
         .select('*')
         .eq('user_id', user.id)
-        .eq('status', 'processing')
         .not('results', 'is', null)
+        .neq('status', 'completed')
       
-      if (error) {
-        console.error('Error checking for orphaned analyses:', error)
+      if (resultsError) {
+        console.error('Error checking for analyses with results:', resultsError)
         return
       }
       
-      if (orphanedAnalyses && orphanedAnalyses.length > 0) {
-        console.log(`🔍 Found ${orphanedAnalyses.length} orphaned processing analyses with results`)
+      if (analysesWithResults && analysesWithResults.length > 0) {
+        console.log(`🔍 Found ${analysesWithResults.length} analyses with results that aren't completed`)
+        console.log('🔍 Statuses found:', analysesWithResults.map(a => ({ id: a.id, status: a.status, document_id: a.document_id })))
         
-        for (const analysis of orphanedAnalyses) {
-          console.log(`🔄 Fixing orphaned analysis ${analysis.id} for document ${analysis.document_id}`)
+        for (const analysis of analysesWithResults) {
+          console.log(`🔄 Fixing analysis ${analysis.id} status from '${analysis.status}' to 'completed'`)
           const { error: fixError } = await supabase
             .from('analyses')
             .update({ 
@@ -408,17 +410,36 @@ export default function Dashboard() {
             .eq('id', analysis.id)
           
           if (fixError) {
-            console.error(`❌ Failed to fix orphaned analysis ${analysis.id}:`, fixError)
+            console.error(`❌ Failed to fix analysis ${analysis.id}:`, fixError)
           } else {
-            console.log(`✅ Fixed orphaned analysis ${analysis.id}`)
+            console.log(`✅ Fixed analysis ${analysis.id} status to completed`)
           }
         }
         
         // Refresh analyses after fixing
         await fetchAnalyses()
       } else {
-        console.log('✅ No orphaned processing analyses found')
+        console.log('✅ All analyses with results are properly completed')
       }
+      
+      // Also check for any processing analyses without results (these might be stuck)
+      const { data: stuckAnalyses, error: stuckError } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'processing')
+        .is('results', null)
+      
+      if (stuckError) {
+        console.error('Error checking for stuck analyses:', stuckError)
+        return
+      }
+      
+      if (stuckAnalyses && stuckAnalyses.length > 0) {
+        console.log(`🔍 Found ${stuckAnalyses.length} stuck processing analyses without results`)
+        console.log('🔍 These might be orphaned:', stuckAnalyses.map(a => ({ id: a.id, document_id: a.document_id, created_at: a.created_at })))
+      }
+      
     } catch (error) {
       console.error('Error in fixOrphanedAnalyses:', error)
     }
@@ -798,23 +819,46 @@ This should show the actual NDA text being sent to the AI.
                   
                   // Verify the database update actually succeeded
                   console.log('🔍 Verifying database update succeeded...')
-                  const { data: verificationData, error: verificationError } = await supabase
-                    .from('analyses')
-                    .select('id, status, results')
-                    .eq('id', existingAnalysis ? existingAnalysis.id : 'new')
-                    .eq('document_id', documentId)
-                    .single()
                   
-                  if (verificationError) {
-                    console.error('❌ Database verification failed:', verificationError)
-                    throw new Error(`Database verification failed: ${verificationError.message}`)
-                  }
-                  
-                  if (verificationData && verificationData.status === 'completed') {
-                    console.log('✅ Database verification successful - analysis is completed')
+                  if (existingAnalysis) {
+                    // Verify update by ID
+                    const { data: verificationData, error: verificationError } = await supabase
+                      .from('analyses')
+                      .select('id, status, results')
+                      .eq('id', existingAnalysis.id)
+                      .single()
+                    
+                    if (verificationError) {
+                      console.error('❌ Database verification failed:', verificationError)
+                      throw new Error(`Database verification failed: ${verificationError.message}`)
+                    }
+                    
+                    if (verificationData && verificationData.status === 'completed') {
+                      console.log('✅ Database verification successful - analysis is completed')
+                    } else {
+                      console.error('❌ Database verification failed - analysis status is:', verificationData?.status)
+                      throw new Error(`Analysis status verification failed - expected 'completed', got '${verificationData?.status}'`)
+                    }
                   } else {
-                    console.error('❌ Database verification failed - analysis status is:', verificationData?.status)
-                    throw new Error(`Analysis status verification failed - expected 'completed', got '${verificationData?.status}'`)
+                    // Verify creation by document_id (since we don't have the new ID yet)
+                    const { data: verificationData, error: verificationError } = await supabase
+                      .from('analyses')
+                      .select('id, status, results')
+                      .eq('document_id', documentId)
+                      .eq('status', 'completed')
+                      .single()
+                    
+                    if (verificationError) {
+                      console.error('❌ Database verification failed:', verificationError)
+                      throw new Error(`Database verification failed: ${verificationError.message}`)
+                    }
+                    
+                    if (verificationData && verificationData.status === 'completed') {
+                      console.log('✅ Database verification successful - analysis is completed')
+                    } else {
+                      console.error('❌ Database verification failed - analysis status is:', verificationData?.status)
+                      throw new Error(`Analysis status verification failed - expected 'completed', got '${verificationData?.status}'`)
+                    }
                   }
                   
                   // Refresh analyses to show the updated record
@@ -872,6 +916,21 @@ This should show the actual NDA text being sent to the AI.
                     console.log('🔍 Completed analysis details:', { id: completedAnalysis.id, status: completedAnalysis.status })
                   } else {
                     console.warn('⚠️ Analysis completion verification failed after all retries')
+                    
+                    // Additional debugging: Check what's actually in the database
+                    console.log('🔍 DEBUG: Checking raw database state...')
+                    const { data: rawAnalyses, error: rawError } = await supabase
+                      .from('analyses')
+                      .select('*')
+                      .eq('document_id', documentId)
+                      .eq('user_id', user.id)
+                    
+                    if (rawError) {
+                      console.error('❌ Raw database query failed:', rawError)
+                    } else {
+                      console.log('🔍 Raw database state:', rawAnalyses)
+                      console.log('🔍 Analysis statuses found:', rawAnalyses?.map(a => ({ id: a.id, status: a.status, has_results: !!a.results })))
+                    }
                   }
                   
                 } catch (error) {
