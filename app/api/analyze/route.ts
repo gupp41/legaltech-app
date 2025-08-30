@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import mammoth from "mammoth"
+import pdfParse from "pdf-parse"
 
 export async function POST(request: NextRequest) {
   console.log('🚨 ANALYZE API ROUTE ENTRY POINT REACHED')
@@ -161,10 +162,57 @@ File details:
 
 Note: This may indicate a corrupted or unsupported DOCX format.`
           }
+        } else if (file.type.includes('pdf')) {
+          // Use pdf-parse for PDF text extraction
+          console.log('🎯 Using pdf-parse for PDF text extraction...')
+          
+          try {
+            const arrayBuffer = await file.arrayBuffer()
+            const buffer = Buffer.from(arrayBuffer)
+            
+            console.log('Processing PDF with pdf-parse...')
+            const result = await pdfParse(buffer)
+            
+            if (result.text) {
+              extractedText = result.text
+              console.log('✅ PDF text extraction successful, length:', extractedText.length)
+              console.log('Text preview:', extractedText.substring(0, 200) + '...')
+              console.log('📊 PDF info:', { pages: result.numpages, version: result.version })
+            } else {
+              console.warn('PDF extraction returned no text')
+              extractedText = `PDF file processed: ${file.name} (${file.size} bytes)
+              
+PDF extraction completed but no text content was found. This may indicate a scanned PDF or corrupted document.
+
+File details:
+- Name: ${file.name}
+- Type: ${file.type}
+- Size: ${file.size} bytes
+- Status: Processed with pdf-parse, no content found
+
+Note: If this is a scanned PDF, OCR processing would be required.`
+            }
+            
+          } catch (pdfError) {
+            console.error('❌ PDF processing failed:', pdfError)
+            extractedText = `PDF file received: ${file.name} (${file.size} bytes)
+            
+The file has been uploaded successfully, but PDF text extraction encountered an error: ${pdfError instanceof Error ? pdfError.message : 'Unknown error'}
+
+File details:
+- Name: ${file.name}
+- Type: ${file.type}
+- Size: ${file.size} bytes
+- Status: Uploaded successfully, PDF extraction failed
+
+Note: This may indicate a corrupted or unsupported PDF format.`
+          }
         } else {
           extractedText = `File received: ${file.name} (${file.type}, ${file.size} bytes)
           
-The file has been uploaded successfully and is ready for analysis.`
+The file has been uploaded successfully and is ready for analysis.
+
+Supported file types: DOCX, PDF, TXT`
         }
       } catch (extractionError) {
         console.error('Text extraction failed:', extractionError)
@@ -235,15 +283,24 @@ Be specific to the content provided and give practical legal insights based on w
                   const result = await mammoth.extractRawText({ buffer })
                   extractedText = result.value || 'No text extracted from DOCX'
                   console.log('✅ DOCX text extracted, length:', extractedText.length)
+                } else if (file.type.includes('pdf')) {
+                  console.log('🎯 Using pdf-parse for PDF text extraction...')
+                  const arrayBuffer = await file.arrayBuffer()
+                  const buffer = Buffer.from(arrayBuffer)
+                  const result = await pdfParse(buffer)
+                  extractedText = result.text || 'No text extracted from PDF'
+                  console.log('✅ PDF text extracted, length:', extractedText.length)
+                  console.log('📊 PDF info:', { pages: result.numpages, version: result.version })
                 } else if (file.type.includes('text/')) {
                   extractedText = await file.text()
                   console.log('✅ Text file content extracted, length:', extractedText.length)
                 } else {
-                  extractedText = `File type ${file.type} not supported for text extraction`
+                  extractedText = `File type ${file.type} not supported for text extraction. Supported types: DOCX, PDF, TXT`
                 }
               } catch (extractionError) {
                 console.error('❌ Text extraction failed:', extractionError)
-                extractedText = `Error extracting text: ${extractionError.message}`
+                const errorMessage = extractionError instanceof Error ? extractionError.message : 'Unknown error'
+                extractedText = `Error extracting text: ${errorMessage}`
               }
             } else {
               extractedText = 'No file uploaded for analysis'
@@ -454,7 +511,9 @@ Be professional, thorough, and provide practical legal insights. Use clear langu
     
   } catch (error) {
     console.error('🚨 CRITICAL ERROR in analyze API:', error)
-    console.error('🚨 Error stack:', error.stack)
+    if (error instanceof Error) {
+      console.error('🚨 Error stack:', error.stack)
+    }
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
