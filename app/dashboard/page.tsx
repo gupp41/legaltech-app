@@ -305,6 +305,16 @@ export default function Dashboard() {
         setAnalyses([])
       } else {
         console.log('Analyses fetched:', analyses)
+        console.log('📊 Total analyses count:', analyses?.length || 0)
+        if (analyses && analyses.length > 0) {
+          console.log('📄 Latest analysis:', {
+            id: analyses[0].id,
+            document_id: analyses[0].document_id,
+            status: analyses[0].status,
+            created_at: analyses[0].created_at,
+            results: analyses[0].results ? 'Has results' : 'No results'
+          })
+        }
         setAnalyses(analyses || [])
       }
     } catch (error) {
@@ -391,9 +401,18 @@ export default function Dashboard() {
   const getCurrentDocumentAnalyses = () => {
     const currentDoc = getCurrentDocument()
     if (!currentDoc) return []
-    return analyses.filter(analysis => analysis.document_id === currentDoc.id)
-
-
+    
+    console.log('🔍 getCurrentDocumentAnalyses debug:', {
+      currentDocId: currentDoc.id,
+      currentDocFilename: currentDoc.filename,
+      totalAnalyses: analyses.length,
+      allAnalyses: analyses.map(a => ({ id: a.id, document_id: a.document_id, status: a.status, created_at: a.created_at }))
+    })
+    
+    const filteredAnalyses = analyses.filter(analysis => analysis.document_id === currentDoc.id)
+    console.log('🔍 Filtered analyses for current document:', filteredAnalyses.length, filteredAnalyses)
+    
+    return filteredAnalyses
   }
 
   const handleStreamingAnalysis = async (documentId: string) => {
@@ -584,24 +603,89 @@ This should show the actual NDA text being sent to the AI.
                 // Set refreshing flag to prevent real-time subscription interference
                 setRefreshingAnalyses(prev => new Set(prev).add(documentId))
                 
-                // Wait a moment for the database update to complete, then refresh analyses
-                console.log('🔄 Waiting for database update to complete...')
-                setTimeout(async () => {
-                  try {
-                    console.log('🔄 Refreshing analyses from database...')
-                    await fetchAnalyses()
-                    console.log('✅ Analyses refreshed from database successfully')
-                  } catch (error) {
-                    console.error('❌ Failed to refresh analyses:', error)
-                  } finally {
-                    // Clear refreshing flag
-                    setRefreshingAnalyses(prev => {
-                      const newSet = new Set(prev)
-                      newSet.delete(documentId)
-                      return newSet
+                        // Wait a moment for the database update to complete, then refresh analyses
+        console.log('🔄 Waiting for database update to complete...')
+        setTimeout(async () => {
+          try {
+            console.log('🔄 Refreshing analyses from database...')
+            await fetchAnalyses()
+            console.log('✅ Analyses refreshed from database successfully')
+            
+            // Check if the analysis was actually saved, if not, create it manually
+            const currentAnalyses = await getCurrentDocumentAnalyses()
+            // Check for any analysis with this document ID (regardless of status)
+            const analysisExists = currentAnalyses.some(a => a.document_id === documentId)
+            
+            if (!analysisExists) {
+              console.log('🔄 Analysis not found in database, creating it manually...')
+              try {
+                const { error: createError } = await supabase
+                  .from('analyses')
+                  .insert({
+                    document_id: documentId,
+                    user_id: user.id,
+                    analysis_type: 'contract_review',
+                    status: 'completed',
+                    results: {
+                      analysis: fullResponse,
+                      model: 'gpt-5-nano',
+                      provider: 'Vercel AI Gateway'
+                    },
+                    completed_at: new Date().toISOString()
+                  })
+                
+                if (createError) {
+                  console.error('❌ Failed to create analysis record manually:', createError)
+                } else {
+                  console.log('✅ Analysis record created manually')
+                  // Refresh analyses again to show the new record
+                  await fetchAnalyses()
+                }
+              } catch (createError) {
+                console.error('❌ Error creating analysis record manually:', createError)
+              }
+            } else {
+              // Analysis exists but might still be 'processing' - try to update it
+              const existingAnalysis = currentAnalyses.find(a => a.document_id === documentId)
+              if (existingAnalysis && existingAnalysis.status === 'processing') {
+                console.log('🔄 Updating existing processing analysis to completed...')
+                try {
+                  const { error: updateError } = await supabase
+                    .from('analyses')
+                    .update({
+                      status: 'completed',
+                      results: {
+                        analysis: fullResponse,
+                        model: 'gpt-5-nano',
+                        provider: 'Vercel AI Gateway'
+                      },
+                      completed_at: new Date().toISOString()
                     })
+                    .eq('id', existingAnalysis.id)
+                  
+                  if (updateError) {
+                    console.error('❌ Failed to update analysis record:', updateError)
+                  } else {
+                    console.log('✅ Analysis record updated to completed')
+                    // Refresh analyses to show the updated record
+                    await fetchAnalyses()
                   }
-                }, 1000)
+                } catch (updateError) {
+                  console.error('❌ Error updating analysis record:', updateError)
+                }
+              }
+            }
+          } catch (error) {
+            console.error('❌ Failed to refresh analyses:', error)
+          } finally {
+            // Clear refreshing flag
+            setRefreshingAnalyses(prev => {
+              const newSet = new Set(prev)
+              newSet.delete(documentId)
+              return newSet
+            })
+          }
+        }, 1000)
                 
                 // Show a success message to the user
                 console.log('🎉 Analysis completed! Refreshing from database...')
