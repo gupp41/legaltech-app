@@ -48,23 +48,182 @@ async function extractTextFromTXT(file: File): Promise<ExtractedText> {
 
 async function extractTextFromPDF(file: File): Promise<ExtractedText> {
   try {
-    // For now, return a message that PDF extraction requires server-side processing
-    // In a production app, you'd upload the PDF to a server endpoint for processing
-    const message = `PDF text extraction requires server-side processing. 
+    console.log('Starting PDF text extraction for:', file.name, file.size, 'bytes')
     
-For now, please upload a text (.txt) or Word (.docx) file, or copy and paste the document content into a text file.
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined') {
+      throw new Error('PDF extraction only works in browser environment')
+    }
+    
+    // Dynamically import pdfjs-dist only when needed (client-side only)
+    console.log('Importing pdfjs-dist...')
+    const pdfjsLib = await import('pdfjs-dist')
+    console.log('pdfjs-dist imported successfully, version:', pdfjsLib.version)
+    
+    // Configure worker - use a local worker approach to avoid CORS issues
+    // Configure worker - use local worker file to avoid CORS issues
+    console.log('Configuring PDF.js with local worker file...')
+    
+    try {
+      // Use our local worker file served from our own domain
+      const workerSrc = '/pdf.worker.js';
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+      console.log('PDF worker configured with local worker file');
+      
+    } catch (workerError) {
+      console.error('Failed to configure PDF worker:', workerError);
+      throw new Error(`Failed to configure PDF.js: ${workerError.message}`);
+    }
+    
+    console.log('Converting file to ArrayBuffer...')
+    const arrayBuffer = await file.arrayBuffer()
+    console.log('ArrayBuffer size:', arrayBuffer.byteLength)
+    
+    const uint8Array = new Uint8Array(arrayBuffer)
+    console.log('Uint8Array created, length:', uint8Array.length)
+    
+    // Load the PDF document with timeout and progress tracking
+    console.log('Loading PDF document...')
+    
+    // Create PDF loading task with all options
+    const loadingTask = pdfjsLib.getDocument({ 
+      data: uint8Array,
+      // Try to use worker but with better configuration
+      disableWorker: false, // Allow worker usage
+      disableRange: false,  // Enable range requests
+      disableStream: false, // Enable streaming
+      // Add more options for better compatibility
+      maxImageSize: -1,     // No image size limit
+      cMapUrl: null,        // Disable CMap loading
+      cMapPacked: false,    // Disable packed CMap
+      // Additional options for better performance
+      verbosity: 1,         // Show progress
+      progressCallback: (progress) => {
+        if (progress.total > 0) {
+          const percent = Math.round((progress.loaded / progress.total) * 100);
+          console.log(`PDF loading progress: ${percent}% (${progress.loaded}/${progress.total})`);
+        } else {
+          console.log(`PDF loading progress: ${progress.loaded} bytes loaded`);
+        }
+      }
+    })
+    
+    // Add timeout to prevent hanging - reduced for faster feedback
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('PDF loading timeout')), 30000) // 30 second timeout for faster feedback
+    })
+    
+    console.log('Starting PDF loading with timeout...')
+    
+    // Add more detailed logging
+    console.log('PDF loading task created, waiting for completion...')
+    
+    let pdf
+    try {
+      pdf = await Promise.race([loadingTask.promise, timeoutPromise])
+      console.log('PDF loaded successfully, pages:', pdf.numPages)
+    } catch (error) {
+      console.error('PDF loading failed:', error)
+      throw error
+    }
+    
+    let fullText = ''
+    let processedPages = 0
+    
+    // Extract text from each page with error handling
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      try {
+        console.log(`Processing page ${pageNum}/${pdf.numPages}...`)
+        const page = await pdf.getPage(pageNum)
+        const textContent = await page.getTextContent()
+        
+        // Combine text items from the page
+        const pageText = textContent.items
+          .filter((item: any) => item.str && item.str.trim()) // Filter out empty strings
+          .map((item: any) => item.str)
+          .join(' ')
+        
+        if (pageText.trim()) {
+          fullText += pageText + '\n\n'
+          processedPages++
+        }
+        
+        console.log(`Page ${pageNum} text length:`, pageText.length, 'characters')
+      } catch (pageError) {
+        console.warn(`Failed to process page ${pageNum}:`, pageError)
+        // Continue with other pages
+      }
+    }
+    
+    console.log('Total extracted text length:', fullText.length, 'characters')
+    console.log('Successfully processed pages:', processedPages, 'out of', pdf.numPages)
+    
+    if (fullText.trim()) {
+      const wordCount = fullText.split(/\s+/).filter(word => word.length > 0).length
+      console.log('PDF extraction successful, word count:', wordCount)
+      return {
+        text: fullText.trim(),
+        wordCount,
+        success: true
+      }
+    } else {
+      console.warn('PDF extraction completed but no text content found')
+      const message = `PDF processed: ${file.name} (${pdf.numPages} pages)
 
-File: ${file.name}
-Size: ${(file.size / 1024).toFixed(1)} KB`
+No readable text content was found. This could be because:
+- The PDF contains only images/scans
+- The text is embedded as images
+- The PDF is password protected
+- The content is in an unsupported format
+
+To analyze this document, you may need to:
+1. Use OCR software to convert images to text
+2. Copy and paste text manually if visible
+3. Save as a text-searchable PDF from the original source`
+
+      return {
+        text: message,
+        wordCount: message.split(/\s+/).filter(word => word.length > 0).length,
+        success: false,
+        error: 'No text content found in PDF'
+      }
+    }
+  } catch (error) {
+    console.error('PDF extraction error:', error)
+    
+    // Provide detailed error information
+    let errorDetails = 'Unknown error'
+    if (error instanceof Error) {
+      errorDetails = `${error.name}: ${error.message}`
+      console.error('Error stack:', error.stack)
+    } else if (typeof error === 'string') {
+      errorDetails = error
+    } else {
+      errorDetails = JSON.stringify(error)
+    }
+    
+    const message = `PDF processing failed: ${file.name}
+
+Error: ${errorDetails}
+
+This could be due to:
+- Network connectivity issues
+- Unsupported PDF format
+- Browser compatibility problems
+- File corruption
+
+To analyze this document, please try:
+1. Converting to text format (.txt)
+2. Using a different browser
+3. Checking your internet connection
+4. Ensuring the PDF is not corrupted`
 
     return {
       text: message,
-      wordCount: message.split(/\s+/).length,
+      wordCount: message.split(/\s+/).filter(word => word.length > 0).length,
       success: false,
-      error: 'PDF extraction requires server-side processing'
+      error: `PDF extraction failed: ${errorDetails}`
     }
-  } catch (error) {
-    throw new Error(`PDF extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 

@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [analyzingDocuments, setAnalyzingDocuments] = useState<Set<string>>(new Set())
   const [realTimeSyncActive, setRealTimeSyncActive] = useState(false)
   const [streamingAnalyses, setStreamingAnalyses] = useState<Map<string, string>>(new Map())
+  const [extractedTexts, setExtractedTexts] = useState<Map<string, { text: string; wordCount: number; success: boolean }>>(new Map())
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -411,6 +412,18 @@ export default function Dashboard() {
       formData.append('analysisType', 'contract_review')
       formData.append('userId', user.id)
       
+      // Check if we have stored extracted text first
+      let documentContent = ''
+      const storedExtraction = extractedTexts.get(documentId)
+      if (storedExtraction && storedExtraction.success) {
+        console.log('✅ Using stored extracted text for analysis:', documentId)
+        documentContent = storedExtraction.text
+        console.log(`Using stored text: ${storedExtraction.wordCount} words`)
+      } else {
+        console.log('No stored text found, will use server-side extraction')
+        documentContent = '' // Will be filled by server-side extraction
+      }
+      
       // Create documentData object as expected by the API
       const documentData = {
         id: document.id,
@@ -418,7 +431,7 @@ export default function Dashboard() {
         file_type: document.file_type || 'application/octet-stream',
         file_size: document.file_size,
         analysisId: analysis.id,
-        documentContent: '' // Will be filled by server-side extraction
+        documentContent: documentContent
       }
       
       console.log('🔍 Document data being sent:', {
@@ -427,6 +440,22 @@ export default function Dashboard() {
         documentDataKeys: Object.keys(documentData),
         documentDataString: JSON.stringify(documentData)
       })
+      
+      // Debug popup to show what's being sent to LLM
+      const debugMessage = `
+🔍 DEBUG: What's being sent to LLM:
+=====================================
+Document ID: ${documentId}
+Analysis ID: ${analysis.id}
+Document Content Length: ${documentData.documentContent.length} characters
+Document Content Preview: ${documentData.documentContent.substring(0, 200)}...
+
+Full Document Data Keys: ${Object.keys(documentData).join(', ')}
+
+This should show the actual NDA text being sent to the AI.
+      `.trim()
+      
+      alert(debugMessage)
       
       formData.append('documentData', JSON.stringify(documentData))
 
@@ -875,6 +904,15 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
         try {
           console.log('Calling analysis API...')
           
+          // Check if we have stored extracted text first
+          const storedExtraction = extractedTexts.get(documentId)
+          if (storedExtraction && storedExtraction.success) {
+            console.log('✅ Using stored extracted text for analysis:', documentId)
+            documentText = storedExtraction.text
+            documentContent = truncateText(storedExtraction.text, 8000)
+            console.log(`Using stored text: ${storedExtraction.wordCount} words`)
+          }
+          
           // Prepare the document data for analysis
           let documentDataForAnalysis = {
             ...document,
@@ -1085,6 +1123,114 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
         return "bg-red-100 text-red-800"
       default:
         return "bg-slate-100 text-slate-800"
+    }
+  }
+
+  const handleConvertToText = async (documentId: string) => {
+    try {
+      console.log('Starting PDF text extraction for:', documentId)
+      
+      // Find the document in our local state
+      const document = documents.find(doc => doc.id === documentId)
+      if (!document) {
+        alert('Document not found')
+        return
+      }
+
+      console.log('Document found:', document)
+
+      // Check if user ID is available
+      if (!user?.id) {
+        alert('User not authenticated')
+        return
+      }
+
+      // Download the file from Supabase storage
+      if (!document.storage_path) {
+        alert('Document storage path not found')
+        return
+      }
+      
+      console.log('Downloading file from storage:', document.storage_path)
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('documents')
+        .download(document.storage_path)
+
+      if (downloadError) {
+        console.error('Download error:', downloadError)
+        alert(`Failed to download file: ${downloadError.message}`)
+        return
+      }
+
+      if (!fileData) {
+        alert('No file data received')
+        return
+      }
+
+      console.log('File downloaded successfully, size:', fileData.size)
+
+      // Convert to File object for the extractor
+      const file = new File([fileData], document.filename, { 
+        type: document.file_type || 'application/octet-stream' 
+      })
+
+      console.log('File object created:', file.name, file.size, file.type)
+
+      // Extract text using the existing function
+      console.log('Starting text extraction...')
+      const extractionResult = await extractTextFromDocument(file)
+      console.log('Text extraction completed:', extractionResult)
+
+      // Store the extracted text for later use by the analyze function
+      if (extractionResult.success && extractionResult.text) {
+        setExtractedTexts(prev => new Map(prev).set(documentId, {
+          text: extractionResult.text,
+          wordCount: extractionResult.wordCount,
+          success: true
+        }))
+        console.log('Extracted text stored for document:', documentId)
+      }
+
+      // Create detailed debug information
+      const debugInfo = {
+        documentId,
+        filename: document.filename,
+        fileSize: document.file_size,
+        fileType: document.file_type,
+        storagePath: document.storage_path,
+        extractionSuccess: extractionResult.success,
+        extractedText: extractionResult.text,
+        wordCount: extractionResult.wordCount,
+        error: extractionResult.error,
+        timestamp: new Date().toISOString()
+      }
+
+      // Display results in a detailed alert (for now)
+      const message = `
+Text Extraction Results:
+=======================
+Document: ${document.filename}
+File Size: ${document.file_size} bytes
+File Type: ${document.file_type}
+Storage Path: ${document.storage_path || 'N/A'}
+
+Extraction Status: ${extractionResult.success ? 'SUCCESS' : 'FAILED'}
+${extractionResult.error ? `Error: ${extractionResult.error}` : ''}
+
+Extracted Text (${extractionResult.wordCount} words):
+${extractionResult.text ? extractionResult.text.substring(0, 500) + (extractionResult.text.length > 500 ? '...' : '') : 'No text extracted'}
+
+Full text length: ${extractionResult.text?.length || 0} characters
+      `.trim()
+
+      alert(message)
+
+      // Also log to console for debugging
+      console.log('Text extraction debug info:', debugInfo)
+
+    } catch (error) {
+      console.error('Error in handleConvertToText:', error)
+      alert(`Text extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -1301,6 +1447,13 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
+                              <Button 
+                                onClick={() => handleConvertToText(currentDoc.id)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                Convert to Text
+                              </Button>
                               <Button 
                                 onClick={() => handleAnalyze(currentDoc.id)}
                                 disabled={analyzingDocuments.has(currentDoc.id)}

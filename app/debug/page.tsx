@@ -1,89 +1,98 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function DebugPage() {
-  const [sessionInfo, setSessionInfo] = useState<any>(null)
-  const [cookies, setCookies] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
+  const [testResult, setTestResult] = useState<string>("")
+  const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    const checkSession = async () => {
-      const supabase = createClient()
+  const testPDFLibrary = async () => {
+    setIsLoading(true)
+    setTestResult("Testing PDF library import...")
+    
+    try {
+      console.log('Testing PDF library import...')
       
-      // Get session info
-      const { data: { session } } = await supabase.auth.getSession()
-      const { data: { user } } = await supabase.auth.getUser()
+      // Test 1: Basic import
+      const pdfjsLib = await import('pdfjs-dist')
+      console.log('✅ PDF library imported successfully')
+      console.log('Version:', pdfjsLib.version)
       
-      // Get cookies
-      const cookieList = document.cookie.split(';').map(c => c.trim())
+      // Test 2: Check if getDocument function exists
+      if (typeof pdfjsLib.getDocument === 'function') {
+        console.log('✅ getDocument function available')
+      } else {
+        console.log('❌ getDocument function not available')
+      }
       
-      setSessionInfo({
-        session: session ? {
-          access_token: session.access_token ? 'Present' : 'Missing',
-          refresh_token: session.refresh_token ? 'Present' : 'Missing',
-          expires_at: session.expires_at ? new Date(session.expires_at * 1000).toLocaleString() : 'Missing'
-        } : 'No session',
-        user: user ? {
-          id: user.id,
-          email: user.email,
-          email_confirmed: user.email_confirmed_at ? 'Yes' : 'No'
-        } : 'No user'
-      })
+      // Test 3: Check if GlobalWorkerOptions exists
+      if (pdfjsLib.GlobalWorkerOptions) {
+        console.log('✅ GlobalWorkerOptions available')
+        console.log('Current worker source:', pdfjsLib.GlobalWorkerOptions.workerSrc)
+      } else {
+        console.log('❌ GlobalWorkerOptions not available')
+      }
       
-      setCookies(cookieList)
-      setLoading(false)
+      setTestResult(`PDF Library Test Results:
+✅ Import successful
+Version: ${pdfjsLib.version}
+getDocument: ${typeof pdfjsLib.getDocument === 'function' ? 'Available' : 'Not available'}
+GlobalWorkerOptions: ${pdfjsLib.GlobalWorkerOptions ? 'Available' : 'Not available'}
+Worker Source: ${pdfjsLib.GlobalWorkerOptions?.workerSrc || 'Not set'}`)
+      
+    } catch (error) {
+      console.error('PDF library test failed:', error)
+      setTestResult(`PDF Library Test Failed:
+Error: ${error instanceof Error ? error.message : 'Unknown error'}
+Type: ${error instanceof Error ? error.name : typeof error}`)
+    } finally {
+      setIsLoading(false)
     }
-
-    checkSession()
-  }, [])
-
-  if (loading) {
-    return <div className="p-8">Loading session info...</div>
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Session Debug Information</h1>
+    <div className="container mx-auto p-6 space-y-6">
+      <h1 className="text-3xl font-bold">Debug Page</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Session State</h2>
-          <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
-            {JSON.stringify(sessionInfo, null, 2)}
-          </pre>
-        </div>
-        
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Browser Cookies</h2>
-          <div className="space-y-2">
-            {cookies.map((cookie, index) => (
-              <div key={index} className="bg-gray-100 p-2 rounded text-sm font-mono">
-                {cookie}
-              </div>
-            ))}
+      <Card>
+        <CardHeader>
+          <CardTitle>PDF Library Test</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button 
+            onClick={testPDFLibrary} 
+            disabled={isLoading}
+          >
+            Test PDF Library Import
+          </Button>
+          
+          {testResult && (
+            <div className="mt-4">
+              <h3 className="font-semibold mb-2">Test Result:</h3>
+              <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
+                {testResult}
+              </pre>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Environment Info</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm">
+            <div><strong>User Agent:</strong> {typeof window !== 'undefined' ? navigator.userAgent : 'Server-side rendering'}</div>
+            <div><strong>Platform:</strong> {typeof window !== 'undefined' ? navigator.platform : 'Server-side rendering'}</div>
+            <div><strong>Language:</strong> {typeof window !== 'undefined' ? navigator.language : 'Server-side rendering'}</div>
+            <div><strong>Online:</strong> {typeof window !== 'undefined' ? (navigator.onLine ? 'Yes' : 'No') : 'Server-side rendering'}</div>
+            <div><strong>Window Size:</strong> {typeof window !== 'undefined' ? `${window.innerWidth} x ${window.innerHeight}` : 'Server-side rendering'}</div>
           </div>
-        </div>
-      </div>
-      
-      <div className="mt-6 bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-4">Actions</h2>
-        <div className="space-x-4">
-          <button 
-            onClick={() => window.location.href = '/dashboard'}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Try Dashboard Access
-          </button>
-          <button 
-            onClick={() => window.location.href = '/auth/login'}
-            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-          >
-            Go to Login
-          </button>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
