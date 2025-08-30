@@ -422,6 +422,52 @@ export default function Dashboard() {
         console.log('✅ All analyses with results are properly completed')
       }
       
+      // AGGRESSIVE CHECK: Also check for any analyses that might have been missed
+      console.log('🔍 AGGRESSIVE CHECK: Looking for any remaining inconsistent analyses...')
+      const { data: allAnalyses, error: allError } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('user_id', user.id)
+      
+      if (!allError && allAnalyses) {
+        const inconsistentAnalyses = allAnalyses.filter(a => {
+          // Any analysis with results should be completed
+          if (a.results && a.status !== 'completed') {
+            return true
+          }
+          // Any analysis without results should not be completed
+          if (!a.results && a.status === 'completed') {
+            return true
+          }
+          return false
+        })
+        
+        if (inconsistentAnalyses.length > 0) {
+          console.log(`🔍 Found ${inconsistentAnalyses.length} inconsistent analyses, fixing...`)
+          for (const analysis of inconsistentAnalyses) {
+            const newStatus = analysis.results ? 'completed' : 'processing'
+            console.log(`🔄 Fixing analysis ${analysis.id} from '${analysis.status}' to '${newStatus}'`)
+            
+            const { error: fixError } = await supabase
+              .from('analyses')
+              .update({ 
+                status: newStatus,
+                completed_at: analysis.results ? new Date().toISOString() : null
+              })
+              .eq('id', analysis.id)
+            
+            if (fixError) {
+              console.error(`❌ Failed to fix analysis ${analysis.id}:`, fixError)
+            } else {
+              console.log(`✅ Fixed analysis ${analysis.id} to '${newStatus}'`)
+            }
+          }
+          
+          // Final refresh after all fixes
+          await fetchAnalyses()
+        }
+      }
+      
       // Also check for any processing analyses without results (these might be stuck)
       const { data: stuckAnalyses, error: stuckError } = await supabase
         .from('analyses')
@@ -817,6 +863,26 @@ This should show the actual NDA text being sent to the AI.
                   console.log('🔄 Waiting for database transaction to commit...')
                   await new Promise(resolve => setTimeout(resolve, 500))
                   
+                  // CRITICAL DEBUGGING: Check what's actually in the database right now
+                  console.log('🔍 CRITICAL DEBUG: Checking database state immediately after update...')
+                  const { data: immediateCheck, error: immediateError } = await supabase
+                    .from('analyses')
+                    .select('*')
+                    .eq('document_id', documentId)
+                    .eq('user_id', user.id)
+                  
+                  if (immediateError) {
+                    console.error('❌ Immediate database check failed:', immediateError)
+                  } else {
+                    console.log('🔍 Immediate database state:', immediateCheck)
+                    console.log('🔍 Analysis statuses found:', immediateCheck?.map(a => ({ 
+                      id: a.id, 
+                      status: a.status, 
+                      has_results: !!a.results,
+                      results_length: a.results?.analysis?.length || 0
+                    })))
+                  }
+                  
                   // Verify the database update actually succeeded
                   console.log('🔍 Verifying database update succeeded...')
                   
@@ -929,7 +995,32 @@ This should show the actual NDA text being sent to the AI.
                       console.error('❌ Raw database query failed:', rawError)
                     } else {
                       console.log('🔍 Raw database state:', rawAnalyses)
-                      console.log('🔍 Analysis statuses found:', rawAnalyses?.map(a => ({ id: a.id, status: a.status, has_results: !!a.results })))
+                      console.log('🔍 Analysis statuses found:', rawAnalyses?.map(a => ({ id: a.id, status: 'processing', has_results: !!a.results })))
+                      
+                      // AGGRESSIVE FIX: Force any analysis with results to be completed
+                      const analysesWithResults = rawAnalyses?.filter(a => a.results) || []
+                      if (analysesWithResults.length > 0) {
+                        console.log('🔍 AGGRESSIVE FIX: Found analyses with results, forcing completion...')
+                        for (const analysis of analysesWithResults) {
+                          console.log(`🔄 Force-fixing analysis ${analysis.id} to completed`)
+                          const { error: forceError } = await supabase
+                            .from('analyses')
+                            .update({ 
+                              status: 'completed',
+                              completed_at: new Date().toISOString()
+                            })
+                            .eq('id', analysis.id)
+                          
+                          if (forceError) {
+                            console.error(`❌ Force-fix failed for analysis ${analysis.id}:`, forceError)
+                          } else {
+                            console.log(`✅ Force-fixed analysis ${analysis.id} to completed`)
+                          }
+                        }
+                        
+                        // Re-fetch analyses after force-fixing
+                        await fetchAnalyses()
+                      }
                     }
                   }
                   
