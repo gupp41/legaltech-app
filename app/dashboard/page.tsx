@@ -557,24 +557,6 @@ This should show the actual NDA text being sent to the AI.
                 console.log('✅ Streaming analysis completed')
                 console.log('🚨 CRITICAL: Analysis completed with full response length:', fullResponse.length)
                 
-                // Store the completed analysis locally so it doesn't disappear
-                const completedAnalysis = {
-                  id: `temp-${Date.now()}`,
-                  document_id: documentId,
-                  user_id: user.id,
-                  analysis_type: 'contract_review',
-                  status: 'completed',
-                  results: {
-                    analysis: fullResponse,
-                    model: 'gpt-5-nano',
-                    provider: 'Vercel AI Gateway'
-                  },
-                  created_at: new Date().toISOString(),
-                  completed_at: new Date().toISOString()
-                }
-                
-                console.log('🚨 CRITICAL: Storing completed analysis locally:', completedAnalysis.id)
-                
                 // Clear streaming state
                 setStreamingAnalyses(prev => {
                   const newMap = new Map(prev)
@@ -589,15 +571,20 @@ This should show the actual NDA text being sent to the AI.
                   return newSet
                 })
                 
-                // Add the completed analysis to local state immediately
-                setAnalyses(prev => [completedAnalysis, ...prev])
-                
-                // Don't refresh from database immediately - let the user see the local result
-                // The analysis will be saved to database by the server, and will appear on next page refresh
-                console.log('🚨 CRITICAL: Analysis stored locally, skipping database refresh to preserve display')
+                // Wait a moment for the database update to complete, then refresh analyses
+                console.log('🔄 Waiting for database update to complete...')
+                setTimeout(async () => {
+                  try {
+                    console.log('🔄 Refreshing analyses from database...')
+                    await fetchAnalyses()
+                    console.log('✅ Analyses refreshed from database successfully')
+                  } catch (error) {
+                    console.error('❌ Failed to refresh analyses:', error)
+                  }
+                }, 1000)
                 
                 // Show a success message to the user
-                console.log('🎉 Analysis completed and stored locally! Check the results below.')
+                console.log('🎉 Analysis completed! Refreshing from database...')
                 return
               }
               
