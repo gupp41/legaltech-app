@@ -843,7 +843,7 @@ This should show the actual NDA text being sent to the AI.
               console.warn('Fetch error details:', {
                 name: fetchError.name,
                 message: fetchError.message,
-                cause: fetchError.cause
+                cause: (fetchError as any).cause
               })
             } else {
               console.warn('Fetch error (unknown type):', fetchError)
@@ -1021,7 +1021,7 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
                 formData.append('userId', user.id)
                 formData.append('documentData', JSON.stringify(documentDataForAnalysis))
                 
-                console.log('FormData created with keys:', Array.from(formData.keys()))
+                console.log('FormData created with entries:', Array.from(formData.entries()))
                 
                 // Call our API route with FormData
                 console.log('Sending FormData request to /api/analyze...')
