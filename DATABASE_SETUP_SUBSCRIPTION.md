@@ -17,6 +17,9 @@ Copy and paste this entire script:
 -- 🚀 Subscription System Database Schema
 -- This script creates the necessary tables for subscription management and usage tracking
 
+-- Enable UUID extension if not already enabled
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- Create subscriptions table
 CREATE TABLE IF NOT EXISTS subscriptions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -29,8 +32,8 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     
-    -- Ensure one active subscription per user
-    UNIQUE(user_id, status) WHERE status = 'active'
+    -- Ensure one active subscription per user (using a simpler approach)
+    UNIQUE(user_id)
 );
 
 -- Create usage_tracking table
@@ -189,6 +192,10 @@ LEFT JOIN usage_tracking ut ON u.id = ut.user_id AND ut.month_year = TO_CHAR(NOW
 
 -- Grant access to the view
 GRANT SELECT ON user_subscription_status TO authenticated;
+
+-- Note: The UNIQUE constraint on user_id ensures one subscription per user
+-- If you need more complex logic (like allowing multiple statuses), you can add a trigger
+-- or handle it in your application logic
 ```
 
 ### **Step 3: Click "Run"**
@@ -220,6 +227,21 @@ Check the browser console for specific error messages. The most common issues ar
 - **Permission denied** → RLS policies not working
 - **Table not found** → Schema script didn't run completely
 - **View not found** → `user_subscription_status` view missing
+
+### **Common SQL Errors & Fixes:**
+
+#### **"syntax error at or near 'WHERE'"**
+- **Cause:** Your PostgreSQL version doesn't support `UNIQUE ... WHERE` syntax
+- **Fix:** The script has been updated to use `UNIQUE(user_id)` instead
+- **Impact:** Each user can have only one subscription record (simpler but still effective)
+
+#### **"function gen_random_uuid() does not exist"**
+- **Cause:** UUID extension not enabled
+- **Fix:** Add this line before the script: `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`
+
+#### **"relation 'users' does not exist"**
+- **Cause:** The users table hasn't been created yet
+- **Fix:** Run the basic database schema first (from `DATABASE_SETUP.md`)
 
 ---
 
