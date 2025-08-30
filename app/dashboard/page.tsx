@@ -140,44 +140,52 @@ export default function Dashboard() {
       )
       .subscribe()
 
-    // Subscribe to text_extractions table changes
-    const extractionsSubscription = supabase
-      .channel('extractions-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'text_extractions',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          console.log('Text extractions real-time change:', payload)
-          console.log('🔄 Real-time subscription triggered, refreshing extractions...')
-          console.log('📊 Payload details:', {
-            event: payload.eventType,
-            table: payload.table,
-            record: payload.new || payload.old,
-            user_id: (payload.new as any)?.user_id || (payload.old as any)?.user_id
-          })
-          fetchSavedExtractions() // Refresh extractions when changes occur
-        }
-      )
-      .subscribe((status) => {
-        console.log('🔄 Text extractions subscription status:', status)
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Text extractions real-time subscription active')
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Text extractions subscription error')
-        }
-      })
+    // Subscribe to text_extractions table changes (with error handling)
+    let extractionsSubscription: any = null
+    try {
+      extractionsSubscription = supabase
+        .channel('extractions-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+            schema: 'public',
+            table: 'text_extractions',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('Text extractions real-time change:', payload)
+            console.log('🔄 Real-time subscription triggered, refreshing extractions...')
+            console.log('📊 Payload details:', {
+              event: payload.eventType,
+              table: payload.table,
+              record: payload.new || payload.old,
+              user_id: (payload.new as any)?.user_id || (payload.old as any)?.user_id
+            })
+            fetchSavedExtractions() // Refresh extractions when changes occur
+          }
+        )
+        .subscribe((status) => {
+          console.log('🔄 Text extractions subscription status:', status)
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Text extractions real-time subscription active')
+          } else if (status === 'CHANNEL_ERROR') {
+            console.warn('⚠️ Text extractions subscription error - table may not exist yet')
+          }
+        })
+    } catch (error) {
+      console.warn('⚠️ Could not subscribe to text_extractions table:', error)
+      console.log('This is normal if the table does not exist yet')
+    }
 
     // Cleanup subscriptions
     return () => {
       console.log('Cleaning up real-time subscriptions')
       documentsSubscription.unsubscribe()
       analysesSubscription.unsubscribe()
-      extractionsSubscription.unsubscribe()
+      if (extractionsSubscription) {
+        extractionsSubscription.unsubscribe()
+      }
     }
   }, [user?.id, refreshingAnalyses])
 
