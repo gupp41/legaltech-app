@@ -59,6 +59,11 @@ export default function Dashboard() {
       fetchDocuments()
       fetchAnalyses()
       fetchSavedExtractions()
+      
+      // Fix any orphaned analyses that might exist
+      setTimeout(() => {
+        fixOrphanedAnalyses()
+      }, 1000) // Wait 1 second after initial data fetch
     }
   }, [user?.id])
 
@@ -327,11 +332,95 @@ export default function Dashboard() {
             results: analyses[0].results ? 'Has results' : 'No results'
           })
         }
+        // Check for any "processing" analyses that should be "completed"
+        const processingAnalyses = analyses?.filter(a => a.status === 'processing' && a.results) || []
+        if (processingAnalyses.length > 0) {
+          console.log('🔍 Found processing analyses with results - fixing status...')
+          for (const analysis of processingAnalyses) {
+            console.log(`🔄 Fixing analysis ${analysis.id} status from processing to completed`)
+            const { error: fixError } = await supabase
+              .from('analyses')
+              .update({ 
+                status: 'completed',
+                completed_at: new Date().toISOString()
+              })
+              .eq('id', analysis.id)
+            
+            if (fixError) {
+              console.error(`❌ Failed to fix analysis ${analysis.id}:`, fixError)
+            } else {
+              console.log(`✅ Fixed analysis ${analysis.id} status`)
+            }
+          }
+          
+          // Re-fetch analyses after fixing
+          const { data: fixedAnalyses, error: refetchError } = await supabase
+            .from('analyses')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+          
+          if (!refetchError && fixedAnalyses) {
+            console.log('✅ Re-fetched analyses after status fixes')
+            setAnalyses(fixedAnalyses)
+            return
+          }
+        }
+        
         setAnalyses(analyses || [])
       }
     } catch (error) {
       console.error("Error fetching analyses:", error)
       setAnalyses([])
+    }
+  }
+
+  // Function to fix any orphaned "processing" analyses that have results
+  const fixOrphanedAnalyses = async () => {
+    try {
+      console.log('🔍 Checking for orphaned processing analyses...')
+      
+      if (!user?.id) return
+      
+      const { data: orphanedAnalyses, error } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'processing')
+        .not('results', 'is', null)
+      
+      if (error) {
+        console.error('Error checking for orphaned analyses:', error)
+        return
+      }
+      
+      if (orphanedAnalyses && orphanedAnalyses.length > 0) {
+        console.log(`🔍 Found ${orphanedAnalyses.length} orphaned processing analyses with results`)
+        
+        for (const analysis of orphanedAnalyses) {
+          console.log(`🔄 Fixing orphaned analysis ${analysis.id} for document ${analysis.document_id}`)
+          const { error: fixError } = await supabase
+            .from('analyses')
+            .update({ 
+              status: 'completed',
+              completed_at: new Date().toISOString()
+            })
+            .eq('id', analysis.id)
+          
+          if (fixError) {
+            console.error(`❌ Failed to fix orphaned analysis ${analysis.id}:`, fixError)
+          } else {
+            console.log(`✅ Fixed orphaned analysis ${analysis.id}`)
+          }
+        }
+        
+        // Refresh analyses after fixing
+        await fetchAnalyses()
+      } else {
+        console.log('✅ No orphaned processing analyses found')
+      }
+    } catch (error) {
+      console.error('Error in fixOrphanedAnalyses:', error)
     }
   }
 
@@ -706,6 +795,27 @@ This should show the actual NDA text being sent to the AI.
                   // Wait a moment for the database transaction to commit
                   console.log('🔄 Waiting for database transaction to commit...')
                   await new Promise(resolve => setTimeout(resolve, 500))
+                  
+                  // Verify the database update actually succeeded
+                  console.log('🔍 Verifying database update succeeded...')
+                  const { data: verificationData, error: verificationError } = await supabase
+                    .from('analyses')
+                    .select('id, status, results')
+                    .eq('id', existingAnalysis ? existingAnalysis.id : 'new')
+                    .eq('document_id', documentId)
+                    .single()
+                  
+                  if (verificationError) {
+                    console.error('❌ Database verification failed:', verificationError)
+                    throw new Error(`Database verification failed: ${verificationError.message}`)
+                  }
+                  
+                  if (verificationData && verificationData.status === 'completed') {
+                    console.log('✅ Database verification successful - analysis is completed')
+                  } else {
+                    console.error('❌ Database verification failed - analysis status is:', verificationData?.status)
+                    throw new Error(`Analysis status verification failed - expected 'completed', got '${verificationData?.status}'`)
+                  }
                   
                   // Refresh analyses to show the updated record
                   console.log('🔄 Refreshing analyses from database...')
