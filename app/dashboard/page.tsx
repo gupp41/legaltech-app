@@ -526,8 +526,12 @@ export default function Dashboard() {
                 // Add the completed analysis to local state immediately
                 setAnalyses(prev => [completedAnalysis, ...prev])
                 
-                // Also try to refresh from database
-                fetchAnalyses()
+                // Don't refresh from database immediately - let the user see the local result
+                // The analysis will be saved to database by the server, and will appear on next page refresh
+                console.log('🚨 CRITICAL: Analysis stored locally, skipping database refresh to preserve display')
+                
+                // Show a success message to the user
+                console.log('🎉 Analysis completed and stored locally! Check the results below.')
                 return
               }
               
