@@ -133,7 +133,7 @@ export function UsageDisplay({ userId }: { userId: string }) {
         
         // Fallback: Try to get basic user info and create mock data
         const { data: userData, error: userError } = await supabase
-          .from('users')
+          .from('profiles')
           .select('current_plan, plan_start_date')
           .eq('id', userId)
           .single()
