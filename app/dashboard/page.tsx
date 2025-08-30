@@ -484,6 +484,42 @@ export default function Dashboard() {
       if (stuckAnalyses && stuckAnalyses.length > 0) {
         console.log(`🔍 Found ${stuckAnalyses.length} stuck processing analyses without results`)
         console.log('🔍 These might be orphaned:', stuckAnalyses.map(a => ({ id: a.id, document_id: a.document_id, created_at: a.created_at })))
+        
+        // AGGRESSIVE CLEANUP: Remove duplicate processing analyses for the same document
+        const documentGroups = stuckAnalyses.reduce((acc, analysis) => {
+          if (!acc[analysis.document_id]) {
+            acc[analysis.document_id] = []
+          }
+          acc[analysis.document_id].push(analysis)
+          return acc
+        }, {} as Record<string, any[]>)
+        
+        for (const [docId, analyses] of Object.entries(documentGroups)) {
+          const typedAnalyses = analyses as any[]
+          if (typedAnalyses.length > 1) {
+            console.log(`🔍 Document ${docId} has ${typedAnalyses.length} processing analyses, keeping only the latest`)
+            
+            // Sort by creation date and keep only the latest
+            const sortedAnalyses = typedAnalyses.sort((a: any, b: any) => 
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            )
+            
+            // Delete all but the latest
+            for (let i = 1; i < sortedAnalyses.length; i++) {
+              console.log(`🗑️ Deleting duplicate analysis ${sortedAnalyses[i].id}`)
+              const { error: deleteError } = await supabase
+                .from('analyses')
+                .delete()
+                .eq('id', sortedAnalyses[i].id)
+              
+              if (deleteError) {
+                console.error(`❌ Failed to delete duplicate analysis ${sortedAnalyses[i].id}:`, deleteError)
+              } else {
+                console.log(`✅ Deleted duplicate analysis ${sortedAnalyses[i].id}`)
+              }
+            }
+          }
+        }
       }
       
     } catch (error) {
@@ -797,19 +833,26 @@ This should show the actual NDA text being sent to the AI.
                 console.log('🔄 Updating analysis record to completed...')
                 console.log('🔍 Document ID:', documentId)
                 console.log('🔍 Full response length:', fullResponse.length)
+                console.log('🔍 Full response preview:', fullResponse.substring(0, 200) + '...')
                 
                 try {
                   // Find the analysis record for this document
                   const currentAnalyses = await getCurrentDocumentAnalyses()
                   console.log('🔍 Current analyses found:', currentAnalyses.length)
-                  console.log('🔍 Current analyses:', currentAnalyses.map(a => ({ id: a.id, document_id: a.document_id, status: a.status })))
+                  console.log('🔍 Current analyses:', currentAnalyses.map(a => ({ id: a.id, document_id: a.document_id, status: a.status, has_results: !!a.results })))
+                  
+                  // Look for ANY analysis for this document, not just processing ones
+                  const anyAnalysisForDocument = currentAnalyses.find(a => a.document_id === documentId)
+                  console.log('🔍 Any analysis for document:', anyAnalysisForDocument ? { id: anyAnalysisForDocument.id, status: anyAnalysisForDocument.status, has_results: !!anyAnalysisForDocument.results } : 'None found')
                   
                   const existingAnalysis = currentAnalyses.find(a => a.document_id === documentId && a.status === 'processing')
                   console.log('🔍 Existing processing analysis:', existingAnalysis ? { id: existingAnalysis.id, status: existingAnalysis.status } : 'None found')
                   
-                  if (existingAnalysis) {
-                    console.log('🔄 Found processing analysis, updating to completed...')
-                    console.log('🔍 Updating analysis ID:', existingAnalysis.id)
+                                    // AGGRESSIVE APPROACH: Update ANY existing analysis for this document, or create a new one
+                  if (anyAnalysisForDocument) {
+                    console.log('🔄 Found existing analysis for document, updating to completed...')
+                    console.log('🔍 Updating analysis ID:', anyAnalysisForDocument.id)
+                    console.log('🔍 Current status:', anyAnalysisForDocument.status)
                     
                     const { error: updateError } = await supabase
                       .from('analyses')
@@ -822,17 +865,17 @@ This should show the actual NDA text being sent to the AI.
                         },
                         completed_at: new Date().toISOString()
                       })
-                      .eq('id', existingAnalysis.id)
+                      .eq('id', anyAnalysisForDocument.id)
                     
-                                      if (updateError) {
-                    console.error('❌ Failed to update analysis record:', updateError)
-                    console.error('🔍 Update error details:', updateError)
-                    throw new Error(`Failed to update analysis: ${updateError.message}`)
+                    if (updateError) {
+                      console.error('❌ Failed to update analysis record:', updateError)
+                      console.error('🔍 Update error details:', updateError)
+                      throw new Error(`Failed to update analysis: ${updateError.message}`)
+                    } else {
+                      console.log('✅ Analysis record updated to completed successfully')
+                    }
                   } else {
-                    console.log('✅ Analysis record updated to completed successfully')
-                  }
-                  } else {
-                    console.log('🔄 No processing analysis found, creating completed record...')
+                    console.log('🔄 No existing analysis found, creating completed record...')
                     console.log('🔍 Creating new analysis for document:', documentId)
                     
                     const { error: createError } = await supabase
