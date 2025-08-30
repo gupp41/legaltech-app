@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { FileText, Download, Trash2, BarChart3, Brain, ChevronLeft, ChevronRight, RefreshCw, Database } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { extractTextFromDocument, truncateText } from "@/lib/document-extractor"
+import { usageTracker } from "@/lib/usage-tracker"
 
 interface Document {
   id: string
@@ -1189,6 +1190,15 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
           success: true
         }))
         console.log('Extracted text stored for document:', documentId)
+        
+        // Increment usage for text extraction
+        try {
+          await usageTracker.incrementUsage(user.id, 'extraction')
+          console.log('Usage incremented for text extraction')
+        } catch (usageError) {
+          console.error('Failed to increment extraction usage:', usageError)
+          // Don't fail the extraction if usage tracking fails
+        }
       }
 
       // Create detailed debug information

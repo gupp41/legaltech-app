@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import mammoth from "mammoth"
+import { usageTracker } from "@/lib/usage-tracker"
 
 export async function POST(request: NextRequest) {
   console.log('🚨 ANALYZE API ROUTE ENTRY POINT REACHED')
@@ -77,6 +78,23 @@ export async function POST(request: NextRequest) {
     
     // Create Supabase server client
     const supabase = await createClient()
+    
+    // Check usage limits before starting analysis
+    const usageCheck = await usageTracker.checkUsage(userId, 'analysis')
+    
+    if (!usageCheck.allowed) {
+      return NextResponse.json({
+        error: "Analysis limit reached",
+        details: usageCheck.errors,
+        currentUsage: usageCheck.currentUsage,
+        limits: usageCheck.limits
+      }, { status: 429 })
+    }
+
+    // Show warnings if approaching limits
+    if (usageCheck.warnings.length > 0) {
+      console.log('Usage warnings:', usageCheck.warnings)
+    }
     
     console.log('Using document data:', { 
       documentId, 
@@ -474,6 +492,14 @@ Be professional, thorough, and provide practical legal insights. Use clear langu
                       console.error('Document data:', documentData)
                     } else {
                       console.log('✅ Analysis record updated successfully in database')
+                      
+                      // Increment usage after successful streaming analysis
+                      try {
+                        await usageTracker.incrementUsage(userId, 'analysis')
+                      } catch (usageError) {
+                        console.error('Failed to increment analysis usage:', usageError)
+                        // Don't fail the analysis if usage tracking fails
+                      }
                     }
 
                     controller.enqueue(`data: ${JSON.stringify({ done: true, fullResponse })}\n\n`)
@@ -560,6 +586,14 @@ Be professional, thorough, and provide practical legal insights. Use clear langu
       console.log('Vercel AI Gateway analysis completed successfully')
       console.log('Token usage:', data.usage?.total_tokens || 0)
       console.log('Model used:', data.model)
+      
+      // Increment usage after successful analysis
+      try {
+        await usageTracker.incrementUsage(userId, 'analysis')
+      } catch (usageError) {
+        console.error('Failed to increment analysis usage:', usageError)
+        // Don't fail the analysis if usage tracking fails
+      }
       
       // Return the analysis results for client-side update
       return NextResponse.json({

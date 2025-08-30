@@ -8,31 +8,31 @@ This document outlines the step-by-step implementation of our subscription syste
 ## 🎯 **PHASE 1: FOUNDATION (MVP)**
 
 ### 🔐 **1.1 Database Schema Updates**
-- [ ] Create `subscriptions` table
-  - [ ] user_id (foreign key)
-  - [ ] plan_type (free, plus, max)
-  - [ ] status (active, cancelled, expired)
-  - [ ] start_date, end_date
-  - [ ] stripe_subscription_id (nullable)
-- [ ] Create `usage_tracking` table
-  - [ ] user_id (foreign key)
-  - [ ] month_year (YYYY-MM format)
-  - [ ] documents_uploaded (count)
-  - [ ] analyses_performed (count)
-  - [ ] storage_used_bytes
-  - [ ] text_extractions (count)
-- [ ] Add subscription fields to existing `users` table
-  - [ ] current_plan
-  - [ ] plan_start_date
-  - [ ] plan_end_date
+- [x] Create `subscriptions` table
+  - [x] user_id (foreign key)
+  - [x] plan_type (free, plus, max)
+  - [x] status (active, cancelled, expired)
+  - [x] start_date, end_date
+  - [x] stripe_subscription_id (nullable)
+- [x] Create `usage_tracking` table
+  - [x] user_id (foreign key)
+  - [x] month_year (YYYY-MM format)
+  - [x] documents_uploaded (count)
+  - [x] analyses_performed (count)
+  - [x] storage_used_bytes
+  - [x] text_extractions (count)
+- [x] Add subscription fields to existing `users` table
+  - [x] current_plan
+  - [x] plan_start_date
+  - [x] plan_end_date
 
 ### 📊 **1.2 Usage Tracking System**
-- [ ] Create usage tracking middleware
-- [ ] Implement document upload counting
-- [ ] Implement AI analysis counting
-- [ ] Implement storage usage calculation
-- [ ] Implement text extraction counting
-- [ ] Create monthly usage reset system
+- [x] Create usage tracking middleware
+- [x] Implement document upload counting
+- [x] Implement AI analysis counting
+- [x] Implement storage usage calculation
+- [x] Implement text extraction counting
+- [x] Create monthly usage reset system
 
 ### 🚫 **1.3 Basic Plan Enforcement**
 - [ ] Implement upload limit checks
@@ -135,8 +135,8 @@ This document outlines the step-by-step implementation of our subscription syste
 ## 📊 **CURRENT STATUS**
 
 **Phase:** 1 - Foundation  
-**Current Step:** 1.1 Database Schema Updates  
-**Progress:** 0% Complete
+**Current Step:** 1.3 Basic Plan Enforcement  
+**Progress:** 30% Complete
 
 ---
 

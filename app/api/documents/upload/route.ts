@@ -1,6 +1,7 @@
 import { put } from "@vercel/blob"
 import { createClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
+import { usageTracker } from "@/lib/usage-tracker"
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,6 +48,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check usage limits before upload
+    const usageCheck = await usageTracker.checkUsage(user.id, 'upload', file.size)
+    
+    if (!usageCheck.allowed) {
+      return NextResponse.json({
+        error: "Upload limit reached",
+        details: usageCheck.errors,
+        currentUsage: usageCheck.currentUsage,
+        limits: usageCheck.limits
+      }, { status: 429 })
+    }
+
+    // Show warnings if approaching limits
+    if (usageCheck.warnings.length > 0) {
+      console.log('Usage warnings:', usageCheck.warnings)
+    }
+
     // Upload to Vercel Blob with organized path
     const fileName = `${user.id}/${Date.now()}-${file.name}`
     const blob = await put(fileName, file, {
@@ -71,6 +89,14 @@ export async function POST(request: NextRequest) {
     if (dbError) {
       console.error("Database error:", dbError)
       return NextResponse.json({ error: "Failed to save document metadata" }, { status: 500 })
+    }
+
+    // Increment usage after successful upload
+    try {
+      await usageTracker.incrementUsage(user.id, 'upload', file.size)
+    } catch (usageError) {
+      console.error('Failed to increment usage:', usageError)
+      // Don't fail the upload if usage tracking fails
     }
 
     return NextResponse.json({
