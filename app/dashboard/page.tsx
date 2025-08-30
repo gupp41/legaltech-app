@@ -39,6 +39,7 @@ export default function Dashboard() {
   const [syncing, setSyncing] = useState(false)
   const [streamingAnalyses, setStreamingAnalyses] = useState<Map<string, string>>(new Map())
   const [extractedTexts, setExtractedTexts] = useState<Map<string, { text: string; wordCount: number; success: boolean }>>(new Map())
+  const [savedExtractions, setSavedExtractions] = useState<any[]>([])
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -55,6 +56,7 @@ export default function Dashboard() {
       console.log('User available, fetching documents...')
       fetchDocuments()
       fetchAnalyses()
+      fetchSavedExtractions()
     }
   }, [user?.id])
 
@@ -127,11 +129,44 @@ export default function Dashboard() {
       )
       .subscribe()
 
+    // Subscribe to text_extractions table changes
+    const extractionsSubscription = supabase
+      .channel('extractions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'text_extractions',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Text extractions real-time change:', payload)
+          console.log('🔄 Real-time subscription triggered, refreshing extractions...')
+          console.log('📊 Payload details:', {
+            event: payload.eventType,
+            table: payload.table,
+            record: payload.new || payload.old,
+            user_id: (payload.new as any)?.user_id || (payload.old as any)?.user_id
+          })
+          fetchSavedExtractions() // Refresh extractions when changes occur
+        }
+      )
+      .subscribe((status) => {
+        console.log('🔄 Text extractions subscription status:', status)
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Text extractions real-time subscription active')
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Text extractions subscription error')
+        }
+      })
+
     // Cleanup subscriptions
     return () => {
       console.log('Cleaning up real-time subscriptions')
       documentsSubscription.unsubscribe()
       analysesSubscription.unsubscribe()
+      extractionsSubscription.unsubscribe()
     }
   }, [user?.id])
 
@@ -267,6 +302,50 @@ export default function Dashboard() {
     }
   }
 
+  const fetchSavedExtractions = async () => {
+    try {
+      console.log('Fetching saved text extractions...')
+      
+      // Check if user ID is available
+      if (!user?.id) {
+        console.log('User ID not available yet, skipping extractions fetch')
+        return
+      }
+      
+      const { data, error } = await supabase
+        .from('text_extractions')
+        .select(`
+          *,
+          documents (
+            filename,
+            file_type
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      
+      if (error) {
+        console.error('Error fetching saved extractions:', error)
+        setSavedExtractions([])
+      } else {
+        console.log('Saved extractions fetched:', data)
+        console.log('📊 Extractions count:', data?.length || 0)
+        if (data && data.length > 0) {
+          console.log('📄 Latest extraction:', {
+            id: data[0].id,
+            document_id: data[0].document_id,
+            word_count: data[0].word_count,
+            created_at: data[0].created_at
+          })
+        }
+        setSavedExtractions(data || [])
+      }
+    } catch (error) {
+      console.error('Error in fetchSavedExtractions:', error)
+      setSavedExtractions([])
+    }
+  }
+
   const handleUploadComplete = (file: any) => {
     fetchDocuments() // Refresh the list
     // Refresh usage data to show updated counts
@@ -303,6 +382,8 @@ export default function Dashboard() {
     if (!currentDoc) return []
     return analyses.filter(analysis => analysis.document_id === currentDoc.id)
   }
+
+
 
   const syncStorageWithDatabase = async () => {
     try {
@@ -392,17 +473,26 @@ export default function Dashboard() {
           filePath = filePath.split('/storage/v1/object/public/documents/')[1]
         }
         
-        // Extract just the filename (without the user folder)
-        const fileName = filePath.split('/').pop()
-        
-        // Look for a matching file in storage by checking if any storage file ends with the filename
+        // Look for a matching file in storage by checking the full path
         const fileExists = storageFiles?.some(storageFile => {
           // Skip directories and placeholder files
           if (storageFile.name.includes('/.emptyFolderPlaceholder') || !storageFile.metadata?.size) {
             return false
           }
-          // Check if the storage file path ends with the filename
-          return storageFile.name.endsWith(`/${fileName}`)
+          
+          // Check if the storage file path matches the database path
+          // The storage file path should be: user_id/filename
+          // The database path should be: user_id/filename
+          const storagePath = `${user.id}/${storageFile.name}`
+          
+          // Debug logging
+          console.log('🔍 Comparing paths:', {
+            storagePath: storagePath,
+            databasePath: filePath,
+            match: storagePath === filePath
+          })
+          
+          return storagePath === filePath
         })
         
         // Debug logging
@@ -410,9 +500,8 @@ export default function Dashboard() {
           filename: doc.filename,
           storagePath: doc.storage_path,
           extractedPath: filePath,
-          fileName: fileName,
           fileExists: fileExists,
-          matchingStorageFile: storageFiles?.find(f => f.name.endsWith(`/${fileName}`))?.name
+          matchingStorageFile: storageFiles?.find(f => `${user.id}/${f.name}` === filePath)?.name
         })
         
         return !fileExists
@@ -439,7 +528,18 @@ export default function Dashboard() {
         }
         
         const fullPath = `${user.id}/${file.name}`
-        return !dbPaths.has(fullPath)
+        const isOrphaned = !dbPaths.has(fullPath)
+        
+        // Debug logging
+        if (isOrphaned) {
+          console.log('🔍 Orphaned storage file found:', {
+            storagePath: fullPath,
+            databasePaths: Array.from(dbPaths),
+            reason: 'Not found in database'
+          })
+        }
+        
+        return isOrphaned
       }) || []
       
       console.log('🗑️ Orphaned storage files found:', orphanedFiles.length)
@@ -545,10 +645,20 @@ export default function Dashboard() {
         throw new Error('Document has no storage path')
       }
       
+      // Extract the file path from the storage URL
+      let filePath = document.storage_path
+      if (filePath.includes('/storage/v1/object/public/documents/')) {
+        // Extract the path after 'documents/'
+        filePath = filePath.split('/storage/v1/object/public/documents/')[1]
+      }
+      
       console.log('📥 Fetching file content from storage...')
+      console.log('📁 Original storage_path:', document.storage_path)
+      console.log('📁 Extracted filePath:', filePath)
+      
       const { data: fileBlob, error: fileError } = await supabase.storage
         .from('documents')
-        .download(document.storage_path)
+        .download(filePath)
       
       if (fileError) {
         throw new Error('Failed to fetch file from storage: ' + fileError.message)
@@ -1386,12 +1496,45 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
         }))
         console.log('Extracted text stored for document:', documentId)
         
-        // Note: Usage tracking is handled server-side in API routes
-        console.log('Text extraction completed, usage will be tracked via API')
-        
-        // Refresh usage data to show updated counts
-        if ((window as any).refreshUsageData) {
-          (window as any).refreshUsageData()
+        // Call the text extraction API to track usage
+        try {
+          const response = await fetch('/api/text-extraction', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+            },
+            body: JSON.stringify({
+              documentId: documentId,
+              extractedText: extractionResult.text,
+              wordCount: extractionResult.wordCount
+            })
+          })
+
+          if (response.ok) {
+            console.log('✅ Text extraction usage tracked successfully')
+            // Refresh usage data to show updated counts
+            if ((window as any).refreshUsageData) {
+              (window as any).refreshUsageData()
+            }
+            // Refresh saved extractions to show the new extraction in the UI
+            console.log('🔄 Refreshing saved extractions to show new extraction...')
+            // Add a small delay to ensure the database update is complete
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            await fetchSavedExtractions()
+            console.log('✅ Saved extractions refreshed')
+            
+            // Also force a re-render by updating state
+            setSavedExtractions(prev => [...prev])
+            
+            // Show success message to user
+            console.log('🎉 Text extraction completed and saved! Check the "Saved Text Extractions" section below.')
+          } else {
+            const errorData = await response.json()
+            console.log('⚠️ Text extraction usage tracking failed:', errorData)
+          }
+        } catch (apiError) {
+          console.log('⚠️ Error calling text extraction API:', apiError)
         }
       }
 
@@ -1505,6 +1648,257 @@ Full text length: ${extractionResult.text?.length || 0} characters
               }}
             >
               Test Upload API
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={async () => {
+                try {
+                  console.log('Resetting usage counts...')
+                  const { data: { session } } = await supabase.auth.getSession()
+                  if (!session) {
+                    alert('No session found')
+                    return
+                  }
+                  
+                  // Reset usage tracking to 0 for current month
+                  const { error: resetError } = await supabase
+                    .from('usage_tracking')
+                    .update({
+                      text_extractions: 0,
+                      analyses_performed: 0,
+                      updated_at: new Date().toISOString()
+                    })
+                    .eq('user_id', user.id)
+                    .eq('month_year', new Date().toISOString().slice(0, 7)) // Current month (YYYY-MM)
+                  
+                  if (resetError) {
+                    console.error('Error resetting usage:', resetError)
+                    alert(`Failed to reset usage: ${resetError.message}`)
+                  } else {
+                    console.log('✅ Usage counts reset successfully')
+                    alert('✅ Usage counts reset successfully!\n\nText Extractions: 0\nAI Analyses: 0\n\nYou can now continue using these features.')
+                    
+                    // Refresh usage data to show updated counts
+                    if ((window as any).refreshUsageData) {
+                      (window as any).refreshUsageData()
+                    }
+                  }
+                } catch (error) {
+                  console.error('Reset usage error:', error)
+                  alert(`Reset error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                }
+              }}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white"
+            >
+              🔄 Reset Usage Counts
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={async () => {
+                try {
+                  console.log('Resetting all usage counts...')
+                  const { data: { session } } = await supabase.auth.getSession()
+                  if (!session) {
+                    alert('No session found')
+                    return
+                  }
+                  
+                  // Reset ALL usage tracking to 0 for current month
+                  const { error: resetError } = await supabase
+                    .from('usage_tracking')
+                    .update({
+                      documents_uploaded: 0,
+                      storage_used_bytes: 0,
+                      text_extractions: 0,
+                      analyses_performed: 0,
+                      updated_at: new Date().toISOString()
+                    })
+                    .eq('user_id', user.id)
+                    .eq('month_year', new Date().toISOString().slice(0, 7)) // Current month (YYYY-MM)
+                  
+                  if (resetError) {
+                    console.error('Error resetting all usage:', resetError)
+                    alert(`Failed to reset all usage: ${resetError.message}`)
+                  } else {
+                    console.log('✅ All usage counts reset successfully')
+                    alert('✅ All usage counts reset successfully!\n\nDocuments Uploaded: 0\nStorage Used: 0 bytes\nText Extractions: 0\nAI Analyses: 0\n\nYou can now continue using all features.')
+                    
+                    // Refresh usage data to show updated counts
+                    if ((window as any).refreshUsageData) {
+                      (window as any).refreshUsageData()
+                    }
+                  }
+                } catch (error) {
+                  console.error('Reset all usage error:', error)
+                  alert(`Reset error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                }
+              }}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              🗑️ Reset All Usage
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={async () => {
+                try {
+                  console.log('Resetting all data...')
+                  const { data: { session } } = await supabase.auth.getSession()
+                  if (!session) {
+                    alert('No session found')
+                    return
+                  }
+                  
+                  // Confirm the action
+                  const confirmed = confirm('⚠️ WARNING: This will delete ALL your text extractions and AI analyses!\n\nThis action cannot be undone.\n\nAre you sure you want to continue?')
+                  if (!confirmed) {
+                    console.log('Reset cancelled by user')
+                    return
+                  }
+                  
+                  console.log('User confirmed reset, proceeding...')
+                  
+                  // Delete all text extractions for the user
+                  const { error: extractionsError } = await supabase
+                    .from('text_extractions')
+                    .delete()
+                    .eq('user_id', user.id)
+                  
+                  if (extractionsError) {
+                    console.error('Error deleting text extractions:', extractionsError)
+                    alert(`Failed to delete text extractions: ${extractionsError.message}`)
+                    return
+                  }
+                  
+                  // Delete all analyses for the user
+                  const { error: analysesError } = await supabase
+                    .from('analyses')
+                    .delete()
+                    .eq('user_id', user.id)
+                  
+                  if (analysesError) {
+                    console.error('Error deleting analyses:', analysesError)
+                    alert(`Failed to delete analyses: ${analysesError.message}`)
+                    return
+                  }
+                  
+                  // Reset usage tracking to 0
+                  const { error: usageError } = await supabase
+                    .from('usage_tracking')
+                    .update({
+                      documents_uploaded: 0,
+                      storage_used_bytes: 0,
+                      text_extractions: 0,
+                      analyses_performed: 0,
+                      updated_at: new Date().toISOString()
+                    })
+                    .eq('user_id', user.id)
+                    .eq('month_year', new Date().toISOString().slice(0, 7))
+                  
+                  if (usageError) {
+                    console.error('Error resetting usage:', usageError)
+                    alert(`Failed to reset usage: ${usageError.message}`)
+                    return
+                  }
+                  
+                  console.log('✅ All data reset successfully')
+                  alert('✅ All data reset successfully!\n\nDeleted:\n- All text extractions\n- All AI analyses\n- Reset usage counts to 0\n\nYou can now start fresh!')
+                  
+                  // Refresh all data
+                  await fetchSavedExtractions()
+                  await fetchAnalyses()
+                  if ((window as any).refreshUsageData) {
+                    (window as any).refreshUsageData()
+                  }
+                } catch (error) {
+                  console.error('Reset all data error:', error)
+                  alert(`Reset error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                }
+              }}
+              className="bg-purple-500 hover:bg-purple-600 text-white"
+            >
+              💥 Reset All Data
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={async () => {
+                try {
+                  console.log('Resetting current month usage...')
+                  const { data: { session } } = await supabase.auth.getSession()
+                  if (!session) {
+                    alert('No session found')
+                    return
+                  }
+                  
+                  // Get current month
+                  const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
+                  console.log('Resetting usage for month:', currentMonth)
+                  
+                  // Check if usage tracking record exists for current month
+                  const { data: existingUsage, error: checkError } = await supabase
+                    .from('usage_tracking')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .eq('month_year', currentMonth)
+                    .single()
+                  
+                  if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
+                    console.error('Error checking existing usage:', checkError)
+                    alert(`Failed to check existing usage: ${checkError.message}`)
+                    return
+                  }
+                  
+                  if (existingUsage) {
+                    // Update existing record
+                    const { error: updateError } = await supabase
+                      .from('usage_tracking')
+                      .update({
+                        text_extractions: 0,
+                        analyses_performed: 0,
+                        updated_at: new Date().toISOString()
+                      })
+                      .eq('user_id', user.id)
+                      .eq('month_year', currentMonth)
+                    
+                    if (updateError) {
+                      console.error('Error updating usage:', updateError)
+                      alert(`Failed to update usage: ${updateError.message}`)
+                      return
+                    }
+                  } else {
+                    // Create new record for current month
+                    const { error: insertError } = await supabase
+                      .from('usage_tracking')
+                      .insert({
+                        user_id: user.id,
+                        month_year: currentMonth,
+                        documents_uploaded: 0,
+                        storage_used_bytes: 0,
+                        text_extractions: 0,
+                        analyses_performed: 0
+                      })
+                    
+                    if (insertError) {
+                      console.error('Error creating usage record:', insertError)
+                      alert(`Failed to create usage record: ${insertError.message}`)
+                      return
+                    }
+                  }
+                  
+                  console.log('✅ Current month usage reset successfully')
+                  alert('✅ Current month usage reset successfully!\n\nMonth: ' + currentMonth + '\nText Extractions: 0\nAI Analyses: 0\n\nYou can now continue using these features.')
+                  
+                  // Refresh usage data to show updated counts
+                  if ((window as any).refreshUsageData) {
+                    (window as any).refreshUsageData()
+                  }
+                } catch (error) {
+                  console.error('Reset current month usage error:', error)
+                  alert(`Reset error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                }
+              }}
+              className="bg-green-500 hover:bg-green-600 text-white"
+            >
+              📅 Reset Current Month
             </Button>
           </div>
         </div>
@@ -1879,6 +2273,56 @@ Full text length: ${extractionResult.text?.length || 0} characters
                               </div>
                             </div>
                           )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })()}
+
+                {/* Saved Text Extractions for Current Document */}
+                {(() => {
+                  const currentDoc = getCurrentDocument()
+                  if (!currentDoc) return null
+                  
+                  // Filter extractions for the current document only
+                  const currentDocumentExtractions = savedExtractions.filter(
+                    extraction => extraction.document_id === currentDoc.id
+                  )
+                  
+                  if (currentDocumentExtractions.length === 0) return null
+                  
+                  return (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <FileText className="h-5 w-5" />
+                          <span>Text Extractions for "{currentDoc.filename}"</span>
+                          <Badge variant="outline" className="ml-2">
+                            {currentDocumentExtractions.length} extraction{currentDocumentExtractions.length !== 1 ? 's' : ''}
+                          </Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {currentDocumentExtractions.map((extraction) => (
+                            <div key={extraction.id} className="border border-slate-200 rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center space-x-2">
+                                  <Badge variant="outline">
+                                    {extraction.word_count} words
+                                  </Badge>
+                                  <span className="text-sm text-slate-500">
+                                    {formatDistanceToNow(new Date(extraction.created_at), { addSuffix: true })}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              {/* Display extracted text with proper formatting */}
+                              <div className="whitespace-pre-wrap text-sm leading-relaxed bg-slate-50 p-3 rounded border max-h-64 overflow-y-auto">
+                                {extraction.extracted_text}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </CardContent>
                     </Card>
