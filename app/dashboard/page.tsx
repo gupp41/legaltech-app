@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [streamingAnalyses, setStreamingAnalyses] = useState<Map<string, string>>(new Map())
   const [extractedTexts, setExtractedTexts] = useState<Map<string, { text: string; wordCount: number; success: boolean }>>(new Map())
   const [savedExtractions, setSavedExtractions] = useState<any[]>([])
+  const [activeTab, setActiveTab] = useState<'analyses' | 'extractions'>('analyses')
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -2125,205 +2126,241 @@ Full text length: ${extractionResult.text?.length || 0} characters
                   </CardContent>
                 </Card>
 
-                {/* Current Document Analyses */}
-                {(() => {
-                  const currentDoc = getCurrentDocument()
-                  const currentAnalyses = getCurrentDocumentAnalyses()
-                  const latestAnalysis = getLatestAnalysis(currentAnalyses)
-                  
-                  if (!currentDoc || currentAnalyses.length === 0) return null
-                  
-                  return (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <Brain className="h-5 w-5" />
-                          <span>AI Analysis Results for "{currentDoc.filename}"</span>
-                          {currentAnalyses.length > 1 && (
-                            <Badge variant="outline" className="ml-2">
-                              {currentAnalyses.length} analyses
-                            </Badge>
-                          )}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {/* Show latest analysis by default */}
-                          {latestAnalysis && (
-                            <div className="border border-slate-200 rounded-lg p-4">
-                              <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center space-x-2">
-                                  <Badge className={getStatusColor(latestAnalysis.status)}>
-                                    {latestAnalysis.status}
-                                  </Badge>
-                                  <span className="text-sm text-slate-500">
-                                    Latest analysis - {formatDistanceToNow(new Date(latestAnalysis.created_at), { addSuffix: true })}
-                                  </span>
-                                </div>
-                              </div>
-                              
-                              {/* Display analysis content with proper formatting */}
-                              {latestAnalysis.results?.analysis ? (
-                                <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                                  {latestAnalysis.results.analysis}
-                                </div>
-                              ) : latestAnalysis.results && Object.keys(latestAnalysis.results).length > 0 ? (
-                                <div className="prose prose-sm max-w-none">
-                                  <pre className="whitespace-pre-wrap">
-                                    {JSON.stringify(latestAnalysis.results, null, 2)}
-                                  </pre>
-                                </div>
-                              ) : (
-                                <p className="text-slate-500">Analysis in progress...</p>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Show streaming analysis or loading indicator */}
-                          {analyzingDocuments.has(currentDoc?.id || '') && (
-                            <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
-                              <div className="flex items-center space-x-3 mb-3">
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                                <div>
-                                  <p className="text-sm font-medium text-blue-900">AI Analysis in Progress</p>
-                                  <p className="text-xs text-blue-700">Analyzing your document in real-time...</p>
-                                </div>
-                              </div>
-                              
-                              {/* Show streaming content if available */}
-                              {streamingAnalyses.has(currentDoc?.id || '') && (
-                                <div className="mt-3 pt-3 border-t border-blue-200">
-                                  <p className="text-xs text-blue-700 mb-2">Live Analysis:</p>
-                                  <div className="whitespace-pre-wrap text-sm text-blue-900 bg-white p-3 rounded border max-h-96 overflow-y-auto">
-                                    {streamingAnalyses.get(currentDoc?.id || '') || ''}
-                                    <span className="animate-pulse">▋</span>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Show other analyses if expanded */}
-                          {currentAnalyses.length > 1 && (
-                            <div className="border-t pt-4">
-                              <div className="flex items-center justify-between mb-3">
-                                <h4 className="text-sm font-medium text-slate-700">Previous Analyses</h4>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const allIds = currentAnalyses.map(a => a.id)
-                                    if (expandedAnalyses.size === allIds.length) {
-                                      setExpandedAnalyses(new Set())
-                                    } else {
-                                      setExpandedAnalyses(new Set(allIds))
-                                    }
-                                  }}
-                                >
-                                  {expandedAnalyses.size === currentAnalyses.length ? 'Collapse All' : 'Expand All'}
-                                </Button>
-                              </div>
-                              
-                              <div className="space-y-3">
-                                {currentAnalyses
-                                  .filter(analysis => analysis.id !== latestAnalysis?.id)
-                                  .map((analysis) => (
-                                    <div
-                                      key={analysis.id}
-                                      className="border border-slate-200 rounded-lg p-3"
-                                    >
-                                      <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center space-x-2">
-                                          <Badge className={getStatusColor(analysis.status)}>
-                                            {analysis.status}
-                                          </Badge>
-                                          <span className="text-sm text-slate-500">
-                                            {formatDistanceToNow(new Date(analysis.created_at), { addSuffix: true })}
-                                          </span>
-                                        </div>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => toggleAnalysisExpansion(analysis.id)}
-                                        >
-                                          {expandedAnalyses.has(analysis.id) ? 'Collapse' : 'Expand'}
-                                        </Button>
-                                      </div>
-                                      
-                                      {/* Show analysis content only if expanded */}
-                                      {expandedAnalyses.has(analysis.id) && (
-                                        <div className="mt-3 pt-3 border-t">
-                                          {analysis.results?.analysis ? (
-                                            <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                                              {analysis.results.analysis}
-                                            </div>
-                                          ) : analysis.results && Object.keys(analysis.results).length > 0 ? (
-                                            <div className="prose prose-sm max-w-none">
-                                              <pre className="whitespace-pre-wrap">
-                                                {JSON.stringify(analysis.results, null, 2)}
-                                              </pre>
-                                            </div>
-                                          ) : (
-                                            <p className="text-slate-500">Analysis in progress...</p>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })()}
-
-                {/* Saved Text Extractions for Current Document */}
+                {/* Tabbed Interface for Analyses and Extractions */}
                 {(() => {
                   const currentDoc = getCurrentDocument()
                   if (!currentDoc) return null
                   
-                  // Filter extractions for the current document only
+                  const currentAnalyses = getCurrentDocumentAnalyses()
                   const currentDocumentExtractions = savedExtractions.filter(
                     extraction => extraction.document_id === currentDoc.id
                   )
                   
-                  if (currentDocumentExtractions.length === 0) return null
+                  // Only show tabs if there are analyses or extractions
+                  if (currentAnalyses.length === 0 && currentDocumentExtractions.length === 0) return null
                   
                   return (
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center space-x-2">
-                          <FileText className="h-5 w-5" />
-                          <span>Text Extractions for "{currentDoc.filename}"</span>
-                          <Badge variant="outline" className="ml-2">
-                            {currentDocumentExtractions.length} extraction{currentDocumentExtractions.length !== 1 ? 's' : ''}
-                          </Badge>
+                          <span>Document Results for "{currentDoc.filename}"</span>
                         </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {currentDocumentExtractions.map((extraction) => (
-                            <div key={extraction.id} className="border border-slate-200 rounded-lg p-4">
-                              <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center space-x-2">
-                                  <Badge variant="outline">
-                                    {extraction.word_count} words
-                                  </Badge>
-                                  <span className="text-sm text-slate-500">
-                                    {formatDistanceToNow(new Date(extraction.created_at), { addSuffix: true })}
-                                  </span>
-                                </div>
-                              </div>
-                              
-                              {/* Display extracted text with proper formatting */}
-                              <div className="whitespace-pre-wrap text-sm leading-relaxed bg-slate-50 p-3 rounded border max-h-64 overflow-y-auto">
-                                {extraction.extracted_text}
-                              </div>
-                            </div>
-                          ))}
+                        
+                        {/* Tab Navigation */}
+                        <div className="flex space-x-1 mt-4">
+                          <Button
+                            variant={activeTab === 'analyses' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setActiveTab('analyses')}
+                            className="flex items-center space-x-2"
+                          >
+                            <Brain className="h-4 w-4" />
+                            <span>AI Analyses</span>
+                            {currentAnalyses.length > 0 && (
+                              <Badge variant="secondary" className="ml-1">
+                                {currentAnalyses.length}
+                              </Badge>
+                            )}
+                          </Button>
+                          
+                          <Button
+                            variant={activeTab === 'extractions' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setActiveTab('extractions')}
+                            className="flex items-center space-x-2"
+                          >
+                            <FileText className="h-4 w-4" />
+                            <span>Text Extractions</span>
+                            {currentDocumentExtractions.length > 0 && (
+                              <Badge variant="secondary" className="ml-1">
+                                {currentDocumentExtractions.length}
+                              </Badge>
+                            )}
+                          </Button>
                         </div>
+                      </CardHeader>
+                      
+                      <CardContent>
+                        {/* Analyses Tab */}
+                        {activeTab === 'analyses' && (
+                          <div className="space-y-4">
+                            {currentAnalyses.length === 0 ? (
+                              <div className="text-center py-8 text-slate-500">
+                                <Brain className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                                <p>No AI analyses yet for this document</p>
+                                <p className="text-sm">Click "Analyze with AI" to get started</p>
+                              </div>
+                            ) : (
+                              <>
+                                {/* Show latest analysis by default */}
+                                {(() => {
+                                  const latestAnalysis = getLatestAnalysis(currentAnalyses)
+                                  if (!latestAnalysis) return null
+                                  
+                                  return (
+                                    <div className="border border-slate-200 rounded-lg p-4">
+                                      <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center space-x-2">
+                                          <Badge className={getStatusColor(latestAnalysis.status)}>
+                                            {latestAnalysis.status}
+                                          </Badge>
+                                          <span className="text-sm text-slate-500">
+                                            Latest analysis - {formatDistanceToNow(new Date(latestAnalysis.created_at), { addSuffix: true })}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Display analysis content with proper formatting */}
+                                      {latestAnalysis.results?.analysis ? (
+                                        <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                                          {latestAnalysis.results.analysis}
+                                        </div>
+                                      ) : latestAnalysis.results && Object.keys(latestAnalysis.results).length > 0 ? (
+                                        <div className="prose prose-sm max-w-none">
+                                          <pre className="whitespace-pre-wrap">
+                                            {JSON.stringify(latestAnalysis.results, null, 2)}
+                                          </pre>
+                                        </div>
+                                      ) : (
+                                        <p className="text-slate-500">Analysis in progress...</p>
+                                      )}
+                                    </div>
+                                  )
+                                })()}
+
+                                {/* Show streaming analysis or loading indicator */}
+                                {analyzingDocuments.has(currentDoc?.id || '') && (
+                                  <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                                    <div className="flex items-center space-x-3 mb-3">
+                                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                                      <div>
+                                        <p className="text-sm font-medium text-blue-900">AI Analysis in Progress</p>
+                                        <p className="text-xs text-blue-700">Analyzing your document in real-time...</p>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Show streaming content if available */}
+                                    {streamingAnalyses.has(currentDoc?.id || '') && (
+                                      <div className="mt-3 pt-3 border-t border-blue-200">
+                                        <p className="text-xs text-blue-700 mb-2">Live Analysis:</p>
+                                        <div className="whitespace-pre-wrap text-sm text-blue-900 bg-white p-3 rounded border max-h-96 overflow-y-auto">
+                                          {streamingAnalyses.get(currentDoc?.id || '') || ''}
+                                          <span className="animate-pulse">▋</span>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Show other analyses if expanded */}
+                                {currentAnalyses.length > 1 && (
+                                  <div className="border-t pt-4">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <h4 className="text-sm font-medium text-slate-700">Previous Analyses</h4>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                          const allIds = currentAnalyses.map(a => a.id)
+                                          if (expandedAnalyses.size === allIds.length) {
+                                            setExpandedAnalyses(new Set())
+                                          } else {
+                                            setExpandedAnalyses(new Set(allIds))
+                                          }
+                                        }}
+                                      >
+                                        {expandedAnalyses.size === currentAnalyses.length ? 'Collapse All' : 'Expand All'}
+                                      </Button>
+                                    </div>
+                                    
+                                    <div className="space-y-3">
+                                      {currentAnalyses
+                                        .filter(analysis => analysis.id !== getLatestAnalysis(currentAnalyses)?.id)
+                                        .map((analysis) => (
+                                          <div
+                                            key={analysis.id}
+                                            className="border border-slate-200 rounded-lg p-3"
+                                          >
+                                            <div className="flex items-center justify-between mb-2">
+                                              <div className="flex items-center space-x-2">
+                                                <Badge className={getStatusColor(analysis.status)}>
+                                                  {analysis.status}
+                                                </Badge>
+                                                <span className="text-sm text-slate-500">
+                                                  {formatDistanceToNow(new Date(analysis.created_at), { addSuffix: true })}
+                                                </span>
+                                              </div>
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => toggleAnalysisExpansion(analysis.id)}
+                                              >
+                                                {expandedAnalyses.has(analysis.id) ? 'Collapse' : 'Expand'}
+                                              </Button>
+                                            </div>
+                                            
+                                            {/* Show analysis content only if expanded */}
+                                            {expandedAnalyses.has(analysis.id) && (
+                                              <div className="mt-3 pt-3 border-t">
+                                                {analysis.results?.analysis ? (
+                                                  <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                                                    {analysis.results.analysis}
+                                                  </div>
+                                                ) : analysis.results && Object.keys(analysis.results).length > 0 ? (
+                                                  <div className="prose prose-sm max-w-none">
+                                                    <pre className="whitespace-pre-wrap">
+                                                      {JSON.stringify(analysis.results, null, 2)}
+                                                    </pre>
+                                                  </div>
+                                                ) : (
+                                                  <p className="text-slate-500">Analysis in progress...</p>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Extractions Tab */}
+                        {activeTab === 'extractions' && (
+                          <div className="space-y-4">
+                            {currentDocumentExtractions.length === 0 ? (
+                              <div className="text-center py-8 text-slate-500">
+                                <FileText className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                                <p>No text extractions yet for this document</p>
+                                <p className="text-sm">Click "Convert to Text" to get started</p>
+                              </div>
+                              ) : (
+                              <>
+                                {currentDocumentExtractions.map((extraction) => (
+                                  <div key={extraction.id} className="border border-slate-200 rounded-lg p-4">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <div className="flex items-center space-x-2">
+                                        <Badge variant="outline">
+                                          {extraction.word_count} words
+                                        </Badge>
+                                        <span className="text-sm text-slate-500">
+                                          {formatDistanceToNow(new Date(extraction.created_at), { addSuffix: true })}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Display extracted text with proper formatting */}
+                                    <div className="whitespace-pre-wrap text-sm leading-relaxed bg-slate-50 p-3 rounded border max-h-64 overflow-y-auto">
+                                      {extraction.extracted_text}
+                                    </div>
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   )
