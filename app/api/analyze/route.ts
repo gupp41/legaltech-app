@@ -487,79 +487,19 @@ Be professional, thorough, and provide practical legal insights. Use clear langu
                       }
                     })
                     
-                    // First check if the analysis record exists with retry
-                    let existingAnalysis = null
-                    let checkError = null
-                    let retryCount = 0
-                    const maxRetries = 3
+                    // Skip the complex database update logic and let the frontend handle everything
+                    // This avoids RLS policy issues and timing problems
+                    console.log('🔄 Skipping API database update - frontend will handle persistence')
                     
-                    while (retryCount < maxRetries) {
-                      const { data, error } = await supabase
-                        .from('analyses')
-                        .select('id, status, document_id')
-                        .eq('id', analysisId)
-                        .single()
-                      
-                      if (error) {
-                        checkError = error
-                        retryCount++
-                        console.log(`🔄 Retry ${retryCount}/${maxRetries} - Analysis record not found yet:`, error.message)
-                        
-                        if (retryCount < maxRetries) {
-                          // Wait before retrying
-                          await new Promise(resolve => setTimeout(resolve, 1000))
-                        }
-                      } else {
-                        existingAnalysis = data
-                        checkError = null
-                        break
-                      }
-                    }
-                    
-                    if (checkError) {
-                      console.error('❌ Failed to find analysis record after all retries:', checkError)
-                      console.error('Analysis ID:', analysisId)
-                      
-                      // Instead of creating a new record (which violates RLS), 
-                      // we'll send the response and let the frontend handle the persistence
-                      console.log('🔄 Analysis record not found - sending response for frontend handling')
-                      controller.enqueue(`data: ${JSON.stringify({ done: true, fullResponse })}\n\n`)
-                      controller.close()
-                      return
-                    } else {
-                      console.log('✅ Analysis record found:', existingAnalysis)
-                    }
-                    
-                    // Now update the existing record
-                    const { error: updateError } = await supabase
-                      .from('analyses')
-                      .update({
-                        status: 'completed',
-                        results: {
-                          analysis: fullResponse,
-                          model: 'gpt-5-nano',
-                          provider: 'Vercel AI Gateway'
-                        },
-                        completed_at: new Date().toISOString()
-                      })
-                      .eq('id', analysisId)
-
-                    if (updateError) {
-                      console.error('❌ Failed to update analysis record:', updateError)
-                      console.error('Analysis ID used:', analysisId)
-                      console.error('Document data:', documentData)
-                    } else {
-                      console.log('✅ Analysis record updated successfully in database')
-                      
-                      // Increment usage after successful streaming analysis
-                      try {
-                        await usageTracker.incrementUsage(userId, 'analysis')
-                      } catch (usageError) {
-                        console.error('Failed to increment analysis usage:', usageError)
-                        // Don't fail the analysis if usage tracking fails
-                      }
+                    // Increment usage after successful streaming analysis
+                    try {
+                      await usageTracker.incrementUsage(userId, 'analysis')
+                    } catch (usageError) {
+                      console.error('Failed to increment analysis usage:', usageError)
+                      // Don't fail the analysis if usage tracking fails
                     }
 
+                    // Send the completed response to the frontend
                     controller.enqueue(`data: ${JSON.stringify({ done: true, fullResponse })}\n\n`)
                     controller.close()
                     return
