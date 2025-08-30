@@ -10,6 +10,7 @@ import { FileText, Download, Trash2, BarChart3, Brain, ChevronLeft, ChevronRight
 import { formatDistanceToNow } from "date-fns"
 import { extractTextFromDocument, truncateText } from "@/lib/document-extractor"
 import { usageTracker } from "@/lib/usage-tracker"
+import { UsageDisplay } from "@/components/usage-display"
 
 interface Document {
   id: string
@@ -1288,6 +1289,13 @@ Full text length: ${extractionResult.text?.length || 0} characters
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Usage Display */}
+        {user?.id && (
+          <div className="mb-8">
+            <UsageDisplay userId={user.id} />
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Upload Section */}
           <div className="lg:col-span-1">
