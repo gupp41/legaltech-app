@@ -6,7 +6,7 @@ import { FileUpload } from "@/components/file-upload"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Download, Trash2, BarChart3, Brain, ChevronLeft, ChevronRight, RefreshCw, Database } from "lucide-react"
+import { FileText, Download, Trash2, BarChart3, Brain, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { extractTextFromDocument, truncateText } from "@/lib/document-extractor"
 // Usage tracking is handled server-side in API routes
@@ -35,8 +35,8 @@ export default function Dashboard() {
   const [showDocumentDetail, setShowDocumentDetail] = useState(false)
   const [expandedAnalyses, setExpandedAnalyses] = useState<Set<string>>(new Set())
   const [analyzingDocuments, setAnalyzingDocuments] = useState<Set<string>>(new Set())
-  const [realTimeSyncActive, setRealTimeSyncActive] = useState(false)
-  const [syncing, setSyncing] = useState(false)
+
+
   const [streamingAnalyses, setStreamingAnalyses] = useState<Map<string, string>>(new Map())
   const [extractedTexts, setExtractedTexts] = useState<Map<string, { text: string; wordCount: number; success: boolean }>>(new Map())
   const [savedExtractions, setSavedExtractions] = useState<any[]>([])
@@ -108,7 +108,7 @@ export default function Dashboard() {
       .subscribe((status) => {
         console.log('Documents subscription status:', status)
         if (status === 'SUBSCRIBED') {
-          setRealTimeSyncActive(true)
+    
         }
       })
 
@@ -382,233 +382,8 @@ export default function Dashboard() {
     const currentDoc = getCurrentDocument()
     if (!currentDoc) return []
     return analyses.filter(analysis => analysis.document_id === currentDoc.id)
-  }
 
 
-
-  const syncStorageWithDatabase = async () => {
-    try {
-      setSyncing(true)
-      console.log('🔄 Syncing storage bucket with database...')
-      
-      // Get all files in storage bucket, including subdirectories
-      console.log('🔍 Listing storage files from root...')
-      const { data: rootFiles, error: rootError } = await supabase.storage
-        .from('documents')
-        .list('', { limit: 1000, sortBy: { column: 'name', order: 'asc' } })
-      
-      if (rootError) {
-        console.error('❌ Error listing root storage files:', rootError)
-        return
-      }
-      
-      console.log('📁 Root level files:', rootFiles?.map(f => f.name))
-      
-      // Check if there are user subdirectories
-      let storageFiles = rootFiles || []
-      
-      // Look for user subdirectories and list files in them
-      if (rootFiles && rootFiles.length > 0) {
-        console.log('🔍 Checking root items for directories...')
-        for (const item of rootFiles) {
-          console.log('🔍 Root item:', { name: item.name, size: item.metadata?.size, isDirectory: !item.metadata?.size })
-          
-          // Check if this is a directory (no size metadata or size is 0)
-          if (!item.metadata?.size || item.metadata.size === 0) {
-            console.log('📁 Found potential directory:', item.name)
-            
-            // Try to list files in this directory
-            const { data: subFiles, error: subError } = await supabase.storage
-              .from('documents')
-              .list(item.name, { limit: 1000 })
-            
-            if (subError) {
-              console.log('❌ Error listing directory', item.name, ':', subError)
-            } else if (subFiles && subFiles.length > 0) {
-              console.log('📁 Files in directory', item.name, ':', subFiles.map(f => f.name))
-              // Add the directory path to each file name
-              const filesWithPath = subFiles.map(f => ({
-                ...f,
-                name: `${item.name}/${f.name}`,
-                fullPath: `${item.name}/${f.name}`
-              }))
-              storageFiles = storageFiles.concat(filesWithPath)
-            } else {
-              console.log('📁 Directory', item.name, 'is empty or not accessible')
-            }
-          } else {
-            console.log('📄 Found file at root:', item.name)
-          }
-        }
-      }
-      
-      console.log('📁 Storage files found:', storageFiles?.length || 0)
-      console.log('📁 Storage file details:', storageFiles?.map(f => ({ name: f.name, size: f.metadata?.size, updated_at: f.updated_at })))
-      console.log('📁 All storage file names:', storageFiles?.map(f => f.name))
-      
-      // Get all documents from database
-      const { data: dbDocuments, error: dbError } = await supabase
-        .from('documents')
-        .select('id, storage_path, filename, created_at')
-        .eq('user_id', user.id)
-      
-      if (dbError) {
-        console.error('❌ Error fetching database documents:', dbError)
-        return
-      }
-      
-      console.log('🗄️ Database documents found:', dbDocuments?.length || 0)
-      
-      // Create a map of storage files by path
-      const storageFileMap = new Map()
-      storageFiles?.forEach(file => {
-        const fullPath = `${user.id}/${file.name}`
-        storageFileMap.set(fullPath, file)
-      })
-      
-      // Find orphaned database records (records in DB but files missing from storage)
-      const orphanedDbRecords = dbDocuments?.filter(doc => {
-        // Extract the file path from the storage URL
-        let filePath = doc.storage_path
-        if (filePath.includes('/storage/v1/object/public/documents/')) {
-          filePath = filePath.split('/storage/v1/object/public/documents/')[1]
-        }
-        
-        // Look for a matching file in storage by checking the full path
-        const fileExists = storageFiles?.some(storageFile => {
-          // Skip directories and placeholder files
-          if (storageFile.name.includes('/.emptyFolderPlaceholder') || !storageFile.metadata?.size) {
-            return false
-          }
-          
-          // Check if the storage file path matches the database path
-          // The storage file path should be: user_id/filename
-          // The database path should be: user_id/filename
-          const storagePath = `${user.id}/${storageFile.name}`
-          
-          // Debug logging
-          console.log('🔍 Comparing paths:', {
-            storagePath: storagePath,
-            databasePath: filePath,
-            match: storagePath === filePath
-          })
-          
-          return storagePath === filePath
-        })
-        
-        // Debug logging
-        console.log('🔍 Checking document:', {
-          filename: doc.filename,
-          storagePath: doc.storage_path,
-          extractedPath: filePath,
-          fileExists: fileExists,
-          matchingStorageFile: storageFiles?.find(f => `${user.id}/${f.name}` === filePath)?.name
-        })
-        
-        return !fileExists
-      }) || []
-      
-      console.log('🗑️ Orphaned database records found:', orphanedDbRecords.length)
-      if (orphanedDbRecords.length > 0) {
-        console.log('🗑️ Orphaned records:', orphanedDbRecords.map(doc => ({ id: doc.id, filename: doc.filename, storage_path: doc.storage_path })))
-      }
-      
-      // Find orphaned storage files (files in storage but not in database)
-      const dbPaths = new Set(dbDocuments?.map(doc => {
-        let filePath = doc.storage_path
-        if (filePath.includes('/storage/v1/object/public/documents/')) {
-          filePath = filePath.split('/storage/v1/object/public/documents/')[1]
-        }
-        return filePath
-      }) || [])
-      
-      const orphanedFiles = storageFiles?.filter(file => {
-        // Skip directories and placeholder files
-        if (file.name.includes('/.emptyFolderPlaceholder') || !file.metadata?.size) {
-          return false
-        }
-        
-        const fullPath = `${user.id}/${file.name}`
-        const isOrphaned = !dbPaths.has(fullPath)
-        
-        // Debug logging
-        if (isOrphaned) {
-          console.log('🔍 Orphaned storage file found:', {
-            storagePath: fullPath,
-            databasePaths: Array.from(dbPaths),
-            reason: 'Not found in database'
-          })
-        }
-        
-        return isOrphaned
-      }) || []
-      
-      console.log('🗑️ Orphaned storage files found:', orphanedFiles.length)
-      if (orphanedFiles.length > 0) {
-        console.log('🗑️ Orphaned files:', orphanedFiles.map(file => `${user.id}/${file.name}`))
-      }
-      
-      // Summary of what we found
-      console.log('📊 SYNC SUMMARY:', {
-        totalStorageFiles: storageFiles?.length || 0,
-        totalDbDocuments: dbDocuments?.length || 0,
-        orphanedDbRecords: orphanedDbRecords.length,
-        orphanedStorageFiles: orphanedFiles.length
-      })
-      
-      // Safety check: if more than 50% of documents would be deleted, something is wrong
-      if (orphanedDbRecords.length > (dbDocuments?.length || 0) * 0.5) {
-        console.log('🚨 SAFETY CHECK FAILED: Too many documents would be deleted!')
-        console.log('🚨 Documents to delete:', orphanedDbRecords.length)
-        console.log('🚨 Total documents:', dbDocuments?.length)
-        alert('Safety check failed: Too many documents would be deleted. Sync cancelled.')
-        return
-      }
-      
-      // Clean up orphaned database records
-      if (orphanedDbRecords.length > 0) {
-        console.log('🗑️ Removing orphaned database records...')
-        const { error: deleteError } = await supabase
-          .from('documents')
-          .delete()
-          .in('id', orphanedDbRecords.map(doc => doc.id))
-        
-        if (deleteError) {
-          console.error('❌ Error deleting orphaned database records:', deleteError)
-        } else {
-          console.log('✅ Orphaned database records removed successfully')
-        }
-      }
-      
-      // Clean up orphaned storage files
-      if (orphanedFiles.length > 0) {
-        const filesToRemove = orphanedFiles.map(file => `${user.id}/${file.name}`)
-        console.log('🗑️ Removing orphaned storage files:', filesToRemove)
-        
-        const { error: removeError } = await supabase.storage
-          .from('documents')
-          .remove(filesToRemove)
-        
-        if (removeError) {
-          console.error('❌ Error removing orphaned storage files:', removeError)
-        } else {
-          console.log('✅ Orphaned storage files removed successfully')
-        }
-      }
-      
-      // Refresh documents list and usage data
-      await fetchDocuments()
-      if ((window as any).refreshUsageData) {
-        (window as any).refreshUsageData()
-      }
-      
-      console.log('✅ Storage sync completed successfully')
-      
-    } catch (error) {
-      console.error('❌ Error syncing storage with database:', error)
-    } finally {
-      setSyncing(false)
-    }
   }
 
   const handleStreamingAnalysis = async (documentId: string) => {
@@ -1995,22 +1770,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                 <RefreshCw className="h-3 w-3 mr-1" />
                                 Refresh
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={syncStorageWithDatabase}
-                                className="text-xs"
-                                disabled={syncing}
-                              >
-                                <Database className="h-3 w-3 mr-1" />
-                                {syncing ? 'Syncing...' : 'Sync Storage'}
-                              </Button>
-                              {realTimeSyncActive && (
-                                <div className="flex items-center space-x-1 text-xs text-green-600">
-                                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                  <span>Live Sync</span>
-                                </div>
-                              )}
+
                             </div>
                         </div>
                       <div className="flex items-center space-x-2">
