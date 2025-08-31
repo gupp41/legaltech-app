@@ -40,22 +40,36 @@ export default function HomePage() {
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
           )
 
-          let result
-          if (codeVerifier) {
-            // PKCE flow - try to handle it directly
-            console.log('Handling PKCE flow directly')
-            try {
-              // Try the regular method first
-              result = await supabase.auth.exchangeCodeForSession(code)
-            } catch (pkceError) {
-              console.error('PKCE exchange failed:', pkceError)
-              // If that fails, try to redirect to dashboard (user might already be authenticated)
+          console.log('Attempting to authenticate with code:', code)
+          console.log('Code verifier present:', !!codeVerifier)
+
+          // First, check if user is already authenticated
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session) {
+            console.log('User already has session, redirecting to dashboard')
+            setEmailConfirmation({
+              status: 'success',
+              message: 'Already authenticated! Redirecting to dashboard...'
+            })
+            setTimeout(() => {
               window.location.href = '/dashboard'
-              return
-            }
-          } else {
-            // Regular flow
+            }, 1000)
+            return
+          }
+
+          let result
+          try {
+            // Try to exchange the code for a session
             result = await supabase.auth.exchangeCodeForSession(code)
+            console.log('Exchange result:', result)
+          } catch (exchangeError) {
+            console.error('Exchange failed:', exchangeError)
+            
+            // If exchange fails, try to redirect to dashboard anyway
+            // The user might already be authenticated through the magic link
+            console.log('Attempting to redirect to dashboard...')
+            window.location.href = '/dashboard'
+            return
           }
 
           const { error } = result
@@ -85,6 +99,26 @@ export default function HomePage() {
             message: 'An unexpected error occurred'
           })
         }
+      } else {
+        // No code present, but let's check if user is already authenticated
+        const checkAuth = async () => {
+          try {
+            const supabase = createBrowserClient(
+              process.env.NEXT_PUBLIC_SUPABASE_URL!,
+              process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+            )
+            
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session) {
+              console.log('User is authenticated, redirecting to dashboard')
+              window.location.href = '/dashboard'
+            }
+          } catch (err) {
+            console.log('No active session found')
+          }
+        }
+        
+        checkAuth()
       }
     }
 
