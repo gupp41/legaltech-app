@@ -12,52 +12,64 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
   formatted += `# Document Analysis Summary\n\n`
   formatted += `**Document Purpose:** ${analysis.summary.document_purpose}\n`
   formatted += `**Document Type:** ${analysis.summary.document_type}\n`
-  formatted += `**Overall Risk Assessment:** ${analysis.summary.overall_assessment.replace('_', ' ').toUpperCase()}\n\n`
   
-  formatted += `**Key Obligations:**\n`
-  analysis.summary.key_obligations.forEach(obligation => {
-    formatted += `• ${obligation}\n`
-  })
-  formatted += '\n'
+  // Handle overall_assessment safely
+  if (analysis.summary.overall_assessment) {
+    formatted += `**Overall Risk Assessment:** ${analysis.summary.overall_assessment.replace('_', ' ').toUpperCase()}\n\n`
+  }
+  
+  // Handle key_obligations safely
+  if (analysis.summary.key_obligations && analysis.summary.key_obligations.length > 0) {
+    formatted += `**Key Obligations:**\n`
+    analysis.summary.key_obligations.forEach(obligation => {
+      formatted += `• ${obligation}\n`
+    })
+    formatted += '\n'
+  }
   
   // Risk Analysis Section
-  formatted += `# Risk Analysis\n\n`
-  formatted += `${analysis.risk_analysis.risk_summary}\n\n`
-  
-  if (analysis.risk_analysis.high_risk_items.length > 0) {
-    formatted += `## 🔴 High Risk Items\n\n`
-    analysis.risk_analysis.high_risk_items.forEach(item => {
-      formatted += `**${item.clause}**\n`
-      formatted += `- Description: ${item.description}\n`
-      formatted += `- Impact: ${item.impact}\n`
-      formatted += `- Recommendation: ${item.recommendation}\n\n`
-    })
-  }
-  
-  if (analysis.risk_analysis.medium_risk_items.length > 0) {
-    formatted += `## 🟡 Medium Risk Items\n\n`
-    analysis.risk_analysis.medium_risk_items.forEach(item => {
-      formatted += `**${item.clause}**\n`
-      formatted += `- Description: ${item.description}\n`
-      formatted += `- Impact: ${item.impact}\n`
-      formatted += `- Recommendation: ${item.recommendation}\n\n`
-    })
-  }
-  
-  if (analysis.risk_analysis.low_risk_items.length > 0) {
-    formatted += `## 🟢 Low Risk Items\n\n`
-    analysis.risk_analysis.low_risk_items.forEach(item => {
-      formatted += `**${item.clause}**\n`
-      formatted += `- Description: ${item.description}\n`
-      formatted += `- Impact: ${item.impact}\n`
-      formatted += `- Recommendation: ${item.recommendation}\n\n`
-    })
+  if (analysis.risk_analysis) {
+    formatted += `# Risk Analysis\n\n`
+    if (analysis.risk_analysis.risk_summary) {
+      formatted += `${analysis.risk_analysis.risk_summary}\n\n`
+    }
+    
+    if (analysis.risk_analysis.high_risk_items && analysis.risk_analysis.high_risk_items.length > 0) {
+      formatted += `## 🔴 High Risk Items\n\n`
+      analysis.risk_analysis.high_risk_items.forEach(item => {
+        formatted += `**${item.clause}**\n`
+        formatted += `- Description: ${item.description}\n`
+        formatted += `- Impact: ${item.impact}\n`
+        formatted += `- Recommendation: ${item.recommendation}\n\n`
+      })
+    }
+    
+    if (analysis.risk_analysis.medium_risk_items && analysis.risk_analysis.medium_risk_items.length > 0) {
+      formatted += `## 🟡 Medium Risk Items\n\n`
+      analysis.risk_analysis.medium_risk_items.forEach(item => {
+        formatted += `**${item.clause}**\n`
+        formatted += `- Description: ${item.description}\n`
+        formatted += `- Impact: ${item.impact}\n`
+        formatted += `- Recommendation: ${item.recommendation}\n\n`
+      })
+    }
+    
+    if (analysis.risk_analysis.low_risk_items && analysis.risk_analysis.low_risk_items.length > 0) {
+      formatted += `## 🟢 Low Risk Items\n\n`
+      analysis.risk_analysis.low_risk_items.forEach(item => {
+        formatted += `**${item.clause}**\n`
+        formatted += `- Description: ${item.description}\n`
+        formatted += `- Impact: ${item.impact}\n`
+        formatted += `- Recommendation: ${item.recommendation}\n\n`
+      })
+    }
   }
   
   // Identified Clauses Section
-  formatted += `# Identified Clauses\n\n`
-  
-  if (analysis.identified_clauses.key_terms.length > 0) {
+  if (analysis.identified_clauses) {
+    formatted += `# Identified Clauses\n\n`
+    
+    if (analysis.identified_clauses.key_terms && analysis.identified_clauses.key_terms.length > 0) {
     formatted += `## Key Terms\n\n`
     analysis.identified_clauses.key_terms.forEach(term => {
       formatted += `**${term.name}** (${term.importance.toUpperCase()})\n`
@@ -159,7 +171,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
     formatted += '\n'
   }
   
-  if (analysis.recommendations.improvements.length > 0) {
+  if (analysis.recommendations && analysis.recommendations.improvements && analysis.recommendations.improvements.length > 0) {
     formatted += `## Suggested Improvements\n\n`
     analysis.recommendations.improvements.forEach(improvement => {
       formatted += `• ${improvement}\n`
@@ -167,7 +179,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
     formatted += '\n'
   }
   
-  if (analysis.recommendations.red_flags.length > 0) {
+  if (analysis.recommendations && analysis.recommendations.red_flags && analysis.recommendations.red_flags.length > 0) {
     formatted += `## Red Flags\n\n`
     analysis.recommendations.red_flags.forEach(flag => {
       formatted += `• ${flag}\n`
@@ -175,7 +187,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
     formatted += '\n'
   }
   
-  if (analysis.recommendations.next_steps.length > 0) {
+  if (analysis.recommendations && analysis.recommendations.next_steps && analysis.recommendations.next_steps.length > 0) {
     formatted += `## Next Steps\n\n`
     analysis.recommendations.next_steps.forEach(step => {
       formatted += `• ${step}\n`
@@ -184,26 +196,29 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
   }
   
   // Technical Details Section
-  formatted += `# Technical Details\n\n`
-  
-  if (analysis.technical_details.contract_value) {
-    formatted += `**Contract Value:** ${analysis.technical_details.contract_value}\n`
-  }
-  if (analysis.technical_details.duration) {
-    formatted += `**Duration:** ${analysis.technical_details.duration}\n`
-  }
-  if (analysis.technical_details.governing_law) {
-    formatted += `**Governing Law:** ${analysis.technical_details.governing_law}\n`
-  }
-  if (analysis.technical_details.jurisdiction) {
-    formatted += `**Jurisdiction:** ${analysis.technical_details.jurisdiction}\n`
-  }
-  
-  if (analysis.technical_details.parties_involved.length > 0) {
-    formatted += `**Parties Involved:** ${analysis.technical_details.parties_involved.join(', ')}\n`
+  if (analysis.technical_details) {
+    formatted += `# Technical Details\n\n`
+    
+    if (analysis.technical_details.contract_value) {
+      formatted += `**Contract Value:** ${analysis.technical_details.contract_value}\n`
+    }
+    if (analysis.technical_details.duration) {
+      formatted += `**Duration:** ${analysis.technical_details.duration}\n`
+    }
+    if (analysis.technical_details.governing_law) {
+      formatted += `**Governing Law:** ${analysis.technical_details.governing_law}\n`
+    }
+    if (analysis.technical_details.jurisdiction) {
+      formatted += `**Jurisdiction:** ${analysis.technical_details.jurisdiction}\n`
+    }
+    
+    if (analysis.technical_details.parties_involved && analysis.technical_details.parties_involved.length > 0) {
+      formatted += `**Parties Involved:** ${analysis.technical_details.parties_involved.join(', ')}\n`
+    }
   }
   
   return formatted
+}
 }
 
 export async function POST(request: NextRequest) {
@@ -799,6 +814,7 @@ Analyze the document thoroughly and populate all fields. If a field is not appli
                                             // Try multiple JSON parsing approaches
                       let parsed = null
                       let parseMethod = 'none'
+                      let formattedResponse = ''
                       
                       // Method 1: Try parsing the raw content directly
                       try {
@@ -829,13 +845,16 @@ Analyze the document thoroughly and populate all fields. If a field is not appli
                           try {
                             const documentPurposeMatch = fullResponse.match(/"document_purpose":\s*"([^"]+)"/)
                             const documentTypeMatch = fullResponse.match(/"document_type":\s*"([^"]+)"/)
+                            const overallAssessmentMatch = fullResponse.match(/"overall_assessment":\s*"([^"]+)"/)
                             
                             if (documentPurposeMatch) {
-                              // Create a minimal structured object with what we can extract
+                              // Create a more complete structured object for manual extraction
                               parsed = {
                                 summary: {
                                   document_purpose: documentPurposeMatch[1],
-                                  document_type: documentTypeMatch ? documentTypeMatch[1] : 'Unknown'
+                                  document_type: documentTypeMatch ? documentTypeMatch[1] : 'Unknown',
+                                  overall_assessment: overallAssessmentMatch ? overallAssessmentMatch[1] : 'medium_risk',
+                                  key_obligations: []
                                 }
                               }
                               parseMethod = 'manual'
@@ -852,33 +871,33 @@ Analyze the document thoroughly and populate all fields. If a field is not appli
                         console.log(`✅ Successfully parsed structured analysis using ${parseMethod} method`)
                         
                         // Convert structured analysis to formatted text for display
-                        formattedResponse = formatStructuredAnalysis(structuredAnalysis)
-                        console.log('✅ Formatted streaming analysis result length:', formattedResponse.length)
-                      } else {
-                        console.warn('❌ Parsed streaming content is not an object, using raw content')
-                      }
-                    } catch (parseError) {
-                      console.warn('❌ All JSON parsing methods failed, using raw content:', parseError)
-                      console.log('🔍 Final parsing attempt failed, parseMethod was:', parseMethod)
-                      
-                      // Since we already tried manual extraction above, just format the raw response
-                      if (parseMethod === 'none') {
-                        // Try one last manual extraction
                         try {
-                          const documentPurposeMatch = fullResponse.match(/"document_purpose":\s*"([^"]+)"/)
-                          if (documentPurposeMatch) {
-                            console.log('🔍 Found document purpose in final fallback:', documentPurposeMatch[1])
-                            formattedResponse = `# Document Analysis\n\n**Document Purpose:** ${documentPurposeMatch[1]}\n\n*Note: Full structured analysis could not be parsed due to JSON formatting issues. Please check the raw output for complete details.*`
-                          } else {
-                            // Use the raw response as-is
-                            formattedResponse = fullResponse
-                          }
-                        } catch (finalFallbackError) {
-                          console.log('🔍 Final fallback also failed, using raw response')
+                          formattedResponse = formatStructuredAnalysis(structuredAnalysis)
+                          console.log('✅ Formatted streaming analysis result length:', formattedResponse.length)
+                        } catch (formatError) {
+                          console.warn('❌ Formatting failed, using raw response:', formatError)
                           formattedResponse = fullResponse
                         }
                       } else {
-                        // We had some parsing success, use the raw response
+                        console.warn('❌ Parsed streaming content is not an object, using raw content')
+                        formattedResponse = fullResponse
+                      }
+                    } catch (parseError) {
+                      console.warn('❌ All JSON parsing methods failed, using raw content:', parseError)
+                      
+                      // Since we already tried manual extraction above, just format the raw response
+                      // Try one last manual extraction
+                      try {
+                        const documentPurposeMatch = fullResponse.match(/"document_purpose":\s*"([^"]+)"/)
+                        if (documentPurposeMatch) {
+                          console.log('🔍 Found document purpose in final fallback:', documentPurposeMatch[1])
+                          formattedResponse = `# Document Analysis\n\n**Document Purpose:** ${documentPurposeMatch[1]}\n\n*Note: Full structured analysis could not be parsed due to JSON formatting issues. Please check the raw output for complete details.*`
+                        } else {
+                          // Use the raw response as-is
+                          formattedResponse = fullResponse
+                        }
+                      } catch (finalFallbackError) {
+                        console.log('🔍 Final fallback also failed, using raw response')
                         formattedResponse = fullResponse
                       }
                     }
