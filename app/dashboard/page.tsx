@@ -986,12 +986,13 @@ This should show the actual NDA text being sent to the AI.
                     }
                   } else {
                     // Verify creation by document_id (since we don't have the new ID yet)
+                    // Use .maybeSingle() instead of .single() to handle multiple analyses gracefully
                     const { data: verificationData, error: verificationError } = await supabase
                       .from('analyses')
                       .select('id, status, results')
                       .eq('document_id', documentId)
                       .eq('status', 'completed')
-                      .single()
+                      .maybeSingle()
                     
                     if (verificationError) {
                       console.error('❌ Database verification failed:', verificationError)
@@ -1001,8 +1002,26 @@ This should show the actual NDA text being sent to the AI.
                     if (verificationData && verificationData.status === 'completed') {
                       console.log('✅ Database verification successful - analysis is completed')
                     } else {
-                      console.error('❌ Database verification failed - analysis status is:', verificationData?.status)
-                      throw new Error(`Analysis status verification failed - expected 'completed', got '${verificationData?.status}'`)
+                      // Check if there are any completed analyses for this document
+                      const { data: allAnalyses, error: allError } = await supabase
+                        .from('analyses')
+                        .select('id, status, results')
+                        .eq('document_id', documentId)
+                        .eq('user_id', user.id)
+                      
+                      if (allError) {
+                        console.error('❌ Failed to check all analyses:', allError)
+                        throw new Error(`Failed to verify analysis completion: ${allError.message}`)
+                      }
+                      
+                      // Look for any completed analysis
+                      const completedAnalysis = allAnalyses?.find(a => a.status === 'completed')
+                      if (completedAnalysis) {
+                        console.log('✅ Found completed analysis:', completedAnalysis.id)
+                      } else {
+                        console.error('❌ No completed analysis found for document')
+                        throw new Error('No completed analysis found for document')
+                      }
                     }
                   }
                   
