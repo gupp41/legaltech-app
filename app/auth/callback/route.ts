@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
+  const codeVerifier = searchParams.get('code_verifier')
   const next = searchParams.get('next') ?? '/dashboard'
 
   console.log('Callback received with params:', Object.fromEntries(searchParams.entries()))
@@ -12,8 +13,22 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
     
     try {
-      // Try to exchange the code for a session (works for both email confirmation and magic links)
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+      let result
+      
+      if (codeVerifier) {
+        // PKCE flow - we need to handle this differently
+        console.log('PKCE flow detected, but code verifier not supported in this method')
+        console.log('Code:', code)
+        console.log('Code Verifier:', codeVerifier)
+        // For now, try the regular flow and see what happens
+        result = await supabase.auth.exchangeCodeForSession(code)
+      } else {
+        // Regular flow - try without code verifier
+        console.log('Using regular flow without code verifier')
+        result = await supabase.auth.exchangeCodeForSession(code)
+      }
+      
+      const { data, error } = result
       
       if (error) {
         console.error('Session exchange error:', error)
