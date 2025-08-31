@@ -1,9 +1,119 @@
+'use client'
+
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Scale, FileText, Shield, Zap, Users, TrendingUp } from "lucide-react"
+import { Scale, FileText, Shield, Zap, Users, TrendingUp, CheckCircle, AlertCircle } from "lucide-react"
 import Link from "next/link"
+import { useEffect, useState } from "react"
+import { createBrowserClient } from '@supabase/ssr'
 
 export default function HomePage() {
+  const [emailConfirmation, setEmailConfirmation] = useState<{
+    status: 'idle' | 'loading' | 'success' | 'error'
+    message: string
+  }>({ status: 'idle', message: '' })
+
+  useEffect(() => {
+    const handleEmailConfirmation = async () => {
+      const urlParams = new URLSearchParams(window.location.search)
+      const code = urlParams.get('code')
+      const error = urlParams.get('error')
+      const errorDescription = urlParams.get('error_description')
+
+      if (error) {
+        setEmailConfirmation({
+          status: 'error',
+          message: errorDescription || 'Email confirmation failed'
+        })
+        return
+      }
+
+      if (code) {
+        setEmailConfirmation({ status: 'loading', message: 'Confirming your email...' })
+
+        try {
+          const supabase = createBrowserClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+          )
+
+          const { error } = await supabase.auth.exchangeCodeForSession(code)
+
+          if (error) {
+            console.error('Email confirmation error:', error)
+            setEmailConfirmation({
+              status: 'error',
+              message: error.message || 'Failed to confirm email'
+            })
+          } else {
+            setEmailConfirmation({
+              status: 'success',
+              message: 'Email confirmed successfully! You can now sign in.'
+            })
+            
+            // Clean up the URL
+            window.history.replaceState({}, document.title, window.location.pathname)
+          }
+        } catch (err) {
+          console.error('Email confirmation error:', err)
+          setEmailConfirmation({
+            status: 'error',
+            message: 'An unexpected error occurred'
+          })
+        }
+      }
+    }
+
+    handleEmailConfirmation()
+  }, [])
+
+  // Show email confirmation status if processing
+  if (emailConfirmation.status !== 'idle') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <div className="bg-blue-600 p-2 rounded-lg">
+                <Scale className="h-6 w-6 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-slate-900">LegalTech AI</h1>
+            </div>
+          </div>
+
+          <Card className="shadow-lg border-0">
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 bg-blue-100 p-3 rounded-full w-fit">
+                {emailConfirmation.status === 'loading' && (
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                )}
+                {emailConfirmation.status === 'success' && (
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                )}
+                {emailConfirmation.status === 'error' && (
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                )}
+              </div>
+              <CardTitle className="text-2xl font-semibold">
+                {emailConfirmation.status === 'loading' && 'Confirming Email'}
+                {emailConfirmation.status === 'success' && 'Email Confirmed!'}
+                {emailConfirmation.status === 'error' && 'Confirmation Failed'}
+              </CardTitle>
+              <CardDescription>
+                {emailConfirmation.message}
+              </CardDescription>
+            </CardHeader>
+            <CardHeader className="text-center">
+              <Button asChild className="w-full bg-blue-600 hover:bg-blue-700">
+                <Link href="/auth/login">Continue to Sign In</Link>
+              </Button>
+            </CardHeader>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}

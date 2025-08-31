@@ -55,8 +55,8 @@ export default function SignUpPage() {
         password: formData.password,
         options: {
           emailRedirectTo: process.env.NEXT_PUBLIC_VERCEL_URL 
-            ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/auth/callback`
-            : `${window.location.origin}/auth/callback`,
+            ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/`
+            : `${window.location.origin}/`,
           data: {
             full_name: formData.fullName,
             company_name: formData.companyName,
@@ -80,14 +80,15 @@ export default function SignUpPage() {
         
         if (signInError) {
           console.log('Sign in error:', signInError)
-          // If sign in fails, still redirect to verify page
-          router.push("/auth/verify-email")
+          // If sign in fails, redirect to home page for email confirmation
+          router.push("/")
         } else {
           // Successfully signed in, redirect to dashboard
           router.push("/dashboard")
         }
       } else {
-        router.push("/auth/verify-email")
+        // Redirect to home page for email confirmation
+        router.push("/")
       }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred")
