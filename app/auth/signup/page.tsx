@@ -55,8 +55,8 @@ export default function SignUpPage() {
         password: formData.password,
         options: {
           emailRedirectTo: process.env.NEXT_PUBLIC_VERCEL_URL 
-            ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/dashboard`
-            : `${window.location.origin}/dashboard`,
+            ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/auth/callback`
+            : `${window.location.origin}/auth/callback`,
           data: {
             full_name: formData.fullName,
             company_name: formData.companyName,
