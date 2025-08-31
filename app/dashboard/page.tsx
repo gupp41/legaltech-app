@@ -42,6 +42,7 @@ export default function Dashboard() {
   const [savedExtractions, setSavedExtractions] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'analyses' | 'extractions'>('analyses')
   const [refreshingAnalyses, setRefreshingAnalyses] = useState<Set<string>>(new Set())
+  const [isCleaningUpAnalyses, setIsCleaningUpAnalyses] = useState(false)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -132,6 +133,12 @@ export default function Dashboard() {
         (payload) => {
           console.log('Analyses real-time change:', payload)
           
+          // Skip real-time updates if we're currently cleaning up analyses
+          if (isCleaningUpAnalyses) {
+            console.log('🔄 Skipping real-time refresh - cleanup in progress')
+            return
+          }
+          
           // Check if we're currently refreshing analyses for this document
           const documentId = (payload.new as any)?.document_id || (payload.old as any)?.document_id
           if (documentId && refreshingAnalyses.has(documentId)) {
@@ -143,7 +150,7 @@ export default function Dashboard() {
           console.log('🔄 Real-time subscription detected change, waiting before refresh...')
           setTimeout(() => {
             console.log('🔄 Real-time subscription triggering analyses refresh...')
-            fetchAnalyses() // Refresh analyses when changes occur
+          fetchAnalyses() // Refresh analyses when changes occur
           }, 1000) // Wait 1 second for transaction to commit
         }
       )
@@ -153,17 +160,17 @@ export default function Dashboard() {
     let extractionsSubscription: any = null
     try {
       extractionsSubscription = supabase
-        .channel('extractions-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
-            schema: 'public',
-            table: 'text_extractions',
-            filter: `user_id=eq.${user.id}`
-          },
-          (payload) => {
-            console.log('Text extractions real-time change:', payload)
+      .channel('extractions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'text_extractions',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Text extractions real-time change:', payload)
             console.log('🔄 Real-time subscription triggered, refreshing extractions...')
             console.log('📊 Payload details:', {
               event: payload.eventType,
@@ -171,9 +178,9 @@ export default function Dashboard() {
               record: payload.new || payload.old,
               user_id: (payload.new as any)?.user_id || (payload.old as any)?.user_id
             })
-            fetchSavedExtractions() // Refresh extractions when changes occur
-          }
-        )
+          fetchSavedExtractions() // Refresh extractions when changes occur
+        }
+      )
         .subscribe((status) => {
           console.log('🔄 Text extractions subscription status:', status)
           if (status === 'SUBSCRIBED') {
@@ -193,10 +200,10 @@ export default function Dashboard() {
       documentsSubscription.unsubscribe()
       analysesSubscription.unsubscribe()
       if (extractionsSubscription) {
-        extractionsSubscription.unsubscribe()
-      }
+      extractionsSubscription.unsubscribe()
     }
-  }, [user?.id, refreshingAnalyses])
+    }
+  }, [user?.id, refreshingAnalyses, isCleaningUpAnalyses])
 
   const checkUser = async () => {
     console.log('Checking user authentication...')
@@ -300,17 +307,13 @@ export default function Dashboard() {
 
   const fetchAnalyses = async () => {
     try {
-      console.log('Fetching analyses using Supabase client...')
+      console.log('🔍 Fetching analyses for user:', user?.id)
       
-      // Check if user ID is available
       if (!user?.id) {
-        console.log('User ID not available yet, skipping analyses fetch')
+        console.log('❌ No user ID available, skipping analyses fetch')
         return
       }
       
-      console.log('Fetching analyses for user:', user.id)
-      
-      // Use Supabase client directly instead of API route
       const { data: analyses, error } = await supabase
         .from('analyses')
         .select('*')
@@ -318,26 +321,44 @@ export default function Dashboard() {
         .order('created_at', { ascending: false })
       
       if (error) {
-        console.error('Supabase analyses error:', error)
+        console.error("Error fetching analyses:", error)
         setAnalyses([])
-      } else {
-        console.log('Analyses fetched:', analyses)
-        console.log('📊 Total analyses count:', analyses?.length || 0)
-        if (analyses && analyses.length > 0) {
-          console.log('📄 Latest analysis:', {
-            id: analyses[0].id,
-            document_id: analyses[0].document_id,
-            status: analyses[0].status,
-            created_at: analyses[0].created_at,
-            results: analyses[0].results ? 'Has results' : 'No results'
+        return
+      }
+      
+      console.log('📊 Raw analyses fetched from database:', analyses?.length || 0)
+      if (analyses) {
+        console.log('📊 Analysis status breakdown:', {
+          total: analyses.length,
+          completed: analyses.filter(a => a.status === 'completed').length,
+          processing: analyses.filter(a => a.status === 'processing').length,
+          withResults: analyses.filter(a => a.results).length,
+          withoutResults: analyses.filter(a => !a.results).length
+        })
+        
+        // Log first few analyses for debugging
+        analyses.slice(0, 3).forEach((analysis, index) => {
+          console.log(`📊 Analysis ${index + 1}:`, {
+            id: analysis.id,
+            document_id: analysis.document_id,
+            status: analysis.status,
+            hasResults: !!analysis.results,
+            resultsLength: analysis.results?.analysis?.length || 0,
+            created_at: analysis.created_at
           })
-        }
-        // Check for any "processing" analyses that should be "completed"
-        const processingAnalyses = analyses?.filter(a => a.status === 'processing' && a.results) || []
-        if (processingAnalyses.length > 0) {
-          console.log('🔍 Found processing analyses with results - fixing status...')
-          for (const analysis of processingAnalyses) {
-            console.log(`🔄 Fixing analysis ${analysis.id} status from processing to completed`)
+        })
+      }
+      
+      // Check for any analyses with results that aren't completed
+      if (analyses) {
+        const analysesWithResults = analyses.filter(a => a.results && a.status !== 'completed')
+        if (analysesWithResults.length > 0) {
+          console.log(`🔍 Found ${analysesWithResults.length} analyses with results that aren't completed`)
+          console.log('🔍 These need fixing:', analysesWithResults.map(a => ({ id: a.id, status: a.status, document_id: a.document_id })))
+          
+          // Fix them immediately
+          for (const analysis of analysesWithResults) {
+            console.log(`🔄 Fixing analysis ${analysis.id} status from '${analysis.status}' to 'completed'`)
             const { error: fixError } = await supabase
               .from('analyses')
               .update({ 
@@ -378,7 +399,8 @@ export default function Dashboard() {
   // Function to fix any orphaned "processing" analyses that have results
   const fixOrphanedAnalyses = async () => {
     try {
-      console.log('🔍 Checking for orphaned processing analyses...')
+      console.log('🔍 Starting orphaned analysis cleanup...')
+      setIsCleaningUpAnalyses(true)
       
       if (!user?.id) return
       
@@ -522,8 +544,16 @@ export default function Dashboard() {
         }
       }
       
+      // Final refresh after all cleanup operations
+      console.log('🔄 Refreshing analyses after cleanup...')
+      await fetchAnalyses()
+      
     } catch (error) {
       console.error('Error in fixOrphanedAnalyses:', error)
+    } finally {
+      // Always reset the cleanup flag
+      setIsCleaningUpAnalyses(false)
+      console.log('✅ Orphaned analysis cleanup completed')
     }
   }
 
@@ -613,7 +643,13 @@ export default function Dashboard() {
       allAnalyses: analyses.map(a => ({ id: a.id, document_id: a.document_id, status: a.status, created_at: a.created_at }))
     })
     
-    const filteredAnalyses = analyses.filter(analysis => analysis.document_id === currentDoc.id)
+    // Filter analyses for current document and ensure they are completed with results
+    const filteredAnalyses = analyses.filter(analysis => 
+      analysis.document_id === currentDoc.id && 
+      analysis.status === 'completed' && 
+      analysis.results
+    )
+    
     console.log('🔍 Filtered analyses for current document:', filteredAnalyses.length, filteredAnalyses)
     
     return filteredAnalyses
@@ -881,16 +917,16 @@ This should show the actual NDA text being sent to the AI.
                     const { error: createError } = await supabase
                       .from('analyses')
                       .insert({
-                        document_id: documentId,
-                        user_id: user.id,
-                        analysis_type: 'contract_review',
-                        status: 'completed',
-                        results: {
-                          analysis: fullResponse,
-                          model: 'gpt-5-nano',
-                          provider: 'Vercel AI Gateway'
-                        },
-                        completed_at: new Date().toISOString()
+                  document_id: documentId,
+                  user_id: user.id,
+                  analysis_type: 'contract_review',
+                  status: 'completed',
+                  results: {
+                    analysis: fullResponse,
+                    model: 'gpt-5-nano',
+                    provider: 'Vercel AI Gateway'
+                  },
+                  completed_at: new Date().toISOString()
                       })
                     
                     if (createError) {
@@ -1073,10 +1109,10 @@ This should show the actual NDA text being sent to the AI.
                 } finally {
                   // Clear refreshing flag
                   setRefreshingAnalyses(prev => {
-                    const newSet = new Set(prev)
-                    newSet.delete(documentId)
-                    return newSet
-                  })
+                  const newSet = new Set(prev)
+                  newSet.delete(documentId)
+                  return newSet
+                })
                 }
                 
                 // Show a success message to the user
@@ -1658,6 +1694,15 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
         newSet.delete(documentId)
         return newSet
       })
+    }
+  }
+
+  const handleFixAnalyses = async () => {
+    try {
+      console.log('🔧 Manual fix analyses requested')
+      await fixOrphanedAnalyses()
+    } catch (error) {
+      console.error('Error fixing analyses:', error)
     }
   }
 
@@ -2253,6 +2298,16 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                 <RefreshCw className="h-3 w-3 mr-1" />
                                 Refresh
                               </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleFixAnalyses}
+                                className="text-xs"
+                                title="Fix any stuck or orphaned analyses"
+                              >
+                                <Brain className="h-3 w-3 mr-1" />
+                                Fix Analyses
+                              </Button>
 
                             </div>
                         </div>
@@ -2402,8 +2457,8 @@ Full text length: ${extractionResult.text?.length || 0} characters
                             {currentAnalyses.length > 0 && (
                               <Badge variant="secondary" className="ml-1">
                                 {currentAnalyses.length}
-                              </Badge>
-                            )}
+                            </Badge>
+                          )}
                           </Button>
                           
                           <Button
@@ -2426,7 +2481,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                       <CardContent>
                         {/* Analyses Tab */}
                         {activeTab === 'analyses' && (
-                          <div className="space-y-4">
+                        <div className="space-y-4">
                             {currentAnalyses.length === 0 ? (
                               <div className="text-center py-8 text-slate-500">
                                 <Brain className="h-12 w-12 mx-auto mb-4 text-slate-300" />
@@ -2435,144 +2490,144 @@ Full text length: ${extractionResult.text?.length || 0} characters
                               </div>
                             ) : (
                               <>
-                                {/* Show latest analysis by default */}
+                          {/* Show latest analysis by default */}
                                 {(() => {
                                   const latestAnalysis = getLatestAnalysis(currentAnalyses)
                                   if (!latestAnalysis) return null
                                   
                                   return (
-                                    <div className="border border-slate-200 rounded-lg p-4">
-                                      <div className="flex items-center justify-between mb-3">
-                                        <div className="flex items-center space-x-2">
-                                          <Badge className={getStatusColor(latestAnalysis.status)}>
-                                            {latestAnalysis.status}
-                                          </Badge>
-                                          <span className="text-sm text-slate-500">
-                                            Latest analysis - {formatDistanceToNow(new Date(latestAnalysis.created_at), { addSuffix: true })}
-                                          </span>
-                                        </div>
-                                      </div>
-                                      
-                                      {/* Display analysis content with proper formatting */}
-                                      {latestAnalysis.results?.analysis ? (
-                                        <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                                          {latestAnalysis.results.analysis}
-                                        </div>
-                                      ) : latestAnalysis.results && Object.keys(latestAnalysis.results).length > 0 ? (
-                                        <div className="prose prose-sm max-w-none">
-                                          <pre className="whitespace-pre-wrap">
-                                            {JSON.stringify(latestAnalysis.results, null, 2)}
-                                          </pre>
-                                        </div>
-                                      ) : (
-                                        <p className="text-slate-500">Analysis in progress...</p>
-                                      )}
-                                    </div>
+                            <div className="border border-slate-200 rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center space-x-2">
+                                  <Badge className={getStatusColor(latestAnalysis.status)}>
+                                    {latestAnalysis.status}
+                                  </Badge>
+                                  <span className="text-sm text-slate-500">
+                                    Latest analysis - {formatDistanceToNow(new Date(latestAnalysis.created_at), { addSuffix: true })}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              {/* Display analysis content with proper formatting */}
+                              {latestAnalysis.results?.analysis ? (
+                                <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                                  {latestAnalysis.results.analysis}
+                                </div>
+                              ) : latestAnalysis.results && Object.keys(latestAnalysis.results).length > 0 ? (
+                                <div className="prose prose-sm max-w-none">
+                                  <pre className="whitespace-pre-wrap">
+                                    {JSON.stringify(latestAnalysis.results, null, 2)}
+                                  </pre>
+                                </div>
+                              ) : (
+                                <p className="text-slate-500">Analysis in progress...</p>
+                              )}
+                            </div>
                                   )
                                 })()}
 
-                                {/* Show streaming analysis or loading indicator */}
-                                {analyzingDocuments.has(currentDoc?.id || '') && (
-                                  <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
-                                    <div className="flex items-center space-x-3 mb-3">
-                                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                                      <div>
-                                        <p className="text-sm font-medium text-blue-900">AI Analysis in Progress</p>
-                                        <p className="text-xs text-blue-700">Analyzing your document in real-time...</p>
-                                      </div>
-                                    </div>
-                                    
-                                    {/* Show streaming content if available */}
-                                    {streamingAnalyses.has(currentDoc?.id || '') && (
-                                      <div className="mt-3 pt-3 border-t border-blue-200">
-                                        <p className="text-xs text-blue-700 mb-2">Live Analysis:</p>
-                                        <div className="whitespace-pre-wrap text-sm text-blue-900 bg-white p-3 rounded border max-h-96 overflow-y-auto">
-                                          {streamingAnalyses.get(currentDoc?.id || '') || ''}
-                                          <span className="animate-pulse">▋</span>
-                                        </div>
-                                      </div>
-                                    )}
+                          {/* Show streaming analysis or loading indicator */}
+                          {analyzingDocuments.has(currentDoc?.id || '') && (
+                            <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                              <div className="flex items-center space-x-3 mb-3">
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                                <div>
+                                  <p className="text-sm font-medium text-blue-900">AI Analysis in Progress</p>
+                                  <p className="text-xs text-blue-700">Analyzing your document in real-time...</p>
+                                </div>
+                              </div>
+                              
+                              {/* Show streaming content if available */}
+                              {streamingAnalyses.has(currentDoc?.id || '') && (
+                                <div className="mt-3 pt-3 border-t border-blue-200">
+                                  <p className="text-xs text-blue-700 mb-2">Live Analysis:</p>
+                                  <div className="whitespace-pre-wrap text-sm text-blue-900 bg-white p-3 rounded border max-h-96 overflow-y-auto">
+                                    {streamingAnalyses.get(currentDoc?.id || '') || ''}
+                                    <span className="animate-pulse">▋</span>
                                   </div>
-                                )}
+                                </div>
+                              )}
+                            </div>
+                          )}
 
-                                {/* Show other analyses if expanded */}
-                                {currentAnalyses.length > 1 && (
-                                  <div className="border-t pt-4">
-                                    <div className="flex items-center justify-between mb-3">
-                                      <h4 className="text-sm font-medium text-slate-700">Previous Analyses</h4>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                          const allIds = currentAnalyses.map(a => a.id)
-                                          if (expandedAnalyses.size === allIds.length) {
-                                            setExpandedAnalyses(new Set())
-                                          } else {
-                                            setExpandedAnalyses(new Set(allIds))
-                                          }
-                                        }}
-                                      >
-                                        {expandedAnalyses.size === currentAnalyses.length ? 'Collapse All' : 'Expand All'}
-                                      </Button>
-                                    </div>
-                                    
-                                    <div className="space-y-3">
-                                      {currentAnalyses
+                          {/* Show other analyses if expanded */}
+                          {currentAnalyses.length > 1 && (
+                            <div className="border-t pt-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="text-sm font-medium text-slate-700">Previous Analyses</h4>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const allIds = currentAnalyses.map(a => a.id)
+                                    if (expandedAnalyses.size === allIds.length) {
+                                      setExpandedAnalyses(new Set())
+                                    } else {
+                                      setExpandedAnalyses(new Set(allIds))
+                                    }
+                                  }}
+                                >
+                                  {expandedAnalyses.size === currentAnalyses.length ? 'Collapse All' : 'Expand All'}
+                                </Button>
+                              </div>
+                              
+                              <div className="space-y-3">
+                                {currentAnalyses
                                         .filter(analysis => analysis.id !== getLatestAnalysis(currentAnalyses)?.id)
-                                        .map((analysis) => (
-                                          <div
-                                            key={analysis.id}
-                                            className="border border-slate-200 rounded-lg p-3"
-                                          >
-                                            <div className="flex items-center justify-between mb-2">
-                                              <div className="flex items-center space-x-2">
-                                                <Badge className={getStatusColor(analysis.status)}>
-                                                  {analysis.status}
-                                                </Badge>
-                                                <span className="text-sm text-slate-500">
-                                                  {formatDistanceToNow(new Date(analysis.created_at), { addSuffix: true })}
-                                                </span>
-                                              </div>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => toggleAnalysisExpansion(analysis.id)}
-                                              >
-                                                {expandedAnalyses.has(analysis.id) ? 'Collapse' : 'Expand'}
-                                              </Button>
+                                  .map((analysis) => (
+                                    <div
+                                      key={analysis.id}
+                                      className="border border-slate-200 rounded-lg p-3"
+                                    >
+                                      <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center space-x-2">
+                                          <Badge className={getStatusColor(analysis.status)}>
+                                            {analysis.status}
+                                          </Badge>
+                                          <span className="text-sm text-slate-500">
+                                            {formatDistanceToNow(new Date(analysis.created_at), { addSuffix: true })}
+                                          </span>
+                                        </div>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => toggleAnalysisExpansion(analysis.id)}
+                                        >
+                                          {expandedAnalyses.has(analysis.id) ? 'Collapse' : 'Expand'}
+                                        </Button>
+                                      </div>
+                                      
+                                      {/* Show analysis content only if expanded */}
+                                      {expandedAnalyses.has(analysis.id) && (
+                                        <div className="mt-3 pt-3 border-t">
+                                          {analysis.results?.analysis ? (
+                                            <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                                              {analysis.results.analysis}
                                             </div>
-                                            
-                                            {/* Show analysis content only if expanded */}
-                                            {expandedAnalyses.has(analysis.id) && (
-                                              <div className="mt-3 pt-3 border-t">
-                                                {analysis.results?.analysis ? (
-                                                  <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                                                    {analysis.results.analysis}
-                                                  </div>
-                                                ) : analysis.results && Object.keys(analysis.results).length > 0 ? (
-                                                  <div className="prose prose-sm max-w-none">
-                                                    <pre className="whitespace-pre-wrap">
-                                                      {JSON.stringify(analysis.results, null, 2)}
-                                                    </pre>
-                                                  </div>
-                                                ) : (
-                                                  <p className="text-slate-500">Analysis in progress...</p>
-                                                )}
-                                              </div>
-                                            )}
-                                          </div>
-                                        ))}
+                                          ) : analysis.results && Object.keys(analysis.results).length > 0 ? (
+                                            <div className="prose prose-sm max-w-none">
+                                              <pre className="whitespace-pre-wrap">
+                                                {JSON.stringify(analysis.results, null, 2)}
+                                              </pre>
+                                            </div>
+                                          ) : (
+                                            <p className="text-slate-500">Analysis in progress...</p>
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
-                                  </div>
+                                  ))}
+                              </div>
+                            </div>
                                 )}
                               </>
-                            )}
-                          </div>
+                          )}
+                        </div>
                         )}
                         
                         {/* Extractions Tab */}
                         {activeTab === 'extractions' && (
-                          <div className="space-y-4">
+                        <div className="space-y-4">
                             {currentDocumentExtractions.length === 0 ? (
                               <div className="text-center py-8 text-slate-500">
                                 <FileText className="h-12 w-12 mx-auto mb-4 text-slate-300" />
@@ -2581,28 +2636,28 @@ Full text length: ${extractionResult.text?.length || 0} characters
                               </div>
                               ) : (
                               <>
-                                {currentDocumentExtractions.map((extraction) => (
-                                  <div key={extraction.id} className="border border-slate-200 rounded-lg p-4">
-                                    <div className="flex items-center justify-between mb-3">
-                                      <div className="flex items-center space-x-2">
-                                        <Badge variant="outline">
-                                          {extraction.word_count} words
-                                        </Badge>
-                                        <span className="text-sm text-slate-500">
-                                          {formatDistanceToNow(new Date(extraction.created_at), { addSuffix: true })}
-                                        </span>
-                                      </div>
-                                    </div>
-                                    
-                                    {/* Display extracted text with proper formatting */}
-                                    <div className="whitespace-pre-wrap text-sm leading-relaxed bg-slate-50 p-3 rounded border max-h-64 overflow-y-auto">
-                                      {extraction.extracted_text}
-                                    </div>
-                                  </div>
-                                ))}
+                          {currentDocumentExtractions.map((extraction) => (
+                            <div key={extraction.id} className="border border-slate-200 rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center space-x-2">
+                                  <Badge variant="outline">
+                                    {extraction.word_count} words
+                                  </Badge>
+                                  <span className="text-sm text-slate-500">
+                                    {formatDistanceToNow(new Date(extraction.created_at), { addSuffix: true })}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              {/* Display extracted text with proper formatting */}
+                              <div className="whitespace-pre-wrap text-sm leading-relaxed bg-slate-50 p-3 rounded border max-h-64 overflow-y-auto">
+                                {extraction.extracted_text}
+                              </div>
+                            </div>
+                          ))}
                               </>
                             )}
-                          </div>
+                        </div>
                         )}
                       </CardContent>
                     </Card>
