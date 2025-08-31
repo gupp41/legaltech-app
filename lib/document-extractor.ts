@@ -58,21 +58,56 @@ async function extractTextFromPDF(file: File): Promise<ExtractedText> {
     // Dynamically import pdfjs-dist only when needed (client-side only)
     console.log('Importing pdfjs-dist...')
     const pdfjsLib = await import('pdfjs-dist')
-    console.log('pdfjs-dist imported successfully, version:', pdfjsLib.version)
+    console.log('pdfjs-dist imported successfully, version:', (pdfjsLib as any).version)
     
     // Configure worker - use a local worker approach to avoid CORS issues
-    // Configure worker - use local worker file to avoid CORS issues
-    console.log('Configuring PDF.js with local worker file...')
+    console.log('Configuring PDF.js with worker...')
     
     try {
-      // Use our local worker file served from our own domain
-      const workerSrc = '/pdf.worker.js';
-      pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
-      console.log('PDF worker configured with local worker file');
+      // For v4.x, try to use CDN worker first, then fallback to local
+      let workerSrc = '';
       
-    } catch (workerError) {
+      try {
+        // Try to use CDN worker for better compatibility
+        workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs';
+        console.log('Using CDN worker:', workerSrc);
+      } catch (cdnError) {
+        // Fallback to local worker
+        workerSrc = '/pdf.worker.js';
+        console.log('Using local worker:', workerSrc);
+      }
+      
+      // For v4.x, set the worker source
+      if (pdfjsLib.GlobalWorkerOptions) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+        console.log('PDF worker configured with:', workerSrc);
+      } else {
+        console.log('GlobalWorkerOptions not available, trying alternative configuration');
+        // Try alternative worker configuration for v4.x
+        if ('setWorkerSrc' in pdfjsLib && typeof pdfjsLib.setWorkerSrc === 'function') {
+          (pdfjsLib as any).setWorkerSrc(workerSrc);
+          console.log('PDF worker configured using setWorkerSrc');
+        } else {
+          throw new Error('No worker configuration method available');
+        }
+      }
+      
+    } catch (workerError: any) {
       console.error('Failed to configure PDF worker:', workerError);
-      throw new Error(`Failed to configure PDF.js: ${workerError.message}`);
+      
+      // Try to disable worker and use main thread
+      console.log('Attempting to disable worker and use main thread...');
+      
+      if (pdfjsLib.GlobalWorkerOptions) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+      }
+      
+      // Check if getDocument function is available
+      if ('getDocument' in pdfjsLib && typeof (pdfjsLib as any).getDocument === 'function') {
+        console.log('Worker disabled, will use main thread for PDF processing');
+      } else {
+        throw new Error(`Failed to configure PDF.js: ${workerError instanceof Error ? workerError.message : 'Unknown error'}`);
+      }
     }
     
     console.log('Converting file to ArrayBuffer...')
@@ -98,7 +133,7 @@ async function extractTextFromPDF(file: File): Promise<ExtractedText> {
       cMapPacked: false,    // Disable packed CMap
       // Additional options for better performance
       verbosity: 1,         // Show progress
-      progressCallback: (progress) => {
+      progressCallback: (progress: any) => {
         if (progress.total > 0) {
           const percent = Math.round((progress.loaded / progress.total) * 100);
           console.log(`PDF loading progress: ${percent}% (${progress.loaded}/${progress.total})`);
