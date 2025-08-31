@@ -971,7 +971,7 @@ This should show the actual NDA text being sent to the AI.
                       .from('analyses')
                       .select('id, status, results')
                       .eq('id', existingAnalysis.id)
-                      .single()
+                      .maybeSingle()
                     
                     if (verificationError) {
                       console.error('❌ Database verification failed:', verificationError)
