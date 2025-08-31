@@ -843,7 +843,11 @@ This should show the actual NDA text being sent to the AI.
               
               if (data.done) {
                 console.log('✅ Streaming analysis completed')
-                console.log('🚨 CRITICAL: Analysis completed with full response length:', fullResponse.length)
+                console.log('🚨 CRITICAL: Analysis completed with formatted response length:', data.fullResponse?.length || 'undefined')
+                console.log('🔍 Using formatted response from API instead of raw streaming content')
+                
+                // Use the formatted response from the API, not the raw streaming content
+                const finalFormattedResponse = data.fullResponse || fullResponse
                 
                 // Clear streaming state
                 setStreamingAnalyses(prev => {
@@ -868,8 +872,8 @@ This should show the actual NDA text being sent to the AI.
                 // Update the analysis record to completed immediately
                 console.log('🔄 Updating analysis record to completed...')
                 console.log('🔍 Document ID:', documentId)
-                console.log('🔍 Full response length:', fullResponse.length)
-                console.log('🔍 Full response preview:', fullResponse.substring(0, 200) + '...')
+                console.log('🔍 Formatted response length:', finalFormattedResponse.length)
+                console.log('🔍 Formatted response preview:', finalFormattedResponse.substring(0, 200) + '...')
                 
                 try {
                   // Find the analysis record for this document
@@ -884,7 +888,7 @@ This should show the actual NDA text being sent to the AI.
                   const existingAnalysis = currentAnalyses.find(a => a.document_id === documentId && a.status === 'processing')
                   console.log('🔍 Existing processing analysis:', existingAnalysis ? { id: existingAnalysis.id, status: existingAnalysis.status } : 'None found')
                   
-                                    // AGGRESSIVE APPROACH: Update ANY existing analysis for this document, or create a new one
+                  // AGGRESSIVE APPROACH: Update ANY existing analysis for this document, or create a new one
                   if (anyAnalysisForDocument) {
                     console.log('🔄 Found existing analysis for document, updating to completed...')
                     console.log('🔍 Updating analysis ID:', anyAnalysisForDocument.id)
@@ -895,7 +899,7 @@ This should show the actual NDA text being sent to the AI.
                       .update({
                         status: 'completed',
                         results: {
-                          analysis: fullResponse,
+                          analysis: finalFormattedResponse,
                           model: 'gpt-5-nano',
                           provider: 'Vercel AI Gateway'
                         },
@@ -917,16 +921,16 @@ This should show the actual NDA text being sent to the AI.
                     const { error: createError } = await supabase
                       .from('analyses')
                       .insert({
-                  document_id: documentId,
-                  user_id: user.id,
-                  analysis_type: 'contract_review',
-                  status: 'completed',
-                  results: {
-                    analysis: fullResponse,
-                    model: 'gpt-5-nano',
-                    provider: 'Vercel AI Gateway'
-                  },
-                  completed_at: new Date().toISOString()
+                        document_id: documentId,
+                        user_id: user.id,
+                        analysis_type: 'contract_review',
+                        status: 'completed',
+                        results: {
+                          analysis: finalFormattedResponse,
+                          model: 'gpt-5-nano',
+                          provider: 'Vercel AI Gateway'
+                        },
+                        completed_at: new Date().toISOString()
                       })
                     
                     if (createError) {
