@@ -2,6 +2,209 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import mammoth from "mammoth"
 import { usageTracker } from "@/lib/usage-tracker"
+import { StructuredAnalysis } from "@/types/analysis"
+
+// Helper function to format structured analysis into readable text
+function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
+  let formatted = ''
+  
+  // Summary Section
+  formatted += `# Document Analysis Summary\n\n`
+  formatted += `**Document Purpose:** ${analysis.summary.document_purpose}\n`
+  formatted += `**Document Type:** ${analysis.summary.document_type}\n`
+  formatted += `**Overall Risk Assessment:** ${analysis.summary.overall_assessment.replace('_', ' ').toUpperCase()}\n\n`
+  
+  formatted += `**Key Obligations:**\n`
+  analysis.summary.key_obligations.forEach(obligation => {
+    formatted += `• ${obligation}\n`
+  })
+  formatted += '\n'
+  
+  // Risk Analysis Section
+  formatted += `# Risk Analysis\n\n`
+  formatted += `${analysis.risk_analysis.risk_summary}\n\n`
+  
+  if (analysis.risk_analysis.high_risk_items.length > 0) {
+    formatted += `## 🔴 High Risk Items\n\n`
+    analysis.risk_analysis.high_risk_items.forEach(item => {
+      formatted += `**${item.clause}**\n`
+      formatted += `- Description: ${item.description}\n`
+      formatted += `- Impact: ${item.impact}\n`
+      formatted += `- Recommendation: ${item.recommendation}\n\n`
+    })
+  }
+  
+  if (analysis.risk_analysis.medium_risk_items.length > 0) {
+    formatted += `## 🟡 Medium Risk Items\n\n`
+    analysis.risk_analysis.medium_risk_items.forEach(item => {
+      formatted += `**${item.clause}**\n`
+      formatted += `- Description: ${item.description}\n`
+      formatted += `- Impact: ${item.impact}\n`
+      formatted += `- Recommendation: ${item.recommendation}\n\n`
+    })
+  }
+  
+  if (analysis.risk_analysis.low_risk_items.length > 0) {
+    formatted += `## 🟢 Low Risk Items\n\n`
+    analysis.risk_analysis.low_risk_items.forEach(item => {
+      formatted += `**${item.clause}**\n`
+      formatted += `- Description: ${item.description}\n`
+      formatted += `- Impact: ${item.impact}\n`
+      formatted += `- Recommendation: ${item.recommendation}\n\n`
+    })
+  }
+  
+  // Identified Clauses Section
+  formatted += `# Identified Clauses\n\n`
+  
+  if (analysis.identified_clauses.key_terms.length > 0) {
+    formatted += `## Key Terms\n\n`
+    analysis.identified_clauses.key_terms.forEach(term => {
+      formatted += `**${term.name}** (${term.importance.toUpperCase()})\n`
+      formatted += `- Description: ${term.description}\n`
+      formatted += `- Implications: ${term.implications}\n\n`
+    })
+  }
+  
+  if (analysis.identified_clauses.conditions.length > 0) {
+    formatted += `## Conditions\n\n`
+    analysis.identified_clauses.conditions.forEach(condition => {
+      formatted += `**${condition.name}** (${condition.importance.toUpperCase()})\n`
+      formatted += `- Description: ${condition.description}\n`
+      formatted += `- Implications: ${condition.implications}\n\n`
+    })
+  }
+  
+  if (analysis.identified_clauses.obligations.length > 0) {
+    formatted += `## Obligations\n\n`
+    analysis.identified_clauses.obligations.forEach(obligation => {
+      formatted += `**${obligation.name}** (${obligation.importance.toUpperCase()})\n`
+      formatted += `- Description: ${obligation.description}\n`
+      formatted += `- Implications: ${obligation.implications}\n\n`
+    })
+  }
+  
+  if (analysis.identified_clauses.rights.length > 0) {
+    formatted += `## Rights\n\n`
+    analysis.identified_clauses.rights.forEach(right => {
+      formatted += `**${right.name}** (${right.importance.toUpperCase()})\n`
+      formatted += `- Description: ${right.description}\n`
+      formatted += `- Implications: ${right.implications}\n\n`
+    })
+  }
+  
+  // Missing Clauses Section
+  formatted += `# Missing Clauses & Recommendations\n\n`
+  
+  if (analysis.missing_clauses.recommended_additions.length > 0) {
+    formatted += `## Recommended Additions\n\n`
+    analysis.missing_clauses.recommended_additions.forEach(addition => {
+      formatted += `• ${addition}\n`
+    })
+    formatted += '\n'
+  }
+  
+  if (analysis.missing_clauses.industry_standards.length > 0) {
+    formatted += `## Industry Standards to Consider\n\n`
+    analysis.missing_clauses.industry_standards.forEach(standard => {
+      formatted += `• ${standard}\n`
+    })
+    formatted += '\n'
+  }
+  
+  if (analysis.missing_clauses.compliance_gaps.length > 0) {
+    formatted += `## Compliance Gaps\n\n`
+    analysis.missing_clauses.compliance_gaps.forEach(gap => {
+      formatted += `• ${gap}\n`
+    })
+    formatted += '\n'
+  }
+  
+  // Compliance Section
+  formatted += `# Compliance Considerations\n\n`
+  formatted += `**Compliance Score:** ${analysis.compliance_considerations.compliance_score.replace('_', ' ').toUpperCase()}\n\n`
+  
+  if (analysis.compliance_considerations.regulatory_requirements.length > 0) {
+    formatted += `## Regulatory Requirements\n\n`
+    analysis.compliance_considerations.regulatory_requirements.forEach(req => {
+      formatted += `• ${req}\n`
+    })
+    formatted += '\n'
+  }
+  
+  if (analysis.compliance_considerations.industry_standards.length > 0) {
+    formatted += `## Industry Standards\n\n`
+    analysis.compliance_considerations.industry_standards.forEach(standard => {
+      formatted += `• ${standard}\n`
+    })
+    formatted += '\n'
+  }
+  
+  if (analysis.compliance_considerations.potential_violations.length > 0) {
+    formatted += `## Potential Violations\n\n`
+    analysis.compliance_considerations.potential_violations.forEach(violation => {
+      formatted += `• ${violation}\n`
+    })
+    formatted += '\n'
+  }
+  
+  // Recommendations Section
+  formatted += `# Recommendations\n\n`
+  
+  if (analysis.recommendations.negotiation_points.length > 0) {
+    formatted += `## Negotiation Points\n\n`
+    analysis.recommendations.negotiation_points.forEach(point => {
+      formatted += `• ${point}\n`
+    })
+    formatted += '\n'
+  }
+  
+  if (analysis.recommendations.improvements.length > 0) {
+    formatted += `## Suggested Improvements\n\n`
+    analysis.recommendations.improvements.forEach(improvement => {
+      formatted += `• ${improvement}\n`
+    })
+    formatted += '\n'
+  }
+  
+  if (analysis.recommendations.red_flags.length > 0) {
+    formatted += `## Red Flags\n\n`
+    analysis.recommendations.red_flags.forEach(flag => {
+      formatted += `• ${flag}\n`
+    })
+    formatted += '\n'
+  }
+  
+  if (analysis.recommendations.next_steps.length > 0) {
+    formatted += `## Next Steps\n\n`
+    analysis.recommendations.next_steps.forEach(step => {
+      formatted += `• ${step}\n`
+    })
+    formatted += '\n'
+  }
+  
+  // Technical Details Section
+  formatted += `# Technical Details\n\n`
+  
+  if (analysis.technical_details.contract_value) {
+    formatted += `**Contract Value:** ${analysis.technical_details.contract_value}\n`
+  }
+  if (analysis.technical_details.duration) {
+    formatted += `**Duration:** ${analysis.technical_details.duration}\n`
+  }
+  if (analysis.technical_details.governing_law) {
+    formatted += `**Governing Law:** ${analysis.technical_details.governing_law}\n`
+  }
+  if (analysis.technical_details.jurisdiction) {
+    formatted += `**Jurisdiction:** ${analysis.technical_details.jurisdiction}\n`
+  }
+  
+  if (analysis.technical_details.parties_involved.length > 0) {
+    formatted += `**Parties Involved:** ${analysis.technical_details.parties_involved.join(', ')}\n`
+  }
+  
+  return formatted
+}
 
 export async function POST(request: NextRequest) {
   console.log('🚨 ANALYZE API ROUTE ENTRY POINT REACHED')
@@ -386,15 +589,71 @@ File details:
 DOCUMENT CONTENT:
 ${extractedText}
 
-Please provide a comprehensive legal analysis of the ACTUAL CONTENT of this document, not general advice. Focus on:
+IMPORTANT: You must respond with a valid JSON object that follows this exact structure. Do not include any text before or after the JSON.
 
-1. **Key Terms & Conditions**: Identify and explain the specific contractual terms found in this document
-2. **Potential Risks & Red Flags**: Highlight concerning clauses, unusual terms, or potential legal issues specific to this contract
-3. **Compliance Considerations**: Note any regulatory or compliance requirements mentioned in this document
-4. **Recommendations**: Provide actionable advice for improvement or negotiation based on the actual content
-5. **Summary**: Brief overview of this specific document's purpose and key obligations
+Your response must be a valid JSON object with this structure:
 
-Be specific to the content provided and give practical legal insights based on what's actually in this document.`
+{
+  "summary": {
+    "document_purpose": "Brief description of what this document is for",
+    "document_type": "Type of legal document (e.g., employment contract, NDA, service agreement)",
+    "key_obligations": ["obligation 1", "obligation 2", "obligation 3"],
+    "overall_assessment": "low_risk|medium_risk|high_risk"
+  },
+  "risk_analysis": {
+    "high_risk_items": [
+      {
+        "clause": "Name or description of the clause",
+        "risk_level": "high",
+        "description": "What makes this high risk",
+        "impact": "Potential consequences",
+        "recommendation": "What should be done about it"
+      }
+    ],
+    "medium_risk_items": [/* same structure as high_risk_items */],
+    "low_risk_items": [/* same structure as high_risk_items */],
+    "risk_summary": "Overall assessment of document risks"
+  },
+  "identified_clauses": {
+    "key_terms": [
+      {
+        "name": "Term name",
+        "description": "What this term means",
+        "importance": "critical|important|standard",
+        "implications": "What this means for the parties"
+      }
+    ],
+    "conditions": [/* same structure as key_terms */],
+    "obligations": [/* same structure as key_terms */],
+    "rights": [/* same structure as key_terms */]
+  },
+  "missing_clauses": {
+    "recommended_additions": ["clause 1", "clause 2"],
+    "industry_standards": ["standard 1", "standard 2"],
+    "compliance_gaps": ["gap 1", "gap 2"]
+  },
+  "compliance_considerations": {
+    "regulatory_requirements": ["requirement 1", "requirement 2"],
+    "industry_standards": ["standard 1", "standard 2"],
+    "potential_violations": ["violation 1", "violation 2"],
+    "compliance_score": "compliant|needs_review|non_compliant"
+  },
+  "recommendations": {
+    "negotiation_points": ["point 1", "point 2"],
+    "improvements": ["improvement 1", "improvement 2"],
+    "red_flags": ["flag 1", "flag 2"],
+    "next_steps": ["step 1", "step 2"]
+  },
+  "technical_details": {
+    "contract_value": "Monetary value if applicable",
+    "duration": "Contract duration if specified",
+    "parties_involved": ["party 1", "party 2"],
+    "governing_law": "Applicable law if specified",
+    "jurisdiction": "Legal jurisdiction if specified"
+  }
+}
+
+Analyze the document thoroughly and populate all fields. If a field is not applicable, use an empty array or appropriate default value. Ensure the JSON is valid and complete.`
 
             // 🔍 DEBUG: Show the final prompt being sent to LLM
             console.log('🚨 FINAL DEBUG - Complete LLM prompt:')
@@ -419,16 +678,72 @@ Be specific to the content provided and give practical legal insights based on w
                   {
                     role: 'system',
                     content: `You are a legal AI assistant specializing in contract analysis and legal document review. 
-                    
-Your task is to analyze legal documents and provide professional insights on:
 
-1. **Key Terms & Conditions**: Identify and explain the main contractual terms
-2. **Potential Risks & Red Flags**: Highlight concerning clauses, unusual terms, or potential legal issues
-3. **Compliance Considerations**: Note any regulatory or compliance requirements
-4. **Recommendations**: Provide actionable advice for improvement or negotiation
-5. **Summary**: Brief overview of the document's purpose and key obligations
+IMPORTANT: You must respond with a valid JSON object that follows this exact structure. Do not include any text before or after the JSON.
 
-Be professional, thorough, and provide practical legal insights. Use clear language and structure your response with headings.`
+Your response must be a valid JSON object with this structure:
+
+{
+  "summary": {
+    "document_purpose": "Brief description of what this document is for",
+    "document_type": "Type of legal document (e.g., employment contract, NDA, service agreement)",
+    "key_obligations": ["obligation 1", "obligation 2", "obligation 3"],
+    "overall_assessment": "low_risk|medium_risk|high_risk"
+  },
+  "risk_analysis": {
+    "high_risk_items": [
+      {
+        "clause": "Name or description of the clause",
+        "risk_level": "high",
+        "description": "What makes this high risk",
+        "impact": "Potential consequences",
+        "recommendation": "What should be done about it"
+      }
+    ],
+    "medium_risk_items": [/* same structure as high_risk_items */],
+    "low_risk_items": [/* same structure as high_risk_items */],
+    "risk_summary": "Overall assessment of document risks"
+  },
+  "identified_clauses": {
+    "key_terms": [
+      {
+        "name": "Term name",
+        "description": "What this term means",
+        "importance": "critical|important|standard",
+        "implications": "What this means for the parties"
+      }
+    ],
+    "conditions": [/* same structure as key_terms */],
+    "obligations": [/* same structure as key_terms */],
+    "rights": [/* same structure as key_terms */]
+  },
+  "missing_clauses": {
+    "recommended_additions": ["clause 1", "clause 2"],
+    "industry_standards": ["standard 1", "standard 2"],
+    "compliance_gaps": ["gap 1", "gap 2"]
+  },
+  "compliance_considerations": {
+    "regulatory_requirements": ["requirement 1", "requirement 2"],
+    "industry_standards": ["standard 1", "standard 2"],
+    "potential_violations": ["violation 1", "violation 2"],
+    "compliance_score": "compliant|needs_review|non_compliant"
+  },
+  "recommendations": {
+    "negotiation_points": ["point 1", "point 2"],
+    "improvements": ["improvement 1", "improvement 2"],
+    "red_flags": ["flag 1", "flag 2"],
+    "next_steps": ["step 1", "step 2"]
+  },
+  "technical_details": {
+    "contract_value": "Monetary value if applicable",
+    "duration": "Contract duration if specified",
+    "parties_involved": ["party 1", "party 2"],
+    "governing_law": "Applicable law if specified",
+    "jurisdiction": "Legal jurisdiction if specified"
+  }
+}
+
+Analyze the document thoroughly and populate all fields. If a field is not applicable, use an empty array or appropriate default value. Ensure the JSON is valid and complete.`
                   },
                   {
                     role: 'user',
@@ -473,13 +788,34 @@ Be professional, thorough, and provide practical legal insights. Use clear langu
                       documentData: documentData
                     })
                     
+                    // Try to parse the structured output
+                    let structuredAnalysis: StructuredAnalysis | null = null
+                    let formattedResponse = fullResponse
+                    
+                    try {
+                      const parsed = JSON.parse(fullResponse)
+                      if (parsed && typeof parsed === 'object') {
+                        structuredAnalysis = parsed as StructuredAnalysis
+                        console.log('✅ Successfully parsed structured analysis from streaming')
+                        
+                        // Convert structured analysis to formatted text for display
+                        formattedResponse = formatStructuredAnalysis(structuredAnalysis)
+                      } else {
+                        console.warn('❌ Parsed streaming content is not an object, using raw content')
+                      }
+                    } catch (parseError) {
+                      console.warn('❌ Failed to parse structured output from streaming, using raw content:', parseError)
+                      // Fall back to raw content if parsing fails
+                    }
+                    
                     console.log('🔍 About to update analysis record:', {
                       analysisId,
                       table: 'analyses',
                       updateData: {
                         status: 'completed',
                         results: {
-                          analysis: fullResponse,
+                          analysis: formattedResponse,
+                          structured_analysis: structuredAnalysis,
                           model: 'gpt-5-nano',
                           provider: 'Vercel AI Gateway'
                         },
@@ -500,7 +836,7 @@ Be professional, thorough, and provide practical legal insights. Use clear langu
                     }
 
                     // Send the completed response to the frontend
-                    controller.enqueue(`data: ${JSON.stringify({ done: true, fullResponse })}\n\n`)
+                    controller.enqueue(`data: ${JSON.stringify({ done: true, fullResponse: formattedResponse, structuredAnalysis })}\n\n`)
                     controller.close()
                     return
                   }
@@ -548,16 +884,73 @@ Be professional, thorough, and provide practical legal insights. Use clear langu
             {
               role: 'system',
               content: `You are a legal AI assistant specializing in contract analysis and legal document review. 
-              
-Your task is to analyze legal documents and provide professional insights on:
 
-1. **Key Terms & Conditions**: Identify and explain the main contractual terms
-2. **Potential Risks & Red Flags**: Highlight concerning clauses, unusual terms, or potential legal issues
-3. **Compliance Considerations**: Note any regulatory or compliance requirements
-4. **Recommendations**: Provide actionable advice for improvement or negotiation
-5. **Summary**: Brief overview of the document's purpose and key obligations
+IMPORTANT: You must respond with a valid JSON object that follows this exact structure. Do not include any text before or after the JSON.
 
-Be professional, thorough, and provide practical legal insights. Use clear language and structure your response with headings.`
+Your response must be a valid JSON object with this structure:
+
+{
+  "summary": {
+    "document_purpose": "Brief description of what this document is for",
+    "document_type": "Type of legal document (e.g., employment contract, NDA, service agreement)",
+    "key_obligations": ["obligation 1", "obligation 2", "obligation 3"],
+    "overall_assessment": "low_risk|medium_risk|high_risk"
+  },
+  "risk_analysis": {
+    "high_risk_items": [
+      {
+        "clause": "Name or description of the clause",
+        "risk_level": "high",
+        "description": "What makes this high risk",
+        "impact": "Potential consequences",
+        "recommendation": "What should be done about it"
+      }
+    ],
+    "medium_risk_items": [/* same structure as high_risk_items */],
+    "low_risk_items": [/* same structure as high_risk_items */],
+    "risk_summary": "Overall assessment of document risks"
+  },
+  "identified_clauses": {
+    "key_terms": [
+      {
+        "name": "Term name",
+        "description": "What this term means",
+        "importance": "critical|important|standard",
+        "implications": "What this means for the parties"
+      }
+    ],
+    "conditions": [/* same structure as key_terms */],
+    "obligations": [/* same structure as key_terms */],
+    "rights": [/* same structure as key_terms */]
+  },
+  "missing_clauses": {
+    "recommended_additions": ["clause 1", "clause 2"],
+    "industry_standards": ["standard 1", "standard 2"],
+    "compliance_gaps": ["gap 1", "gap 2"]
+  },
+  "compliance_considerations": {
+    "regulatory_requirements": ["requirement 1", "requirement 2"],
+    "industry_standards": ["standard 1", "standard 2"],
+    "potential_violations": ["violation 1", "violation 2"],
+    "compliance_score": "compliant|needs_review|non_compliant"
+  },
+  "recommendations": {
+    "negotiation_points": ["point 1", "point 2"],
+    "improvements": ["improvement 1", "improvement 2"],
+    "red_flags": ["flag 1", "flag 2"],
+    "next_steps": ["step 1", "step 2"]
+  },
+  "technical_details": {
+    "contract_value": "Monetary value if applicable",
+    "duration": "Contract duration if specified",
+    "parties_involved": ["party 1", "party 2"],
+    "governing_law": "Applicable law if specified",
+    "jurisdiction": "Legal jurisdiction if specified"
+    }
+  }
+}
+
+Analyze the document thoroughly and populate all fields. If a field is not applicable, use an empty array or appropriate default value. Ensure the JSON is valid and complete.`
             },
             {
               role: 'user',
@@ -579,11 +972,32 @@ Be professional, thorough, and provide practical legal insights. Use clear langu
       }
       
       const data = await response.json()
-      const analysisResult = data.choices[0]?.message?.content || 'Analysis failed - no content received'
+      const rawContent = data.choices[0]?.message?.content || 'Analysis failed - no content received'
       
       console.log('Vercel AI Gateway analysis completed successfully')
       console.log('Token usage:', data.usage?.total_tokens || 0)
       console.log('Model used:', data.model)
+      
+      // Parse the structured output
+      let structuredAnalysis: StructuredAnalysis | null = null
+      let analysisResult = rawContent
+      
+      try {
+        // Try to parse the JSON response
+        const parsed = JSON.parse(rawContent)
+        if (parsed && typeof parsed === 'object') {
+          structuredAnalysis = parsed as StructuredAnalysis
+          console.log('✅ Successfully parsed structured analysis')
+          
+          // Convert structured analysis to formatted text for display
+          analysisResult = formatStructuredAnalysis(structuredAnalysis)
+        } else {
+          console.warn('❌ Parsed content is not an object, using raw content')
+        }
+      } catch (parseError) {
+        console.warn('❌ Failed to parse structured output, using raw content:', parseError)
+        // Fall back to raw content if parsing fails
+      }
       
       // Increment usage after successful analysis
       try {
@@ -601,6 +1015,7 @@ Be professional, thorough, and provide practical legal insights. Use clear langu
           status: 'completed',
           results: {
             analysis: analysisResult,
+            structured_analysis: structuredAnalysis,
             model: data.model || 'gpt-5-nano',
             tokens_used: data.usage?.total_tokens || 0,
             provider: 'Vercel AI Gateway'
