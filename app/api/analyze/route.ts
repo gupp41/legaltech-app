@@ -793,19 +793,43 @@ Analyze the document thoroughly and populate all fields. If a field is not appli
                     let formattedResponse = fullResponse
                     
                     try {
-                      const parsed = JSON.parse(fullResponse)
+                      console.log('🔍 Attempting to parse structured output from streaming...')
+                      console.log('🔍 Raw streaming content preview:', fullResponse.substring(0, 200) + '...')
+                      
+                      // Clean up common JSON formatting issues
+                      let cleanedContent = fullResponse
+                        .replace(/(\w+):/g, '"$1":') // Add quotes to unquoted keys
+                        .replace(/,\s*}/g, '}') // Remove trailing commas
+                        .replace(/,\s*]/g, ']') // Remove trailing commas in arrays
+                      
+                      console.log('🔍 Cleaned streaming content preview:', cleanedContent.substring(0, 200) + '...')
+                      
+                      const parsed = JSON.parse(cleanedContent)
                       if (parsed && typeof parsed === 'object') {
                         structuredAnalysis = parsed as StructuredAnalysis
                         console.log('✅ Successfully parsed structured analysis from streaming')
                         
                         // Convert structured analysis to formatted text for display
                         formattedResponse = formatStructuredAnalysis(structuredAnalysis)
+                        console.log('✅ Formatted streaming analysis result length:', formattedResponse.length)
                       } else {
                         console.warn('❌ Parsed streaming content is not an object, using raw content')
                       }
                     } catch (parseError) {
                       console.warn('❌ Failed to parse structured output from streaming, using raw content:', parseError)
-                      // Fall back to raw content if parsing fails
+                      console.log('🔍 Streaming parse error details:', parseError)
+                      
+                      // Try to extract and format what we can from the malformed JSON
+                      try {
+                        // Look for common patterns and try to extract them
+                        const summaryMatch = fullResponse.match(/"document_purpose":\s*"([^"]+)"/)
+                        if (summaryMatch) {
+                          console.log('🔍 Found document purpose in streaming:', summaryMatch[1])
+                          formattedResponse = `# Document Analysis\n\n**Document Purpose:** ${summaryMatch[1]}\n\n*Note: Full structured analysis could not be parsed due to JSON formatting issues. Please check the raw output for complete details.*`
+                        }
+                      } catch (fallbackError) {
+                        console.log('🔍 Streaming fallback formatting also failed:', fallbackError)
+                      }
                     }
                     
                     console.log('🔍 About to update analysis record:', {
@@ -984,19 +1008,43 @@ Analyze the document thoroughly and populate all fields. If a field is not appli
       
       try {
         // Try to parse the JSON response
-        const parsed = JSON.parse(rawContent)
+        console.log('🔍 Attempting to parse structured output...')
+        console.log('🔍 Raw content preview:', rawContent.substring(0, 200) + '...')
+        
+        // Clean up common JSON formatting issues
+        let cleanedContent = rawContent
+          .replace(/(\w+):/g, '"$1":') // Add quotes to unquoted keys
+          .replace(/,\s*}/g, '}') // Remove trailing commas
+          .replace(/,\s*]/g, ']') // Remove trailing commas in arrays
+        
+        console.log('🔍 Cleaned content preview:', cleanedContent.substring(0, 200) + '...')
+        
+        const parsed = JSON.parse(cleanedContent)
         if (parsed && typeof parsed === 'object') {
           structuredAnalysis = parsed as StructuredAnalysis
           console.log('✅ Successfully parsed structured analysis')
           
           // Convert structured analysis to formatted text for display
           analysisResult = formatStructuredAnalysis(structuredAnalysis)
+          console.log('✅ Formatted analysis result length:', analysisResult.length)
         } else {
           console.warn('❌ Parsed content is not an object, using raw content')
         }
       } catch (parseError) {
         console.warn('❌ Failed to parse structured output, using raw content:', parseError)
-        // Fall back to raw content if parsing fails
+        console.log('🔍 Parse error details:', parseError)
+        
+        // Try to extract and format what we can from the malformed JSON
+        try {
+          // Look for common patterns and try to extract them
+          const summaryMatch = rawContent.match(/"document_purpose":\s*"([^"]+)"/)
+          if (summaryMatch) {
+            console.log('🔍 Found document purpose:', summaryMatch[1])
+            analysisResult = `# Document Analysis\n\n**Document Purpose:** ${summaryMatch[1]}\n\n*Note: Full structured analysis could not be parsed due to JSON formatting issues. Please check the raw output for complete details.*`
+          }
+        } catch (fallbackError) {
+          console.log('🔍 Fallback formatting also failed:', fallbackError)
+        }
       }
       
       // Increment usage after successful analysis
