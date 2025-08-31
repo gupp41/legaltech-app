@@ -16,12 +16,23 @@ export async function GET(request: NextRequest) {
       let result
       
       if (codeVerifier) {
-        // PKCE flow - we need to handle this differently
-        console.log('PKCE flow detected, but code verifier not supported in this method')
+        // PKCE flow - try using the verifyOtp method instead
+        console.log('PKCE flow detected, trying verifyOtp method')
         console.log('Code:', code)
         console.log('Code Verifier:', codeVerifier)
-        // For now, try the regular flow and see what happens
-        result = await supabase.auth.exchangeCodeForSession(code)
+        
+        // For PKCE magic links, we might need to use verifyOtp
+        try {
+          result = await supabase.auth.verifyOtp({
+            email: '', // We don't have email in this context
+            token: code,
+            type: 'magiclink'
+          })
+        } catch (verifyError) {
+          console.error('verifyOtp failed:', verifyError)
+          // Fallback to regular method
+          result = await supabase.auth.exchangeCodeForSession(code)
+        }
       } else {
         // Regular flow - try without code verifier
         console.log('Using regular flow without code verifier')

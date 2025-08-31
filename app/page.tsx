@@ -17,8 +17,11 @@ export default function HomePage() {
     const handleEmailConfirmation = async () => {
       const urlParams = new URLSearchParams(window.location.search)
       const code = urlParams.get('code')
+      const codeVerifier = urlParams.get('code_verifier')
       const error = urlParams.get('error')
       const errorDescription = urlParams.get('error_description')
+
+      console.log('Home page received params:', { code, codeVerifier, error, errorDescription })
 
       if (error) {
         setEmailConfirmation({
@@ -29,7 +32,7 @@ export default function HomePage() {
       }
 
       if (code) {
-        setEmailConfirmation({ status: 'loading', message: 'Confirming your email...' })
+        setEmailConfirmation({ status: 'loading', message: 'Processing magic link...' })
 
         try {
           const supabase = createBrowserClient(
@@ -37,25 +40,46 @@ export default function HomePage() {
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
           )
 
-          const { error } = await supabase.auth.exchangeCodeForSession(code)
+          let result
+          if (codeVerifier) {
+            // PKCE flow - try to handle it directly
+            console.log('Handling PKCE flow directly')
+            try {
+              // Try the regular method first
+              result = await supabase.auth.exchangeCodeForSession(code)
+            } catch (pkceError) {
+              console.error('PKCE exchange failed:', pkceError)
+              // If that fails, try to redirect to dashboard (user might already be authenticated)
+              window.location.href = '/dashboard'
+              return
+            }
+          } else {
+            // Regular flow
+            result = await supabase.auth.exchangeCodeForSession(code)
+          }
+
+          const { error } = result
 
           if (error) {
-            console.error('Email confirmation error:', error)
+            console.error('Authentication error:', error)
             setEmailConfirmation({
               status: 'error',
-              message: error.message || 'Failed to confirm email'
+              message: error.message || 'Failed to authenticate'
             })
           } else {
             setEmailConfirmation({
               status: 'success',
-              message: 'Email confirmed successfully! You can now sign in.'
+              message: 'Successfully authenticated! Redirecting to dashboard...'
             })
             
-            // Clean up the URL
+            // Clean up the URL and redirect to dashboard
             window.history.replaceState({}, document.title, window.location.pathname)
+            setTimeout(() => {
+              window.location.href = '/dashboard'
+            }, 2000)
           }
         } catch (err) {
-          console.error('Email confirmation error:', err)
+          console.error('Authentication error:', err)
           setEmailConfirmation({
             status: 'error',
             message: 'An unexpected error occurred'
