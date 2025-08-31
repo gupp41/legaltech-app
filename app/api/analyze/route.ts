@@ -796,18 +796,60 @@ Analyze the document thoroughly and populate all fields. If a field is not appli
                       console.log('🔍 Attempting to parse structured output from streaming...')
                       console.log('🔍 Raw streaming content preview:', fullResponse.substring(0, 200) + '...')
                       
-                      // Clean up common JSON formatting issues
-                      let cleanedContent = fullResponse
-                        .replace(/(\w+):/g, '"$1":') // Add quotes to unquoted keys
-                        .replace(/,\s*}/g, '}') // Remove trailing commas
-                        .replace(/,\s*]/g, ']') // Remove trailing commas in arrays
+                                            // Try multiple JSON parsing approaches
+                      let parsed = null
+                      let parseMethod = 'none'
                       
-                      console.log('🔍 Cleaned streaming content preview:', cleanedContent.substring(0, 200) + '...')
+                      // Method 1: Try parsing the raw content directly
+                      try {
+                        parsed = JSON.parse(fullResponse)
+                        parseMethod = 'direct'
+                        console.log('✅ Successfully parsed JSON directly')
+                      } catch (directError) {
+                        console.log('🔍 Direct parsing failed, trying cleanup...')
+                        
+                        // Method 2: Try with minimal cleanup
+                        try {
+                          let cleanedContent = fullResponse
+                            // Remove trailing commas before closing braces/brackets (most common issue)
+                            .replace(/,\s*([}\]])/g, '$1')
+                            // Fix missing quotes on keys (but be careful)
+                            .replace(/(?<!")(?<!\\)(\w+):\s*"/g, '"$2": "')
+                            .replace(/(?<!")(?<!\\)(\w+):\s*\[/g, '"$2": [')
+                            .replace(/(?<!")(?<!\\)(\w+):\s*\{/g, '"$2": {')
+                            .replace(/(?<!")(?<!\\)(\w+):\s*([^"\[\{,\s][^,]*?)(?=,|\s*[}\]])/g, '"$2": "$3"')
+                          
+                          parsed = JSON.parse(cleanedContent)
+                          parseMethod = 'cleaned'
+                          console.log('✅ Successfully parsed JSON after cleanup')
+                        } catch (cleanupError) {
+                          console.log('🔍 Cleanup parsing failed, trying manual extraction...')
+                          
+                          // Method 3: Try to extract key information manually
+                          try {
+                            const documentPurposeMatch = fullResponse.match(/"document_purpose":\s*"([^"]+)"/)
+                            const documentTypeMatch = fullResponse.match(/"document_type":\s*"([^"]+)"/)
+                            
+                            if (documentPurposeMatch) {
+                              // Create a minimal structured object with what we can extract
+                              parsed = {
+                                summary: {
+                                  document_purpose: documentPurposeMatch[1],
+                                  document_type: documentTypeMatch ? documentTypeMatch[1] : 'Unknown'
+                                }
+                              }
+                              parseMethod = 'manual'
+                              console.log('✅ Successfully extracted key information manually')
+                            }
+                          } catch (manualError) {
+                            console.log('🔍 Manual extraction also failed')
+                          }
+                        }
+                      }
                       
-                      const parsed = JSON.parse(cleanedContent)
                       if (parsed && typeof parsed === 'object') {
                         structuredAnalysis = parsed as StructuredAnalysis
-                        console.log('✅ Successfully parsed structured analysis from streaming')
+                        console.log(`✅ Successfully parsed structured analysis using ${parseMethod} method`)
                         
                         // Convert structured analysis to formatted text for display
                         formattedResponse = formatStructuredAnalysis(structuredAnalysis)
@@ -816,19 +858,28 @@ Analyze the document thoroughly and populate all fields. If a field is not appli
                         console.warn('❌ Parsed streaming content is not an object, using raw content')
                       }
                     } catch (parseError) {
-                      console.warn('❌ Failed to parse structured output from streaming, using raw content:', parseError)
-                      console.log('🔍 Streaming parse error details:', parseError)
+                      console.warn('❌ All JSON parsing methods failed, using raw content:', parseError)
+                      console.log('🔍 Final parsing attempt failed, parseMethod was:', parseMethod)
                       
-                      // Try to extract and format what we can from the malformed JSON
-                      try {
-                        // Look for common patterns and try to extract them
-                        const summaryMatch = fullResponse.match(/"document_purpose":\s*"([^"]+)"/)
-                        if (summaryMatch) {
-                          console.log('🔍 Found document purpose in streaming:', summaryMatch[1])
-                          formattedResponse = `# Document Analysis\n\n**Document Purpose:** ${summaryMatch[1]}\n\n*Note: Full structured analysis could not be parsed due to JSON formatting issues. Please check the raw output for complete details.*`
+                      // Since we already tried manual extraction above, just format the raw response
+                      if (parseMethod === 'none') {
+                        // Try one last manual extraction
+                        try {
+                          const documentPurposeMatch = fullResponse.match(/"document_purpose":\s*"([^"]+)"/)
+                          if (documentPurposeMatch) {
+                            console.log('🔍 Found document purpose in final fallback:', documentPurposeMatch[1])
+                            formattedResponse = `# Document Analysis\n\n**Document Purpose:** ${documentPurposeMatch[1]}\n\n*Note: Full structured analysis could not be parsed due to JSON formatting issues. Please check the raw output for complete details.*`
+                          } else {
+                            // Use the raw response as-is
+                            formattedResponse = fullResponse
+                          }
+                        } catch (finalFallbackError) {
+                          console.log('🔍 Final fallback also failed, using raw response')
+                          formattedResponse = fullResponse
                         }
-                      } catch (fallbackError) {
-                        console.log('🔍 Streaming fallback formatting also failed:', fallbackError)
+                      } else {
+                        // We had some parsing success, use the raw response
+                        formattedResponse = fullResponse
                       }
                     }
                     
