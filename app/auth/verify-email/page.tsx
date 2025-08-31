@@ -24,12 +24,12 @@ export default function VerifyEmailPage() {
             </div>
             <CardTitle className="text-2xl font-semibold">Check your email</CardTitle>
             <CardDescription>
-              We've sent a verification link to your email address. Please click the link to activate your account.
+              We've sent a magic link to your email address. Click the link to sign in to your account.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-sm text-slate-600">
-              Didn't receive the email? Check your spam folder or try signing up again.
+              Didn't receive the email? Check your spam folder or try again.
             </p>
             <Button asChild variant="outline" className="w-full bg-transparent">
               <Link href="/auth/login">Back to sign in</Link>

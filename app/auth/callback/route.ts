@@ -10,16 +10,27 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
     
-    if (!error) {
-      // Successfully confirmed email and created session
-      console.log('Email confirmation successful, redirecting to dashboard')
-      return NextResponse.redirect(`${origin}${next}`)
-    } else {
-      console.error('Email confirmation error:', error)
-      // If there's an error, redirect to login with error message
-      return NextResponse.redirect(`${origin}/auth/login?error=confirmation_failed`)
+    try {
+      // Try to exchange the code for a session (works for both email confirmation and magic links)
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+      
+      if (error) {
+        console.error('Session exchange error:', error)
+        return NextResponse.redirect(`${origin}/auth/login?error=session_failed`)
+      }
+      
+      if (data.session) {
+        // Successfully authenticated, redirect to dashboard
+        console.log('Authentication successful, redirecting to dashboard')
+        return NextResponse.redirect(`${origin}${next}`)
+      } else {
+        console.error('No session returned')
+        return NextResponse.redirect(`${origin}/auth/login?error=no_session`)
+      }
+    } catch (error) {
+      console.error('Unexpected error in callback:', error)
+      return NextResponse.redirect(`${origin}/auth/login?error=unexpected`)
     }
   }
 

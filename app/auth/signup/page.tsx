@@ -16,8 +16,6 @@ import { Scale, Shield } from "lucide-react"
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
     email: "",
-    password: "",
-    confirmPassword: "",
     fullName: "",
     companyName: "",
     role: "",
@@ -36,59 +34,29 @@ export default function SignUpPage() {
     setIsLoading(true)
     setError(null)
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match")
-      setIsLoading(false)
-      return
-    }
 
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters long")
-      setIsLoading(false)
-      return
-    }
 
     try {
-      // For development: Sign up without email confirmation
-      const { data, error } = await supabase.auth.signUp({
+      // Use magic link signup instead of email confirmation
+      const { data, error } = await supabase.auth.signInWithOtp({
         email: formData.email,
-        password: formData.password,
         options: {
-          emailRedirectTo: process.env.NEXT_PUBLIC_VERCEL_URL 
-            ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/auth/callback`
-            : `${window.location.origin}/auth/callback`,
           data: {
             full_name: formData.fullName,
             company_name: formData.companyName,
             role: formData.role,
           },
+          emailRedirectTo: process.env.NEXT_PUBLIC_VERCEL_URL 
+            ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/auth/callback`
+            : `${window.location.origin}/auth/callback`,
         },
       })
       
       if (error) throw error
       
-      // Check if user was created successfully
-      if (data.user && !data.user.email_confirmed_at) {
-        // For development: Auto-confirm the user
-        console.log('User created, auto-confirming for development')
-        
-        // Try to sign in immediately (this should work if email confirmation is disabled)
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        })
-        
-        if (signInError) {
-          console.log('Sign in error:', signInError)
-          // If sign in fails, redirect to verify page
-          router.push("/auth/verify-email")
-        } else {
-          // Successfully signed in, redirect to dashboard
-          router.push("/dashboard")
-        }
-      } else {
-        router.push("/auth/verify-email")
-      }
+      // Magic link sent successfully
+      console.log('Magic link sent to:', formData.email)
+      router.push("/auth/verify-email")
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred")
     } finally {
@@ -170,29 +138,7 @@ export default function SignUpPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={formData.password}
-                  onChange={(e) => handleInputChange("password", e.target.value)}
-                  className="h-11"
-                />
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                  className="h-11"
-                />
-              </div>
 
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-md p-3">
@@ -201,7 +147,7 @@ export default function SignUpPage() {
               )}
 
               <Button type="submit" className="w-full h-11 bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Create account"}
+                {isLoading ? "Sending magic link..." : "Send magic link"}
               </Button>
             </form>
 
