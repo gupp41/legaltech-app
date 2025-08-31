@@ -6,7 +6,7 @@ import { FileUpload } from "@/components/file-upload"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Download, Trash2, BarChart3, Brain, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
+import { FileText, Download, Trash2, BarChart3, Brain, ChevronLeft, ChevronRight, RefreshCw, Settings } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { extractTextFromDocument, truncateText } from "@/lib/document-extractor"
 // Usage tracking is handled server-side in API routes
@@ -1905,6 +1905,14 @@ Full text length: ${extractionResult.text?.length || 0} characters
               <h1 className="text-2xl font-bold text-slate-900">Legal Document Dashboard</h1>
               <p className="text-slate-600">Upload and analyze your legal documents with AI</p>
             </div>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/settings'}
+              className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </Button>
             <Button 
               variant="outline" 
               onClick={async () => {
