@@ -76,19 +76,29 @@ export async function POST(request: NextRequest) {
           interval,
         },
       },
-      // Apply 50% off first month discount
-      discounts: [
-        {
-          coupon: 'FIRST_MONTH_50', // You'll need to create this coupon in Stripe
-        },
-      ],
+      // Note: Coupon removed for now - you can add it back after creating it in Stripe
+      // discounts: [
+      //   {
+      //     coupon: 'FIRST_MONTH_50',
+      //   },
+      // ],
     })
 
     return NextResponse.json({ sessionId: session.id, url: session.url })
   } catch (error) {
     console.error('Error creating checkout session:', error)
+    
+    // Log more details for debugging
+    if (error instanceof Error) {
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+    }
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
