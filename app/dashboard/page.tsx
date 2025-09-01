@@ -835,6 +835,10 @@ This should show the actual NDA text being sent to the AI.
             try {
               const data = JSON.parse(line.slice(6))
               console.log('🔍 Parsed data:', data)
+              console.log('🔍 DEBUG: Line content:', line)
+              console.log('🔍 DEBUG: Parsed data keys:', Object.keys(data))
+              console.log('🔍 DEBUG: Has done property:', 'done' in data)
+              console.log('🔍 DEBUG: Has fullResponse property:', 'fullResponse' in data)
               
               if (data.error) {
                 console.error('❌ Stream error:', data.error)
@@ -853,6 +857,9 @@ This should show the actual NDA text being sent to the AI.
                 
                 // Use the formatted response from the API, not the raw streaming content
                 const finalFormattedResponse = data.fullResponse || fullResponse
+                
+                console.log('🔍 DEBUG: finalFormattedResponse length:', finalFormattedResponse.length)
+                console.log('🔍 DEBUG: finalFormattedResponse preview:', finalFormattedResponse.substring(0, 200) + '...')
                 
                 // Clear streaming state
                 setStreamingAnalyses(prev => {
