@@ -825,10 +825,12 @@ This should show the actual NDA text being sent to the AI.
 
         const chunk = new TextDecoder().decode(value)
         console.log(`📦 Chunk ${chunkCount}:`, chunk.substring(0, 100) + '...')
+        console.log(`🔍 DEBUG: Full chunk content:`, chunk)
 
         const lines = chunk.split('\n')
 
         for (const line of lines) {
+          console.log(`🔍 DEBUG: Processing line: "${line}"`)
           if (line.startsWith('data: ')) {
             console.log('📝 Processing line:', line.substring(0, 100) + '...')
             
