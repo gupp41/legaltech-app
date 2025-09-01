@@ -1222,7 +1222,7 @@ This should show the actual NDA text being sent to the AI.
         if (parsed.summary.key_obligations && parsed.summary.key_obligations.length > 0) {
           formattedMarkdown += `**Key Obligations:**\n`
           parsed.summary.key_obligations.forEach((obligation: string) => {
-            formattedMarkdown += `• ${obligation}\n`
+            formattedMarkdown += `- ${obligation}\n`
           })
           //formattedMarkdown += '\n'
         }
@@ -1318,7 +1318,7 @@ This should show the actual NDA text being sent to the AI.
         if (parsed.missing_clauses.recommended_additions && parsed.missing_clauses.recommended_additions.length > 0) {
           formattedMarkdown += `## ➕ Recommended Additions\n\n`
           parsed.missing_clauses.recommended_additions.forEach((addition: string) => {
-            formattedMarkdown += `• ${addition}\n`
+            formattedMarkdown += `- ${addition}\n`
           })
           formattedMarkdown += '\n'
         }
@@ -1326,7 +1326,7 @@ This should show the actual NDA text being sent to the AI.
         if (parsed.missing_clauses.industry_standards && parsed.missing_clauses.industry_standards.length > 0) {
           formattedMarkdown += `## 🏭 Industry Standards to Consider\n\n`
           parsed.missing_clauses.industry_standards.forEach((standard: string) => {
-            formattedMarkdown += `• ${standard}\n`
+            formattedMarkdown += `- ${standard}\n`
           })
           formattedMarkdown += '\n'
         }
@@ -1334,7 +1334,7 @@ This should show the actual NDA text being sent to the AI.
         if (parsed.missing_clauses.compliance_gaps && parsed.missing_clauses.compliance_gaps.length > 0) {
           formattedMarkdown += `## ⚠️ Compliance Gaps\n\n`
           parsed.missing_clauses.compliance_gaps.forEach((gap: string) => {
-            formattedMarkdown += `• ${gap}\n`
+            formattedMarkdown += `- ${gap}\n`
           })
           formattedMarkdown += '\n'
         }
@@ -1351,7 +1351,7 @@ This should show the actual NDA text being sent to the AI.
         if (parsed.compliance_considerations.regulatory_requirements && parsed.compliance_considerations.regulatory_requirements.length > 0) {
           formattedMarkdown += `## 🏛️ Regulatory Requirements\n\n`
           parsed.compliance_considerations.regulatory_requirements.forEach((req: string) => {
-            formattedMarkdown += `• ${req}\n`
+            formattedMarkdown += `- ${req}\n`
           })
           formattedMarkdown += '\n'
         }
@@ -1359,7 +1359,7 @@ This should show the actual NDA text being sent to the AI.
         if (parsed.compliance_considerations.industry_standards && parsed.compliance_considerations.industry_standards.length > 0) {
           formattedMarkdown += `## 🏭 Industry Standards\n\n`
           parsed.compliance_considerations.industry_standards.forEach((standard: string) => {
-            formattedMarkdown += `• ${standard}\n`
+            formattedMarkdown += `- ${standard}\n`
           })
           formattedMarkdown += '\n'
         }
@@ -1367,7 +1367,7 @@ This should show the actual NDA text being sent to the AI.
         if (parsed.compliance_considerations.potential_violations && parsed.compliance_considerations.potential_violations.length > 0) {
           formattedMarkdown += `## 🚨 Potential Violations\n\n`
           parsed.compliance_considerations.potential_violations.forEach((violation: string) => {
-            formattedMarkdown += `• ${violation}\n`
+            formattedMarkdown += `- ${violation}\n`
           })
           formattedMarkdown += '\n'
         }
@@ -1380,7 +1380,7 @@ This should show the actual NDA text being sent to the AI.
         if (parsed.recommendations.negotiation_points && parsed.recommendations.negotiation_points.length > 0) {
           formattedMarkdown += `## ⚖️ Negotiation Points\n\n`
           parsed.recommendations.negotiation_points.forEach((point: string) => {
-            formattedMarkdown += `• ${point}\n`
+            formattedMarkdown += `- ${point}\n`
           })
           formattedMarkdown += '\n'
         }
@@ -1388,7 +1388,7 @@ This should show the actual NDA text being sent to the AI.
         if (parsed.recommendations.improvements && parsed.recommendations.improvements.length > 0) {
           formattedMarkdown += `## 📈 Suggested Improvements\n\n`
           parsed.recommendations.improvements.forEach((improvement: string) => {
-            formattedMarkdown += `• ${improvement}\n`
+            formattedMarkdown += `- ${improvement}\n`
           })
           formattedMarkdown += '\n'
         }
@@ -1396,7 +1396,7 @@ This should show the actual NDA text being sent to the AI.
         if (parsed.recommendations.red_flags && parsed.recommendations.red_flags.length > 0) {
           formattedMarkdown += `## 🚩 Red Flags\n\n`
           parsed.recommendations.red_flags.forEach((flag: string) => {
-            formattedMarkdown += `• ${flag}\n`
+            formattedMarkdown += `- ${flag}\n`
           })
           formattedMarkdown += '\n'
         }
@@ -1404,7 +1404,7 @@ This should show the actual NDA text being sent to the AI.
         if (parsed.recommendations.next_steps && parsed.recommendations.next_steps.length > 0) {
           formattedMarkdown += `## ⏭️ Next Steps\n\n`
           parsed.recommendations.next_steps.forEach((step: string) => {
-            formattedMarkdown += `• ${step}\n`
+            formattedMarkdown += `- ${step}\n`
           })
           formattedMarkdown += '\n'
         }
@@ -2568,7 +2568,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         if (parsed.summary.key_obligations && parsed.summary.key_obligations.length > 0) {
                                           formattedMarkdown += `**Key Obligations:**\n`
                                           parsed.summary.key_obligations.forEach((obligation: string) => {
-                                            formattedMarkdown += `• ${obligation}\n`
+                                            formattedMarkdown += `- ${obligation}\n`
                                           })
                                           //formattedMarkdown += '\n'
                                         }
@@ -2670,7 +2670,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         if (parsed.missing_clauses.recommended_additions && parsed.missing_clauses.recommended_additions.length > 0) {
                                           formattedMarkdown += `## ➕ Recommended Additions\n\n`
                                           parsed.missing_clauses.recommended_additions.forEach((addition: string) => {
-                                            formattedMarkdown += `• ${addition}\n`
+                                            formattedMarkdown += `- ${addition}\n`
                                           })
                                           formattedMarkdown += '\n'
                                         }
@@ -2678,7 +2678,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         if (parsed.missing_clauses.industry_standards && parsed.missing_clauses.industry_standards.length > 0) {
                                           formattedMarkdown += `## 🏭 Industry Standards to Consider\n\n`
                                           parsed.missing_clauses.industry_standards.forEach((standard: string) => {
-                                            formattedMarkdown += `• ${standard}\n`
+                                            formattedMarkdown += `- ${standard}\n`
                                           })
                                           formattedMarkdown += '\n'
                                         }
@@ -2686,7 +2686,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         if (parsed.missing_clauses.compliance_gaps && parsed.missing_clauses.compliance_gaps.length > 0) {
                                           formattedMarkdown += `## ⚠️ Compliance Gaps\n\n`
                                           parsed.missing_clauses.compliance_gaps.forEach((gap: string) => {
-                                            formattedMarkdown += `• ${gap}\n`
+                                            formattedMarkdown += `- ${gap}\n`
                                           })
                                           formattedMarkdown += '\n'
                                         }
@@ -2703,7 +2703,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         if (parsed.compliance_considerations.regulatory_requirements && parsed.compliance_considerations.regulatory_requirements.length > 0) {
                                           formattedMarkdown += `## 🏛️ Regulatory Requirements\n\n`
                                           parsed.compliance_considerations.regulatory_requirements.forEach((req: string) => {
-                                            formattedMarkdown += `• ${req}\n`
+                                            formattedMarkdown += `- ${req}\n`
                                           })
                                           formattedMarkdown += '\n'
                                         }
@@ -2711,7 +2711,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         if (parsed.compliance_considerations.industry_standards && parsed.compliance_considerations.industry_standards.length > 0) {
                                           formattedMarkdown += `## 🏭 Industry Standards\n\n`
                                           parsed.compliance_considerations.industry_standards.forEach((standard: string) => {
-                                            formattedMarkdown += `• ${standard}\n`
+                                            formattedMarkdown += `- ${standard}\n`
                                           })
                                           formattedMarkdown += '\n'
                                         }
@@ -2719,7 +2719,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         if (parsed.compliance_considerations.potential_violations && parsed.compliance_considerations.potential_violations.length > 0) {
                                           formattedMarkdown += `## 🚨 Potential Violations\n\n`
                                           parsed.compliance_considerations.potential_violations.forEach((violation: string) => {
-                                            formattedMarkdown += `• ${violation}\n`
+                                            formattedMarkdown += `- ${violation}\n`
                                           })
                                           formattedMarkdown += '\n'
                                         }
@@ -2732,7 +2732,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         if (parsed.recommendations.negotiation_points && parsed.recommendations.negotiation_points.length > 0) {
                                           formattedMarkdown += `## ⚖️ Negotiation Points\n\n`
                                           parsed.recommendations.negotiation_points.forEach((point: string) => {
-                                            formattedMarkdown += `• ${point}\n`
+                                            formattedMarkdown += `- ${point}\n`
                                           })
                                           formattedMarkdown += '\n'
                                         }
@@ -2740,7 +2740,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         if (parsed.recommendations.improvements && parsed.recommendations.improvements.length > 0) {
                                           formattedMarkdown += `## 📈 Suggested Improvements\n\n`
                                           parsed.recommendations.improvements.forEach((improvement: string) => {
-                                            formattedMarkdown += `• ${improvement}\n`
+                                            formattedMarkdown += `- ${improvement}\n`
                                           })
                                           formattedMarkdown += '\n'
                                         }
@@ -2748,7 +2748,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         if (parsed.recommendations.red_flags && parsed.recommendations.red_flags.length > 0) {
                                           formattedMarkdown += `## 🚩 Red Flags\n\n`
                                           parsed.recommendations.red_flags.forEach((flag: string) => {
-                                            formattedMarkdown += `• ${flag}\n`
+                                            formattedMarkdown += `- ${flag}\n`
                                           })
                                           formattedMarkdown += '\n'
                                         }
@@ -2756,7 +2756,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         if (parsed.recommendations.next_steps && parsed.recommendations.next_steps.length > 0) {
                                           formattedMarkdown += `## ⏭️ Next Steps\n\n`
                                           parsed.recommendations.next_steps.forEach((step: string) => {
-                                            formattedMarkdown += `• ${step}\n`
+                                            formattedMarkdown += `- ${step}\n`
                                           })
                                           formattedMarkdown += '\n'
                                         }
@@ -2795,7 +2795,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                               .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mb-2">$1</h1>')
                                               .replace(/^## (.*$)/gm, '<h2 class="text-lg font-semibold mb-2 mt-4">$1</h2>')
                                               .replace(/^### (.*$)/gm, '<h3 class="text-base font-medium mb-2 mt-3">$1</h3>')
-                                              .replace(/^• (.*$)/gm, '<li class="ml-4">$1</li>')
+                                              .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
                                               .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
                                               .replace(/\n\n/g, '</p><p class="mb-2">')
                                               .replace(/^/g, '<p class="mb-2">')
@@ -2955,7 +2955,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     if (parsed.summary.key_obligations && parsed.summary.key_obligations.length > 0) {
                                                       formattedMarkdown += `**Key Obligations:**\n`
                                                       parsed.summary.key_obligations.forEach((obligation: string) => {
-                                                        formattedMarkdown += `• ${obligation}\n`
+                                                        formattedMarkdown += `- ${obligation}\n`
                                                       })
                                                       //formattedMarkdown += '\n'
                                                     }
@@ -3051,7 +3051,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     if (parsed.missing_clauses.recommended_additions && parsed.missing_clauses.recommended_additions.length > 0) {
                                                       formattedMarkdown += `## ➕ Recommended Additions\n\n`
                                                       parsed.missing_clauses.recommended_additions.forEach((addition: string) => {
-                                                        formattedMarkdown += `• ${addition}\n`
+                                                        formattedMarkdown += `- ${addition}\n`
                                                       })
                                                       formattedMarkdown += '\n'
                                                     }
@@ -3059,7 +3059,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     if (parsed.missing_clauses.industry_standards && parsed.missing_clauses.industry_standards.length > 0) {
                                                       formattedMarkdown += `## 🏭 Industry Standards to Consider\n\n`
                                                       parsed.missing_clauses.industry_standards.forEach((standard: string) => {
-                                                        formattedMarkdown += `• ${standard}\n`
+                                                        formattedMarkdown += `- ${standard}\n`
                                                       })
                                                       formattedMarkdown += '\n'
                                                     }
@@ -3067,7 +3067,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     if (parsed.missing_clauses.compliance_gaps && parsed.missing_clauses.compliance_gaps.length > 0) {
                                                       formattedMarkdown += `## ⚠️ Compliance Gaps\n\n`
                                                       parsed.missing_clauses.compliance_gaps.forEach((gap: string) => {
-                                                        formattedMarkdown += `• ${gap}\n`
+                                                        formattedMarkdown += `- ${gap}\n`
                                                       })
                                                       formattedMarkdown += '\n'
                                                     }
@@ -3084,7 +3084,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     if (parsed.compliance_considerations.regulatory_requirements && parsed.compliance_considerations.regulatory_requirements.length > 0) {
                                                       formattedMarkdown += `## 🏛️ Regulatory Requirements\n\n`
                                                       parsed.compliance_considerations.regulatory_requirements.forEach((req: string) => {
-                                                        formattedMarkdown += `• ${req}\n`
+                                                        formattedMarkdown += `- ${req}\n`
                                                       })
                                                       formattedMarkdown += '\n'
                                                     }
@@ -3092,7 +3092,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     if (parsed.compliance_considerations.industry_standards && parsed.compliance_considerations.industry_standards.length > 0) {
                                                       formattedMarkdown += `## 🏭 Industry Standards\n\n`
                                                       parsed.compliance_considerations.industry_standards.forEach((standard: string) => {
-                                                        formattedMarkdown += `• ${standard}\n`
+                                                        formattedMarkdown += `- ${standard}\n`
                                                       })
                                                       formattedMarkdown += '\n'
                                                     }
@@ -3100,7 +3100,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     if (parsed.compliance_considerations.potential_violations && parsed.compliance_considerations.potential_violations.length > 0) {
                                                       formattedMarkdown += `## 🚨 Potential Violations\n\n`
                                                       parsed.compliance_considerations.potential_violations.forEach((violation: string) => {
-                                                        formattedMarkdown += `• ${violation}\n`
+                                                        formattedMarkdown += `- ${violation}\n`
                                                       })
                                                       formattedMarkdown += '\n'
                                                     }
@@ -3113,7 +3113,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     if (parsed.recommendations.negotiation_points && parsed.recommendations.negotiation_points.length > 0) {
                                                       formattedMarkdown += `## ⚖️ Negotiation Points\n\n`
                                                       parsed.recommendations.negotiation_points.forEach((point: string) => {
-                                                        formattedMarkdown += `• ${point}\n`
+                                                        formattedMarkdown += `- ${point}\n`
                                                       })
                                                       formattedMarkdown += '\n'
                                                     }
@@ -3121,7 +3121,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     if (parsed.recommendations.improvements && parsed.recommendations.improvements.length > 0) {
                                                       formattedMarkdown += `## 📈 Suggested Improvements\n\n`
                                                       parsed.recommendations.improvements.forEach((improvement: string) => {
-                                                        formattedMarkdown += `• ${improvement}\n`
+                                                        formattedMarkdown += `- ${improvement}\n`
                                                       })
                                                       formattedMarkdown += '\n'
                                                     }
@@ -3129,7 +3129,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     if (parsed.recommendations.red_flags && parsed.recommendations.red_flags.length > 0) {
                                                       formattedMarkdown += `## 🚩 Red Flags\n\n`
                                                       parsed.recommendations.red_flags.forEach((flag: string) => {
-                                                        formattedMarkdown += `• ${flag}\n`
+                                                        formattedMarkdown += `- ${flag}\n`
                                                       })
                                                       formattedMarkdown += '\n'
                                                     }
@@ -3137,7 +3137,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     if (parsed.recommendations.next_steps && parsed.recommendations.next_steps.length > 0) {
                                                       formattedMarkdown += `## ⏭️ Next Steps\n\n`
                                                       parsed.recommendations.next_steps.forEach((step: string) => {
-                                                        formattedMarkdown += `• ${step}\n`
+                                                        formattedMarkdown += `- ${step}\n`
                                                       })
                                                       formattedMarkdown += '\n'
                                                     }
@@ -3176,7 +3176,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                           .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mb-2">$1</h1>')
                                                           .replace(/^## (.*$)/gm, '<h2 class="text-lg font-semibold mb-2 mt-4">$1</h2>')
                                                           .replace(/^### (.*$)/gm, '<h3 class="text-base font-medium mb-2 mt-3">$1</h3>')
-                                                          .replace(/^• (.*$)/gm, '<li class="ml-4">$1</li>')
+                                                          .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
                                                           .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
                                                           .replace(/\n\n/g, '</p><p class="mb-2">')
                                                           .replace(/^/g, '<p class="mb-2">')
@@ -3314,7 +3314,6 @@ Full text length: ${extractionResult.text?.length || 0} characters
                         .replace(/^# (.*$)/gm, '<h1 class="text-sm sm:text-base font-bold mb-1">$1</h1>')
                         .replace(/^## (.*$)/gm, '<h2 class="text-xs sm:text-sm font-semibold mb-1 mt-2">$1</h2>')
                         .replace(/^### (.*$)/gm, '<h3 class="text-xs sm:text-sm font-medium mb-1 mt-2">$1</h3>')
-                        .replace(/^• (.*$)/gm, '<li class="ml-2 text-xs sm:text-sm">$1</li>')
                         .replace(/^- (.*$)/gm, '<li class="ml-2 text-xs sm:text-sm">$1</li>')
                         .replace(/\n\n/g, '</p><p class="mb-1 text-xs sm:text-sm">')
                         .replace(/^/g, '<p class="mb-1 text-xs sm:text-sm">')
