@@ -147,6 +147,18 @@ export default function SettingsPage() {
     }
   }, [user?.id])
 
+  // Check for successful payment and refresh data
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    if (urlParams.get('success') === 'true') {
+      // Refresh user data after successful payment
+      setTimeout(() => {
+        checkUser()
+        fetchUserData()
+      }, 1000)
+    }
+  }, [])
+
   // Helper functions for pricing
   const getPlusPrice = () => {
     return plusInterval === 'monthly' ? '$29/month' : '$290/year'
@@ -168,12 +180,19 @@ export default function SettingsPage() {
     try {
       const { data: { user: authUser } } = await supabase.auth.getUser()
       if (authUser) {
+        // Fetch user profile data including current plan
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('current_plan, plan_start_date, plan_end_date')
+          .eq('id', authUser.id)
+          .single()
+
         setUser({
           id: authUser.id,
           email: authUser.email || '',
-          current_plan: 'free',
-          plan_start_date: new Date().toISOString(),
-          plan_end_date: undefined
+          current_plan: profileData?.current_plan || 'free',
+          plan_start_date: profileData?.plan_start_date || new Date().toISOString(),
+          plan_end_date: profileData?.plan_end_date || undefined
         })
       }
     } catch (error) {
