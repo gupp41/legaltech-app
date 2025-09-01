@@ -24,7 +24,8 @@ import {
   Download,
   Bell,
   Palette,
-  Globe
+  Globe,
+  ArrowLeft
 } from "lucide-react"
 import { UsageDisplay } from "@/components/usage-display"
 
@@ -127,6 +128,8 @@ export default function SettingsPage() {
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const [plusInterval, setPlusInterval] = useState<'monthly' | 'yearly'>('monthly')
   const [maxInterval, setMaxInterval] = useState<'monthly' | 'yearly'>('monthly')
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -354,6 +357,64 @@ export default function SettingsPage() {
     }
   }
 
+  const handleDeleteAccount = async () => {
+    try {
+      setDeleteLoading(true)
+      
+      if (!user?.id) {
+        console.error('No user ID available')
+        return
+      }
+
+      console.log('Starting account deletion process for user:', user.id)
+
+      // Delete user data from all tables
+      const tables = ['analyses', 'text_extractions', 'documents', 'usage_tracking', 'subscriptions']
+      
+      for (const table of tables) {
+        try {
+          const { error } = await supabase
+            .from(table)
+            .delete()
+            .eq('user_id', user.id)
+          
+          if (error) {
+            console.error(`Error deleting from ${table}:`, error)
+          } else {
+            console.log(`Successfully deleted data from ${table}`)
+          }
+        } catch (error) {
+          console.error(`Exception deleting from ${table}:`, error)
+        }
+      }
+
+      // Delete user account from Supabase auth
+      try {
+        const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id)
+        
+        if (deleteError) {
+          console.error('Error deleting user account:', deleteError)
+          // Fallback: sign out the user
+          await supabase.auth.signOut()
+          window.location.href = '/auth/login'
+        } else {
+          console.log('Successfully deleted user account')
+          window.location.href = '/auth/login'
+        }
+      } catch (error) {
+        console.error('Exception during account deletion:', error)
+        // Fallback: sign out the user
+        await supabase.auth.signOut()
+        window.location.href = '/auth/login'
+      }
+
+    } catch (error) {
+      console.error('Unexpected error during account deletion:', error)
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -377,31 +438,47 @@ export default function SettingsPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="mb-8">
+        <div className="flex items-center gap-4 mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.href = '/dashboard'}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </div>
         <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
         <p className="text-gray-600 mt-2">Manage your account, subscription, and preferences</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="account" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            Account
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 gap-1">
+          <TabsTrigger value="account" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <User className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Account</span>
+            <span className="sm:hidden">Account</span>
           </TabsTrigger>
-          <TabsTrigger value="subscription" className="flex items-center gap-2">
-            <Crown className="h-4 w-4" />
-            Subscription
+          <TabsTrigger value="subscription" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Crown className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Subscription</span>
+            <span className="sm:hidden">Plan</span>
           </TabsTrigger>
-          <TabsTrigger value="usage" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Usage
+          <TabsTrigger value="usage" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Usage</span>
+            <span className="sm:hidden">Usage</span>
           </TabsTrigger>
-          <TabsTrigger value="billing" className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            Billing
+          <TabsTrigger value="billing" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <CreditCard className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Billing</span>
+            <span className="sm:hidden">Billing</span>
           </TabsTrigger>
-          <TabsTrigger value="preferences" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Preferences
+          <TabsTrigger value="preferences" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Preferences</span>
+            <span className="sm:hidden">Settings</span>
           </TabsTrigger>
         </TabsList>
 
@@ -447,19 +524,26 @@ export default function SettingsPage() {
               
               <Separator />
               
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
+                            <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setShowPasswordModal(true)}
+                  className="w-full sm:w-auto"
                 >
                   Change Password
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="w-full sm:w-auto">
                   Export Data
                 </Button>
-                <Button variant="destructive" size="sm">
-                  Delete Account
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={() => setShowDeleteModal(true)}
+                  disabled={deleteLoading}
+                  className="w-full sm:w-auto"
+                >
+                  {deleteLoading ? 'Deleting...' : 'Delete Account'}
                 </Button>
               </div>
             </CardContent>
@@ -643,7 +727,7 @@ export default function SettingsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <UsageDisplay />
+              <UsageDisplay userId={user.id} />
               
               <Separator className="my-6" />
               
@@ -945,6 +1029,69 @@ export default function SettingsPage() {
                   Cancel
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-red-600">Delete Account</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDeleteModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="text-sm font-medium text-red-800">Warning: This action cannot be undone</h4>
+                    <p className="text-sm text-red-700 mt-1">
+                      Deleting your account will permanently remove:
+                    </p>
+                    <ul className="text-sm text-red-700 mt-2 list-disc list-inside space-y-1">
+                      <li>All your uploaded documents</li>
+                      <li>All AI analysis results</li>
+                      <li>Your usage history and statistics</li>
+                      <li>Your subscription and billing information</li>
+                      <li>Your account and login credentials</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-sm text-gray-600">
+                Are you absolutely sure you want to delete your account? This action is permanent and cannot be reversed.
+              </p>
+            </div>
+            
+            <div className="flex space-x-3 mt-6">
+              <Button
+                variant="destructive"
+                onClick={handleDeleteAccount}
+                disabled={deleteLoading}
+                className="flex-1"
+              >
+                {deleteLoading ? 'Deleting Account...' : 'Yes, Delete My Account'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1"
+                disabled={deleteLoading}
+              >
+                Cancel
+              </Button>
             </div>
           </div>
         </div>
