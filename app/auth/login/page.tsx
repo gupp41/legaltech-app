@@ -11,6 +11,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { Scale, Shield } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -80,20 +81,23 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo and branding */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="bg-blue-600 p-2 rounded-lg">
-              <Scale className="h-6 w-6 text-white" />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="bg-blue-600 p-2 rounded-lg">
+                <Scale className="h-6 w-6 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-foreground">LegalTech AI</h1>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">LegalTech AI</h1>
+            <ThemeToggle />
           </div>
-          <p className="text-slate-600">Automated legal document analysis</p>
+          <p className="text-muted-foreground">Automated legal document analysis</p>
         </div>
 
-        <Card className="shadow-lg border-0">
+        <Card className="shadow-lg">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-semibold text-center">Welcome back</CardTitle>
             <CardDescription className="text-center">Sign in to your account to continue</CardDescription>
@@ -142,9 +146,9 @@ export default function LoginPage() {
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-muted-foreground">
                 Don't have an account?{" "}
-                <Link href="/auth/signup" className="font-medium text-blue-600 hover:text-blue-500">
+                <Link href="/auth/signup" className="font-medium text-primary hover:text-primary/80">
                   Create account
                 </Link>
               </p>
@@ -153,7 +157,7 @@ export default function LoginPage() {
         </Card>
 
         {/* Security badge */}
-        <div className="mt-6 flex items-center justify-center gap-2 text-sm text-slate-500">
+        <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
           <Shield className="h-4 w-4" />
           <span>Enterprise-grade security & compliance</span>
         </div>

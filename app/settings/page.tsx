@@ -28,6 +28,7 @@ import {
   ArrowLeft
 } from "lucide-react"
 import { UsageDisplay } from "@/components/usage-display"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 interface User {
   id: string
@@ -235,13 +236,13 @@ export default function SettingsPage() {
   const getPlanColor = (plan: string) => {
     switch (plan) {
       case 'free':
-        return 'bg-slate-100 text-slate-800'
+        return 'bg-muted text-muted-foreground'
       case 'plus':
         return 'bg-blue-100 text-blue-800'
       case 'max':
         return 'bg-purple-100 text-purple-800'
       default:
-        return 'bg-slate-100 text-slate-800'
+        return 'bg-muted text-muted-foreground'
     }
   }
 
@@ -429,7 +430,7 @@ export default function SettingsPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Please log in to access settings</h1>
+          <h1 className="text-2xl font-bold text-foreground">Please log in to access settings</h1>
         </div>
       </div>
     )
@@ -438,7 +439,7 @@ export default function SettingsPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="mb-8">
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center justify-between mb-4">
           <Button
             variant="outline"
             size="sm"
@@ -448,9 +449,10 @@ export default function SettingsPage() {
             <ArrowLeft className="h-4 w-4" />
             Back to Dashboard
           </Button>
+          <ThemeToggle />
         </div>
-        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600 mt-2">Manage your account, subscription, and preferences</p>
+        <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+        <p className="text-muted-foreground mt-2">Manage your account, subscription, and preferences</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -494,8 +496,8 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Email</label>
-                  <p className="text-gray-900 mt-1">{user.email}</p>
+                  <label className="text-sm font-medium text-foreground">Email</label>
+                  <p className="text-foreground mt-1">{user.email}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">Current Plan</label>
@@ -565,10 +567,10 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-4">
                   {getPlanIcon(user.current_plan)}
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900">
+                    <h3 className="text-xl font-semibold text-foreground">
                       {user.current_plan.charAt(0).toUpperCase() + user.current_plan.slice(1)} Plan
                     </h3>
-                    <p className="text-gray-600">
+                    <p className="text-muted-foreground">
                       {subscription?.stripe_subscription_id ? 'Active Subscription' : 'Free Plan'}
                     </p>
                   </div>
@@ -590,10 +592,10 @@ export default function SettingsPage() {
                 {/* Free Plan */}
                 <div className="border rounded-lg p-6 text-center">
                   <div className="flex justify-center mb-4">
-                    <Shield className="h-12 w-12 text-slate-600" />
+                    <Shield className="h-12 w-12 text-muted-foreground" />
                   </div>
                   <h3 className="text-xl font-semibold mb-2">Free</h3>
-                  <p className="text-3xl font-bold mb-4">$0<span className="text-sm text-gray-500">/month</span></p>
+                  <p className="text-3xl font-bold mb-4">$0<span className="text-sm text-muted-foreground">/month</span></p>
                   <ul className="text-left space-y-2 mb-6">
                     {PLAN_FEATURES.free.map((feature, index) => (
                       <li key={index} className="flex items-center gap-2 text-sm">
@@ -859,8 +861,8 @@ export default function SettingsPage() {
               ) : (
                 <div className="text-center py-8">
                   <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Subscription</h3>
-                  <p className="text-gray-600 mb-4">
+                  <h3 className="text-lg font-medium text-foreground mb-2">No Active Subscription</h3>
+                  <p className="text-muted-foreground mb-4">
                     You're currently on the free plan. Upgrade to unlock more features and higher limits.
                   </p>
                   <Button onClick={() => setActiveTab("subscription")}>

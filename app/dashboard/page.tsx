@@ -11,6 +11,7 @@ import { formatDistanceToNow } from "date-fns"
 import { extractTextFromDocument, truncateText } from "@/lib/document-extractor"
 // Usage tracking is handled server-side in API routes
 import { UsageDisplay } from "@/components/usage-display"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 interface Document {
   id: string
@@ -2009,15 +2010,15 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
   const getStatusColor = (status: string) => {
     switch (status) {
       case "uploaded":
-        return "bg-blue-100 text-blue-800"
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
       case "analyzing":
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
       case "completed":
-        return "bg-green-100 text-green-800"
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
       case "error":
-        return "bg-red-100 text-red-800"
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
       default:
-        return "bg-slate-100 text-slate-800"
+        return "bg-muted text-muted-foreground"
     }
   }
 
@@ -2179,47 +2180,49 @@ Full text length: ${extractionResult.text?.length || 0} characters
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-slate-600">Loading dashboard...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading dashboard...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="bg-white border-b border-slate-200">
+    <div className="min-h-screen bg-background">
+      <div className="bg-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Legal Document Dashboard</h1>
-              <p className="text-slate-600">Upload and analyze your legal documents with AI</p>
+              <h1 className="text-2xl font-bold text-foreground">Legal Document Dashboard</h1>
+              <p className="text-muted-foreground">Upload and analyze your legal documents with AI</p>
             </div>
             
-            {/* Hamburger Menu */}
-            <div className="relative">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setHamburgerMenuOpen(!hamburgerMenuOpen)}
-                className="flex items-center gap-2"
-              >
-                <Menu className="h-4 w-4" />
-                Menu
-              </Button>
+            {/* Header Actions */}
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setHamburgerMenuOpen(!hamburgerMenuOpen)}
+                  className="flex items-center gap-2"
+                >
+                  <Menu className="h-4 w-4" />
+                  Menu
+                </Button>
               
               {/* Dropdown Menu */}
               {hamburgerMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-slate-200 z-50">
+                <div className="absolute right-0 mt-2 w-48 bg-popover rounded-md shadow-lg border border-border z-50">
                   <div className="py-1">
                     <button
                       onClick={() => {
                         window.location.href = '/settings'
                         setHamburgerMenuOpen(false)
                       }}
-                      className="flex items-center w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                      className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
                     >
                       <Settings className="h-4 w-4 mr-3" />
                       Settings
@@ -2240,7 +2243,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                           console.error('Sign out exception:', error)
                         }
                       }}
-                      className="flex items-center w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                      className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
                     >
                       <LogOut className="h-4 w-4 mr-3" />
                       Sign Out
@@ -2248,6 +2251,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                   </div>
                 </div>
               )}
+              </div>
             </div>
           </div>
         </div>
@@ -2255,7 +2259,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
 
       {/* Subscription Status - moved below header */}
       {user?.id && (
-        <div className="bg-white border-b border-slate-200">
+        <div className="bg-card border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <UsageDisplay userId={user.id} />
           </div>

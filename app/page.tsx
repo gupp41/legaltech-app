@@ -6,6 +6,7 @@ import { Scale, FileText, Shield, Zap, Users, TrendingUp, CheckCircle, AlertCirc
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { createBrowserClient } from '@supabase/ssr'
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function HomePage() {
   const [emailConfirmation, setEmailConfirmation] = useState<{
@@ -135,7 +136,7 @@ export default function HomePage() {
               <div className="bg-blue-600 p-2 rounded-lg">
                 <Scale className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-slate-900">LegalTech AI</h1>
+              <h1 className="text-2xl font-bold text-foreground">LegalTech AI</h1>
             </div>
           </div>
 
@@ -173,17 +174,18 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted">
       {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="bg-blue-600 p-2 rounded-lg">
               <Scale className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-xl font-bold text-slate-900">LegalTech AI</h1>
+            <h1 className="text-xl font-bold text-foreground">LegalTech AI</h1>
           </div>
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <Button asChild variant="ghost">
               <Link href="/auth/login">Sign in</Link>
             </Button>
@@ -197,10 +199,10 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-20 text-center">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-5xl font-bold text-slate-900 mb-6">
+          <h1 className="text-5xl font-bold text-foreground mb-6">
             Automate Your Legal Workflows with <span className="text-blue-600">AI-Powered Analysis</span>
           </h1>
-          <p className="text-xl text-slate-600 mb-8 leading-relaxed">
+          <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
             Transform how you handle contracts, compliance checks, and legal research. Cut costs by 60% and improve
             processing speed by 10x with our intelligent automation platform.
           </p>
@@ -218,8 +220,8 @@ export default function HomePage() {
       {/* Features Section */}
       <section id="features" className="container mx-auto px-4 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-slate-900 mb-4">Powerful Features for Legal Professionals</h2>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+          <h2 className="text-3xl font-bold text-foreground mb-4">Powerful Features for Legal Professionals</h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Everything you need to streamline legal processes and make data-driven decisions
           </p>
         </div>
@@ -320,7 +322,7 @@ export default function HomePage() {
               </div>
               <span className="font-semibold">LegalTech AI</span>
             </div>
-            <p className="text-slate-400">© 2024 LegalTech AI. All rights reserved.</p>
+            <p className="text-muted-foreground">© 2024 LegalTech AI. All rights reserved.</p>
           </div>
         </div>
       </footer>
