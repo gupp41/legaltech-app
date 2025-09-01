@@ -6,6 +6,7 @@ import { StructuredAnalysis } from "@/types/analysis"
 
 // Helper function to format structured analysis into readable text
 function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
+  console.log('🔍 API: formatStructuredAnalysis function called with:', analysis)
   let formatted = ''
   
   // Summary Section
