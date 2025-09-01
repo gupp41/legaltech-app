@@ -139,6 +139,7 @@ export default function SettingsPage() {
   )
 
   useEffect(() => {
+    console.log('🔍 Settings Debug - useEffect triggered, calling checkUser')
     checkUser()
   }, [])
 
@@ -189,7 +190,9 @@ export default function SettingsPage() {
 
   const checkUser = async () => {
     try {
+      console.log('🔍 Settings Debug - checkUser function called')
       const { data: { user: authUser } } = await supabase.auth.getUser()
+      console.log('🔍 Settings Debug - authUser:', authUser)
       if (authUser) {
         // Fetch user profile data including current plan
         const { data: profileData, error: profileError } = await supabase
@@ -217,9 +220,11 @@ export default function SettingsPage() {
           plan_start_date: profileData?.plan_start_date || new Date().toISOString(),
           plan_end_date: profileData?.plan_end_date || undefined
         })
+      } else {
+        console.log('🔍 Settings Debug - No authUser found')
       }
     } catch (error) {
-      console.error('Error checking user:', error)
+      console.error('🔍 Settings Debug - Error in checkUser:', error)
     }
   }
 
