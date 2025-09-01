@@ -99,6 +99,18 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS current_plan TEXT DEFAULT '
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS plan_start_date TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS plan_end_date TIMESTAMP WITH TIME ZONE;
 
+-- Create text_extractions table
+CREATE TABLE IF NOT EXISTS public.text_extractions (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    document_id UUID NOT NULL REFERENCES public.documents(id) ON DELETE CASCADE,
+    extracted_text TEXT NOT NULL,
+    word_count INTEGER NOT NULL,
+    extraction_method VARCHAR(50) DEFAULT 'pdf_extraction',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ============================================================================
 -- STEP 3: INDEXES FOR PERFORMANCE
 -- ============================================================================
@@ -110,6 +122,11 @@ CREATE INDEX IF NOT EXISTS idx_documents_upload_status ON public.documents(uploa
 CREATE INDEX IF NOT EXISTS idx_analyses_user_id ON public.analyses(user_id);
 CREATE INDEX IF NOT EXISTS idx_analyses_document_id ON public.analyses(document_id);
 CREATE INDEX IF NOT EXISTS idx_analyses_status ON public.analyses(status);
+
+-- Text extractions indexes
+CREATE INDEX IF NOT EXISTS idx_text_extractions_user_id ON public.text_extractions(user_id);
+CREATE INDEX IF NOT EXISTS idx_text_extractions_document_id ON public.text_extractions(document_id);
+CREATE INDEX IF NOT EXISTS idx_text_extractions_created_at ON public.text_extractions(created_at);
 
 -- Subscription system indexes
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON public.subscriptions(user_id);
@@ -129,6 +146,7 @@ ALTER TABLE public.analyses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.shared_documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.usage_tracking ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.text_extractions ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for profiles
 CREATE POLICY "profiles_select_own" ON public.profiles FOR SELECT USING (auth.uid() = id);
@@ -147,6 +165,12 @@ CREATE POLICY "analyses_select_own" ON public.analyses FOR SELECT USING (auth.ui
 CREATE POLICY "analyses_insert_own" ON public.analyses FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "analyses_update_own" ON public.analyses FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "analyses_delete_own" ON public.analyses FOR DELETE USING (auth.uid() = user_id);
+
+-- RLS Policies for text_extractions
+CREATE POLICY "text_extractions_select_own" ON public.text_extractions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "text_extractions_insert_own" ON public.text_extractions FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "text_extractions_update_own" ON public.text_extractions FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "text_extractions_delete_own" ON public.text_extractions FOR DELETE USING (auth.uid() = user_id);
 
 -- RLS Policies for shared_documents
 CREATE POLICY "shared_documents_select_own" ON public.shared_documents FOR SELECT USING (auth.uid() = shared_by);
