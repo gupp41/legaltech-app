@@ -2091,7 +2091,8 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
       const extractionResult = await extractTextFromDocument(file)
       console.log('Text extraction completed:', extractionResult)
 
-      // Store the extracted text for later use by the analyze function
+      // Call the text extraction API to track usage (only if extraction was successful)
+      let apiResponse = null
       if (extractionResult.success && extractionResult.text) {
         setExtractedTexts(prev => new Map(prev).set(documentId, {
           text: extractionResult.text,
@@ -2100,8 +2101,6 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
         }))
         console.log('Extracted text stored for document:', documentId)
         
-        // Call the text extraction API to track usage
-        let apiResponse = null
         try {
           apiResponse = await fetch('/api/text-extraction', {
             method: 'POST',
