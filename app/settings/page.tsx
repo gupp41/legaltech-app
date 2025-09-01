@@ -740,7 +740,7 @@ export default function SettingsPage() {
                     </h3>
                     {/* Debug info */}
                     <p className="text-xs text-gray-500">
-                      Debug: {user.current_plan} (ID: {user.id})
+                      Debug: {user.current_plan} (ID: {user.id}) - Live Site
                     </p>
                     <p className="text-muted-foreground">
                       {subscription?.stripe_subscription_id ? 'Active Subscription' : 'Free Plan'}
