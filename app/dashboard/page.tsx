@@ -2821,8 +2821,18 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                       )
                                     } catch (e) {
                                       // If parsing fails, show the raw content with a prettify button
+                                      console.error('Latest analysis formatting error:', e)
+                                      console.log('Raw latest analysis content:', latestAnalysis.results.analysis)
                                       return (
                                         <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                                          <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-3">
+                                            <p className="text-yellow-800 text-sm">
+                                              ⚠️ Analysis formatting failed. Showing raw content.
+                                            </p>
+                                            <p className="text-yellow-700 text-xs mt-1">
+                                              Error: {e instanceof Error ? e.message : 'Unknown error'}
+                                            </p>
+                                          </div>
                                           {latestAnalysis.results.analysis}
                                           <div className="mt-3 pt-3 border-t border-slate-200">
                                             <Button
@@ -3203,8 +3213,18 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                                   )
                                                 } catch (e) {
                                                   // If parsing fails, show the raw content with a prettify button
+                                                  console.error('Analysis formatting error:', e)
+                                                  console.log('Raw analysis content:', analysis.results.analysis)
                                                   return (
                                                     <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                                                      <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-3">
+                                                        <p className="text-yellow-800 text-sm">
+                                                          ⚠️ Analysis formatting failed. Showing raw content.
+                                                        </p>
+                                                        <p className="text-yellow-700 text-xs mt-1">
+                                                          Error: {e instanceof Error ? e.message : 'Unknown error'}
+                                                        </p>
+                                                      </div>
                                                       {analysis.results.analysis}
                                                       <div className="mt-3 pt-3 border-t border-slate-200">
                                                         <Button
