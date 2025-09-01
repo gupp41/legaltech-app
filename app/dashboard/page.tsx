@@ -2843,12 +2843,12 @@ Full text length: ${extractionResult.text?.length || 0} characters
 
                           {/* Show streaming analysis or loading indicator */}
                           {analyzingDocuments.has(currentDoc?.id || '') && (
-                            <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                            <div className="border border-blue-200 dark:border-blue-800 rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20">
                               <div className="flex items-center space-x-3 mb-3">
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
                                 <div>
-                                  <p className="text-sm font-medium text-blue-900">AI Analysis in Progress</p>
-                                  <p className="text-xs text-blue-700">Analyzing your document in real-time...</p>
+                                  <p className="text-sm font-medium text-blue-900 dark:text-blue-300">AI Analysis in Progress</p>
+                                  <p className="text-xs text-blue-700 dark:text-blue-300">Analyzing your document in real-time...</p>
                                 </div>
                               </div>
                               
@@ -3320,9 +3320,9 @@ Full text length: ${extractionResult.text?.length || 0} characters
 
         {/* Reset Buttons - moved to bottom of page */}
         <div className="mt-12 pt-8 border-t border-slate-200">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <h3 className="text-lg font-semibold text-yellow-800 mb-2">⚠️ Reset Functions</h3>
-            <p className="text-sm text-yellow-700 mb-4">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
+            <h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-300 mb-2">⚠️ Reset Functions</h3>
+            <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-4">
               Use these buttons to reset various data. <strong>Warning:</strong> Some operations cannot be undone.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

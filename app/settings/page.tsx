@@ -1004,13 +1004,13 @@ export default function SettingsPage() {
               </div>
 
               {passwordError && (
-                <div className="text-red-600 text-sm bg-red-50 p-2 rounded">
+                <div className="text-red-600 dark:text-red-300 text-sm bg-red-50 dark:bg-red-900/20 p-2 rounded">
                   {passwordError}
                 </div>
               )}
 
               {passwordSuccess && (
-                <div className="text-green-600 text-sm bg-green-50 p-2 rounded">
+                <div className="text-green-600 dark:text-green-300 text-sm bg-green-50 dark:bg-green-900/20 p-2 rounded">
                   {passwordSuccess}
                 </div>
               )}
@@ -1039,7 +1039,7 @@ export default function SettingsPage() {
       {/* Delete Account Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+          <div className="bg-card rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-red-600">Delete Account</h3>
               <Button
@@ -1053,15 +1053,15 @@ export default function SettingsPage() {
             </div>
             
             <div className="space-y-4">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                 <div className="flex items-start space-x-3">
                   <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <h4 className="text-sm font-medium text-red-800">Warning: This action cannot be undone</h4>
-                    <p className="text-sm text-red-700 mt-1">
+                    <h4 className="text-sm font-medium text-red-800 dark:text-red-300">Warning: This action cannot be undone</h4>
+                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">
                       Deleting your account will permanently remove:
                     </p>
-                    <ul className="text-sm text-red-700 mt-2 list-disc list-inside space-y-1">
+                    <ul className="text-sm text-red-700 dark:text-red-300 mt-2 list-disc list-inside space-y-1">
                       <li>All your uploaded documents</li>
                       <li>All AI analysis results</li>
                       <li>Your usage history and statistics</li>
