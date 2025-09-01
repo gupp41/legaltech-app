@@ -131,6 +131,7 @@ export default function SettingsPage() {
   const [maxInterval, setMaxInterval] = useState<'monthly' | 'yearly'>('monthly')
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -176,6 +177,16 @@ export default function SettingsPage() {
     return maxInterval === 'monthly' ? 'Save 17% with annual billing' : 'Billed annually'
   }
 
+  const handleRefreshData = async () => {
+    setRefreshing(true)
+    try {
+      await checkUser()
+      await fetchUserData()
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
   const checkUser = async () => {
     try {
       const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -187,9 +198,21 @@ export default function SettingsPage() {
           .eq('id', authUser.id)
           .single()
 
+        console.log('🔍 Settings Debug - Profile fetch result:', {
+          profileData,
+          profileError,
+          userId: authUser.id
+        })
+
         setUser({
           id: authUser.id,
           email: authUser.email || '',
+          current_plan: profileData?.current_plan || 'free',
+          plan_start_date: profileData?.plan_start_date || new Date().toISOString(),
+          plan_end_date: profileData?.plan_end_date || undefined
+        })
+
+        console.log('🔍 Settings Debug - User state set to:', {
           current_plan: profileData?.current_plan || 'free',
           plan_start_date: profileData?.plan_start_date || new Date().toISOString(),
           plan_end_date: profileData?.plan_end_date || undefined
@@ -576,9 +599,19 @@ export default function SettingsPage() {
           {/* Current Plan Status */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Crown className="h-5 w-5" />
-                Current Plan
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Crown className="h-5 w-5" />
+                  Current Plan
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefreshData}
+                  disabled={refreshing}
+                >
+                  {refreshing ? 'Refreshing...' : 'Refresh'}
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
