@@ -2544,7 +2544,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                               
                               {/* Display analysis content with proper formatting */}
                               {latestAnalysis.results?.analysis ? (
-                                <div className="prose prose-sm max-w-none analysis-bullets">
+                                <div className="prose prose-sm max-w-none">
                                   {/* Try to parse and format the analysis content */}
                                   {(() => {
                                     try {
@@ -2836,7 +2836,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                   </div>
                                 </div>
                               ) : latestAnalysis.results && Object.keys(latestAnalysis.results).length > 0 ? (
-                                <div className="prose prose-sm max-w-none analysis-bullets">
+                                <div className="prose prose-sm max-w-none">
                                   <p className="text-slate-500">Analysis results available but no formatted content found.</p>
                                   <div className="mt-3 pt-3 border-t border-slate-200">
                                     <Button
@@ -2931,7 +2931,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                       {expandedAnalyses.has(analysis.id) && (
                                         <div className="mt-3 pt-3 border-t">
                                           {analysis.results?.analysis ? (
-                                            <div className="prose prose-sm max-w-none analysis-bullets">
+                                            <div className="prose prose-sm max-w-none">
                                               {/* Try to parse and format the analysis content */}
                                               {(() => {
                                                 try {
@@ -3217,7 +3217,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                               </div>
                                             </div>
                                           ) : analysis.results && Object.keys(analysis.results).length > 0 ? (
-                                            <div className="prose prose-sm max-w-none analysis-bullets">
+                                            <div className="prose prose-sm max-w-none">
                                               <p className="text-slate-500">Analysis results available but no formatted content found.</p>
                                               <div className="mt-3 pt-3 border-t border-slate-200">
                                                 <Button
