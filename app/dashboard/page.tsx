@@ -2101,8 +2101,9 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
         console.log('Extracted text stored for document:', documentId)
         
         // Call the text extraction API to track usage
+        let apiResponse = null
         try {
-          const response = await fetch('/api/text-extraction', {
+          apiResponse = await fetch('/api/text-extraction', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -2115,7 +2116,7 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
             })
           })
 
-          if (response.ok) {
+          if (apiResponse.ok) {
             console.log('✅ Text extraction usage tracked successfully')
             // Refresh usage data to show updated counts
             if ((window as any).refreshUsageData) {
@@ -2134,7 +2135,7 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
             // Show success message to user
             console.log('🎉 Text extraction completed and saved! Check the "Saved Text Extractions" section below.')
           } else {
-            const errorData = await response.json()
+            const errorData = await apiResponse.json()
             console.log('⚠️ Text extraction usage tracking failed:', errorData)
           }
         } catch (apiError) {
@@ -2172,6 +2173,9 @@ Extracted Text (${extractionResult.wordCount} words):
 ${extractionResult.text ? extractionResult.text.substring(0, 500) + (extractionResult.text.length > 500 ? '...' : '') : 'No text extracted'}
 
 Full text length: ${extractionResult.text?.length || 0} characters
+
+API Call Status: ${apiResponse?.ok ? 'SUCCESS' : 'FAILED'}
+${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to database'}
       `.trim()
 
       alert(message)
@@ -2470,7 +2474,16 @@ Full text length: ${extractionResult.text?.length || 0} characters
                     extraction => extraction.document_id === currentDoc.id
                   )
                   
-                  // Only show tabs if there are analyses or extractions
+                  // Debug logging for tab visibility
+                  console.log('Tab visibility check:', {
+                    currentDocId: currentDoc.id,
+                    currentAnalyses: currentAnalyses.length,
+                    currentDocumentExtractions: currentDocumentExtractions.length,
+                    savedExtractions: savedExtractions.length,
+                    allSavedExtractions: savedExtractions
+                  })
+                  
+                  // Show tabs if there are analyses OR extractions (not both required)
                   if (currentAnalyses.length === 0 && currentDocumentExtractions.length === 0) return null
                   
                   return (
