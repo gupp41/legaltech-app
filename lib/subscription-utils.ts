@@ -1,0 +1,247 @@
+// 🔧 Subscription Status Utilities
+// This file provides utilities for checking and validating subscription status
+
+import { createBrowserClient } from '@supabase/ssr'
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
+export interface SubscriptionStatus {
+  isActive: boolean
+  plan: string
+  status: string
+  expiresAt?: string
+  isPastDue: boolean
+  isTrial: boolean
+  daysUntilExpiry?: number
+}
+
+/**
+ * Get the current subscription status for a user
+ */
+export async function getSubscriptionStatus(userId: string): Promise<SubscriptionStatus> {
+  try {
+    // Get the most recent active subscription
+    const { data: subscription, error } = await supabase
+      .from('active_subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+
+    if (error || !subscription) {
+      // No active subscription found, return free plan
+      return {
+        isActive: false,
+        plan: 'free',
+        status: 'free',
+        isPastDue: false,
+        isTrial: false
+      }
+    }
+
+    const now = new Date()
+    const expiresAt = subscription.current_period_end ? new Date(subscription.current_period_end) : null
+    const daysUntilExpiry = expiresAt ? Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : undefined
+
+    return {
+      isActive: subscription.status === 'active' || subscription.status === 'trialing',
+      plan: subscription.effective_plan || subscription.plan_type,
+      status: subscription.status,
+      expiresAt: subscription.current_period_end,
+      isPastDue: subscription.status === 'past_due',
+      isTrial: subscription.status === 'trialing',
+      daysUntilExpiry
+    }
+  } catch (error) {
+    console.error('Error getting subscription status:', error)
+    return {
+      isActive: false,
+      plan: 'free',
+      status: 'error',
+      isPastDue: false,
+      isTrial: false
+    }
+  }
+}
+
+/**
+ * Check if a user has access to a specific feature based on their plan
+ */
+export async function hasFeatureAccess(userId: string, feature: string): Promise<boolean> {
+  try {
+    const subscriptionStatus = await getSubscriptionStatus(userId)
+    
+    // Get plan details to check feature access
+    const { data: planDetails, error } = await supabase
+      .from('plan_details')
+      .select('features, limits')
+      .eq('plan_type', subscriptionStatus.plan)
+      .single()
+
+    if (error || !planDetails) {
+      return false
+    }
+
+    // Check if the feature is included in the plan
+    const features = planDetails.features || []
+    return features.includes(feature)
+  } catch (error) {
+    console.error('Error checking feature access:', error)
+    return false
+  }
+}
+
+/**
+ * Check if a user is within their usage limits
+ */
+export async function checkUsageLimits(userId: string, usageType: 'documents' | 'analyses' | 'storage' | 'extractions'): Promise<{
+  isWithinLimit: boolean
+  currentUsage: number
+  limit: number
+  percentage: number
+}> {
+  try {
+    const subscriptionStatus = await getSubscriptionStatus(userId)
+    
+    // Get plan limits
+    const { data: planDetails, error } = await supabase
+      .from('plan_details')
+      .select('limits')
+      .eq('plan_type', subscriptionStatus.plan)
+      .single()
+
+    if (error || !planDetails) {
+      return {
+        isWithinLimit: false,
+        currentUsage: 0,
+        limit: 0,
+        percentage: 100
+      }
+    }
+
+    const limits = planDetails.limits || {}
+    const limit = limits[usageType] || 0
+
+    // Get current usage for this month
+    const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM format
+    const { data: usage, error: usageError } = await supabase
+      .from('usage_tracking')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('month_year', currentMonth)
+      .single()
+
+    if (usageError || !usage) {
+      return {
+        isWithinLimit: true,
+        currentUsage: 0,
+        limit,
+        percentage: 0
+      }
+    }
+
+    let currentUsage = 0
+    switch (usageType) {
+      case 'documents':
+        currentUsage = usage.documents_uploaded || 0
+        break
+      case 'analyses':
+        currentUsage = usage.analyses_performed || 0
+        break
+      case 'storage':
+        currentUsage = usage.storage_used_bytes || 0
+        break
+      case 'extractions':
+        currentUsage = usage.text_extractions || 0
+        break
+    }
+
+    const percentage = limit > 0 ? (currentUsage / limit) * 100 : 0
+    const isWithinLimit = limit === -1 || currentUsage < limit // -1 means unlimited
+
+    return {
+      isWithinLimit,
+      currentUsage,
+      limit,
+      percentage
+    }
+  } catch (error) {
+    console.error('Error checking usage limits:', error)
+    return {
+      isWithinLimit: false,
+      currentUsage: 0,
+      limit: 0,
+      percentage: 100
+    }
+  }
+}
+
+/**
+ * Get subscription status with user-friendly messages
+ */
+export async function getSubscriptionStatusMessage(userId: string): Promise<{
+  status: string
+  message: string
+  actionRequired: boolean
+  actionText?: string
+}> {
+  try {
+    const subscriptionStatus = await getSubscriptionStatus(userId)
+
+    if (subscriptionStatus.plan === 'free') {
+      return {
+        status: 'free',
+        message: 'You are on the Free plan',
+        actionRequired: false
+      }
+    }
+
+    if (subscriptionStatus.isTrial) {
+      return {
+        status: 'trial',
+        message: `You are on a trial of the ${subscriptionStatus.plan} plan`,
+        actionRequired: false
+      }
+    }
+
+    if (subscriptionStatus.isPastDue) {
+      return {
+        status: 'past_due',
+        message: 'Your payment failed. Please update your payment method to continue using premium features.',
+        actionRequired: true,
+        actionText: 'Update Payment Method'
+      }
+    }
+
+    if (subscriptionStatus.isActive) {
+      if (subscriptionStatus.daysUntilExpiry && subscriptionStatus.daysUntilExpiry <= 7) {
+        return {
+          status: 'expiring_soon',
+          message: `Your ${subscriptionStatus.plan} plan expires in ${subscriptionStatus.daysUntilExpiry} days`,
+          actionRequired: false
+        }
+      }
+      
+      return {
+        status: 'active',
+        message: `You are on the ${subscriptionStatus.plan} plan`,
+        actionRequired: false
+      }
+    }
+
+    return {
+      status: 'unknown',
+      message: 'Unable to determine subscription status',
+      actionRequired: false
+    }
+  } catch (error) {
+    console.error('Error getting subscription status message:', error)
+    return {
+      status: 'error',
+      message: 'Error loading subscription status',
+      actionRequired: false
+    }
+  }
+}

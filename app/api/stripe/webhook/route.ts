@@ -10,6 +10,8 @@ const relevantEvents = new Set([
   'customer.subscription.deleted',
   'invoice.payment_succeeded',
   'invoice.payment_failed',
+  'customer.subscription.trial_will_end',
+  'invoice.payment_action_required',
 ])
 
 export async function POST(request: NextRequest) {
@@ -82,6 +84,12 @@ async function handleWebhookEvent(event: any) {
       break
     case 'invoice.payment_failed':
       await handlePaymentFailed(event.data.object, supabase)
+      break
+    case 'customer.subscription.trial_will_end':
+      await handleTrialWillEnd(event.data.object, supabase)
+      break
+    case 'invoice.payment_action_required':
+      await handlePaymentActionRequired(event.data.object, supabase)
       break
     default:
       console.log(`Unhandled event type: ${event.type}`)
@@ -280,19 +288,76 @@ async function handlePaymentFailed(invoice: any, supabase: any) {
         .from('subscriptions')
         .update({
           status: 'past_due',
-          last_payment_date: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         })
         .eq('stripe_subscription_id', invoice.subscription)
+
+      // Database trigger will automatically sync to profiles table
+      // (will keep current plan during grace period)
 
       if (error) {
         console.error('Error updating subscription payment status:', error)
         throw error
       }
 
-      console.log(`⚠️ Payment failed status updated for subscription ${invoice.subscription}`)
+      console.log(`⚠️ Payment failed - subscription ${invoice.subscription} set to past_due`)
     }
   } catch (error) {
     console.error('Error in handlePaymentFailed:', error)
+    throw error
+  }
+}
+
+async function handleTrialWillEnd(subscription: any, supabase: any) {
+  try {
+    console.log(`Trial will end for subscription ${subscription.id}`)
+    
+    // Update subscription with trial end information
+    const { error } = await supabase
+      .from('subscriptions')
+      .update({
+        trial_end: subscription.trial_end 
+          ? new Date(subscription.trial_end * 1000).toISOString()
+          : null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('stripe_subscription_id', subscription.id)
+
+    if (error) {
+      console.error('Error updating trial end date:', error)
+      throw error
+    }
+
+    console.log(`📅 Trial end date updated for subscription ${subscription.id}`)
+  } catch (error) {
+    console.error('Error in handleTrialWillEnd:', error)
+    throw error
+  }
+}
+
+async function handlePaymentActionRequired(invoice: any, supabase: any) {
+  try {
+    console.log(`Payment action required for invoice ${invoice.id}`)
+    
+    // If this is a subscription invoice, update the subscription status
+    if (invoice.subscription) {
+      const { error } = await supabase
+        .from('subscriptions')
+        .update({
+          status: 'past_due',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('stripe_subscription_id', invoice.subscription)
+
+      if (error) {
+        console.error('Error updating subscription for payment action required:', error)
+        throw error
+      }
+
+      console.log(`🔔 Payment action required - subscription ${invoice.subscription} set to past_due`)
+    }
+  } catch (error) {
+    console.error('Error in handlePaymentActionRequired:', error)
     throw error
   }
 }
