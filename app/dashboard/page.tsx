@@ -3266,28 +3266,28 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                         {activeTab === 'extractions' && (
                         <div className="space-y-4">
                             {currentDocumentExtractions.length === 0 ? (
-                              <div className="text-center py-8 text-slate-500">
-                                <FileText className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                              <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                                <FileText className="h-12 w-12 mx-auto mb-4 text-slate-300 dark:text-slate-600" />
                                 <p>No text extractions yet for this document</p>
                                 <p className="text-sm">Click "Convert to Text" to get started</p>
                               </div>
                               ) : (
                               <>
                           {currentDocumentExtractions.map((extraction) => (
-                            <div key={extraction.id} className="border border-slate-200 rounded-lg p-4">
+                            <div key={extraction.id} className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800">
                               <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center space-x-2">
-                                  <Badge variant="outline">
+                                  <Badge variant="outline" className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300">
                                     {extraction.word_count} words
                                   </Badge>
-                                  <span className="text-sm text-slate-500">
+                                  <span className="text-sm text-slate-500 dark:text-slate-400">
                                     {formatDistanceToNow(new Date(extraction.created_at), { addSuffix: true })}
                                   </span>
                                 </div>
                               </div>
                               
                               {/* Display extracted text with proper formatting */}
-                              <div className="whitespace-pre-wrap text-sm leading-relaxed bg-slate-50 p-3 rounded border max-h-64 overflow-y-auto">
+                              <div className="whitespace-pre-wrap text-sm leading-relaxed bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-slate-100 p-3 rounded border border-slate-200 dark:border-slate-600 max-h-64 overflow-y-auto">
                                 {extraction.extracted_text}
                               </div>
                             </div>
