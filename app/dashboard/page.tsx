@@ -2283,34 +2283,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
               </div>
             </div>
 
-            {/* Stats Cards */}
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <FileText className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="text-sm text-slate-600">Total Documents</p>
-                      <p className="text-xl font-bold text-slate-900">{documents.length}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <BarChart3 className="h-5 w-5 text-green-600" />
-                    <div>
-                      <p className="text-sm text-slate-600">Analyzed</p>
-                      <p className="text-xl font-bold text-slate-900">
-                        {documents.filter((d) => d.status === "completed").length}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
           </div>
 
           {/* Single Document View */}
