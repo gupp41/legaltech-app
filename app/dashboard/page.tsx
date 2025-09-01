@@ -2275,13 +2275,13 @@ Full text length: ${extractionResult.text?.length || 0} characters
             <FileUpload onUploadComplete={handleUploadComplete} />
             
             {/* File Type Guidance */}
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="text-sm font-medium text-blue-900 mb-2">📄 Best File Types for AI Analysis</h3>
-              <div className="text-xs text-blue-800 space-y-1">
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <h3 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">📄 Best File Types for AI Analysis</h3>
+              <div className="text-xs text-blue-800 dark:text-blue-300 space-y-1">
                 <p>✅ <strong>Text files (.txt)</strong> - Full text extraction and analysis</p>
                 <p>⚠️ <strong>Word docs (.docx)</strong> - Limited text extraction</p>
                 <p>⚠️ <strong>PDF files (.pdf)</strong> - Limited text extraction</p>
-                <p className="mt-2 text-blue-700">
+                <p className="mt-2 text-blue-700 dark:text-blue-300">
                   <strong>Tip:</strong> For best results, copy your document content into a .txt file before uploading.
                 </p>
               </div>
@@ -2295,9 +2295,9 @@ Full text length: ${extractionResult.text?.length || 0} characters
             {documents.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-8">
-                  <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                  <p className="text-slate-600">No documents uploaded yet</p>
-                  <p className="text-sm text-slate-500">Upload your first legal document to get started</p>
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No documents uploaded yet</p>
+                  <p className="text-sm text-muted-foreground">Upload your first legal document to get started</p>
                 </CardContent>
               </Card>
             ) : (
@@ -2367,8 +2367,8 @@ Full text length: ${extractionResult.text?.length || 0} characters
                           onClick={() => goToDocument(index)}
                           className={`flex-shrink-0 p-3 border rounded-lg transition-colors ${
                             index === currentDocumentIndex
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-slate-200 hover:border-slate-300'
+                              ? 'border-primary bg-primary/10'
+                              : 'border-border hover:border-border/80'
                           }`}
                         >
                           <FileText className={`h-6 w-6 ${
@@ -2398,8 +2398,8 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                 <div className="flex flex-wrap items-center gap-2 mt-2">
                                   <Badge className={getStatusColor(currentDoc.status)}>{currentDoc.status}</Badge>
                                   <Badge variant="outline">{currentDoc.document_type}</Badge>
-                                  <span className="text-sm text-slate-500">{formatFileSize(currentDoc.file_size)}</span>
-                                  <span className="text-sm text-slate-500">
+                                  <span className="text-sm text-muted-foreground">{formatFileSize(currentDoc.file_size)}</span>
+                                  <span className="text-sm text-muted-foreground">
                                     {formatDistanceToNow(new Date(currentDoc.created_at), { addSuffix: true })}
                                   </span>
                                 </div>

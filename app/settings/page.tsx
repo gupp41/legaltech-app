@@ -500,7 +500,7 @@ export default function SettingsPage() {
                   <p className="text-foreground mt-1">{user.email}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Current Plan</label>
+                  <label className="text-sm font-medium text-foreground">Current Plan</label>
                   <div className="flex items-center gap-2 mt-1">
                     {getPlanIcon(user.current_plan)}
                     <Badge className={getPlanColor(user.current_plan)}>
@@ -509,15 +509,15 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Plan Start Date</label>
-                  <p className="text-gray-900 mt-1">
+                  <label className="text-sm font-medium text-foreground">Plan Start Date</label>
+                  <p className="text-foreground mt-1">
                     {new Date(user.plan_start_date).toLocaleDateString()}
                   </p>
                 </div>
                 {user.plan_end_date && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Plan End Date</label>
-                    <p className="text-gray-900 mt-1">
+                    <label className="text-sm font-medium text-foreground">Plan End Date</label>
+                    <p className="text-foreground mt-1">
                       {new Date(user.plan_end_date).toLocaleDateString()}
                     </p>
                   </div>
@@ -563,7 +563,7 @@ export default function SettingsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border">
                 <div className="flex items-center gap-4">
                   {getPlanIcon(user.current_plan)}
                   <div>

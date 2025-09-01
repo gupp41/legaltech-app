@@ -354,8 +354,8 @@ export function UsageDisplay({ userId }: { userId: string }) {
 
         {/* Upgrade CTA for Free Users */}
         {usageData.current_plan === 'free' && (
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
-            <div className="flex items-center gap-2 text-blue-700 text-sm">
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded">
+            <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm">
               <Star className="h-4 w-4" />
               <span>
                 <strong>Upgrade to Plus</strong> for 10x more capacity and advanced features!
@@ -369,7 +369,7 @@ export function UsageDisplay({ userId }: { userId: string }) {
         {/* Refresh Button */}
         <button 
           onClick={fetchUsageData}
-          className="w-full mt-2 text-sm text-gray-600 hover:text-gray-800 hover:underline"
+          className="w-full mt-2 text-sm text-muted-foreground hover:text-foreground hover:underline"
         >
           Refresh usage data
         </button>
