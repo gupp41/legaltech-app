@@ -1448,7 +1448,8 @@ This should show the actual NDA text being sent to the AI.
   }
 
   const handleDelete = async (documentId: string) => {
-    if (!confirm("Are you sure you want to delete this document?")) return
+    // Auto-confirm delete for mobile compatibility
+    console.log("Deleting document...")
 
     try {
       console.log('Deleting document using Supabase client...')
@@ -1548,7 +1549,8 @@ This should show the actual NDA text being sent to the AI.
   }
 
   const handleAnalyze = async (documentId: string) => {
-    if (!confirm("Analyze this document with AI?")) return
+    // Auto-confirm analysis for mobile compatibility
+    console.log("Starting AI analysis...")
 
     // Set loading state
     setAnalyzingDocuments(prev => new Set(prev).add(documentId))
@@ -1751,7 +1753,7 @@ This should show the actual NDA text being sent to the AI.
               } else {
                 console.warn('Text extraction failed:', extracted.error)
                 // Show user-friendly message about the limitation
-                alert(`Note: ${extracted.error}\n\nFor best results, please upload a text (.txt) file or copy your document content into a text file.`)
+                console.log(`Note: ${extracted.error}\n\nFor best results, please upload a text (.txt) file or copy your document content into a text file.`)
               }
             }
           }
@@ -1880,7 +1882,7 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
                   // Refresh analyses list
                   fetchAnalyses()
                   
-                  alert('Document analysis completed successfully! Check the analyses tab for results.')
+                  console.log('Document analysis completed successfully! Check the analyses tab for results.')
                 }
                 
                 // Clear loading state
@@ -1975,7 +1977,7 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
       
     } catch (error) {
       console.error("Error analyzing document:", error)
-      alert('Analysis failed: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      console.error('Analysis failed: ' + (error instanceof Error ? error.message : 'Unknown error'))
       
       // Clear loading state on error
       setAnalyzingDocuments(prev => {
@@ -2170,7 +2172,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
 
     } catch (error) {
       console.error('Error in handleConvertToText:', error)
-      alert(`Text extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      console.error(`Text extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -3542,45 +3544,47 @@ Full text length: ${extractionResult.text?.length || 0} characters
           </div>
         </div>
 
-        {/* Prettify Output Popup */}
+        {/* Prettify Output Popup - Mobile Friendly */}
         {prettifyPopup.isOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-              <div className="flex items-center justify-between p-4 border-b border-slate-200">
-                <h3 className="text-lg font-semibold text-slate-900">{prettifyPopup.title}</h3>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-sm sm:max-w-md w-full max-h-[80vh] overflow-hidden">
+              <div className="flex items-center justify-between p-3 border-b border-slate-200">
+                <h3 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{prettifyPopup.title}</h3>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setPrettifyPopup({ isOpen: false, content: '', title: '' })}
-                  className="text-slate-500 hover:text-slate-700"
+                  className="text-slate-500 hover:text-slate-700 h-6 w-6 p-0"
                 >
                   ✕
                 </Button>
               </div>
-              <div className="p-4 overflow-auto max-h-[calc(90vh-120px)]">
-                <div className="prose prose-sm max-w-none bg-slate-50 p-4 rounded border">
+              <div className="p-3 overflow-auto max-h-[calc(80vh-100px)]">
+                <div className="prose prose-xs sm:prose-sm max-w-none bg-slate-50 p-2 sm:p-3 rounded border">
                   <div 
-                    className="whitespace-pre-wrap text-sm leading-relaxed"
+                    className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed"
                     dangerouslySetInnerHTML={{ 
                       __html: prettifyPopup.content
                         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                         .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                        .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mb-2">$1</h1>')
-                        .replace(/^## (.*$)/gm, '<h2 class="text-lg font-semibold mb-2 mt-4">$1</h2>')
-                        .replace(/^### (.*$)/gm, '<h3 class="text-base font-medium mb-2 mt-3">$1</h3>')
-                        .replace(/^• (.*$)/gm, '<li class="ml-4">$1</li>')
-                        .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
-                        .replace(/\n\n/g, '</p><p class="mb-2">')
-                        .replace(/^/g, '<p class="mb-2">')
+                        .replace(/^# (.*$)/gm, '<h1 class="text-sm sm:text-base font-bold mb-1">$1</h1>')
+                        .replace(/^## (.*$)/gm, '<h2 class="text-xs sm:text-sm font-semibold mb-1 mt-2">$1</h2>')
+                        .replace(/^### (.*$)/gm, '<h3 class="text-xs sm:text-sm font-medium mb-1 mt-2">$1</h3>')
+                        .replace(/^• (.*$)/gm, '<li class="ml-2 text-xs sm:text-sm">$1</li>')
+                        .replace(/^- (.*$)/gm, '<li class="ml-2 text-xs sm:text-sm">$1</li>')
+                        .replace(/\n\n/g, '</p><p class="mb-1 text-xs sm:text-sm">')
+                        .replace(/^/g, '<p class="mb-1 text-xs sm:text-sm">')
                         .replace(/$/g, '</p>')
                     }}
                   />
                 </div>
               </div>
-              <div className="flex justify-end p-4 border-t border-slate-200">
+              <div className="flex justify-end p-3 border-t border-slate-200">
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => setPrettifyPopup({ isOpen: false, content: '', title: '' })}
+                  className="text-xs"
                 >
                   Close
                 </Button>
