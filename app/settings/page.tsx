@@ -149,6 +149,11 @@ export default function SettingsPage() {
     }
   }, [user?.id])
 
+  // Debug: Log when user state changes
+  useEffect(() => {
+    console.log('🔍 Settings Debug - User state changed:', user)
+  }, [user])
+
   // Check for successful payment and refresh data
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -220,11 +225,16 @@ export default function SettingsPage() {
           plan_start_date: profileData?.plan_start_date || new Date().toISOString(),
           plan_end_date: profileData?.plan_end_date || undefined
         })
+        
+        // Set loading to false since we have user data
+        setLoading(false)
       } else {
         console.log('🔍 Settings Debug - No authUser found')
+        setLoading(false)
       }
     } catch (error) {
       console.error('🔍 Settings Debug - Error in checkUser:', error)
+      setLoading(false)
     }
   }
 
@@ -627,6 +637,10 @@ export default function SettingsPage() {
                     <h3 className="text-xl font-semibold text-foreground">
                       {user.current_plan.charAt(0).toUpperCase() + user.current_plan.slice(1)} Plan
                     </h3>
+                    {/* Debug info */}
+                    <p className="text-xs text-gray-500">
+                      Debug: {user.current_plan} (ID: {user.id})
+                    </p>
                     <p className="text-muted-foreground">
                       {subscription?.stripe_subscription_id ? 'Active Subscription' : 'Free Plan'}
                     </p>
