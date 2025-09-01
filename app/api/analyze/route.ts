@@ -930,7 +930,15 @@ Analyze the document thoroughly and populate all fields. If a field is not appli
                     }
 
                     // Send the completed response to the frontend
-                    controller.enqueue(`data: ${JSON.stringify({ done: true, fullResponse: formattedResponse, structuredAnalysis })}\n\n`)
+                    console.log('🔍 API: About to send formatted response to frontend')
+                    console.log('🔍 API: formattedResponse length:', formattedResponse?.length || 'undefined')
+                    console.log('🔍 API: formattedResponse preview:', formattedResponse?.substring(0, 200) + '...')
+                    console.log('🔍 API: structuredAnalysis exists:', !!structuredAnalysis)
+                    
+                    const responseData = { done: true, fullResponse: formattedResponse, structuredAnalysis }
+                    console.log('🔍 API: Sending response data:', responseData)
+                    
+                    controller.enqueue(`data: ${JSON.stringify(responseData)}\n\n`)
                     controller.close()
                     return
                   }

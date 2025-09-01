@@ -845,6 +845,11 @@ This should show the actual NDA text being sent to the AI.
                 console.log('✅ Streaming analysis completed')
                 console.log('🚨 CRITICAL: Analysis completed with formatted response length:', data.fullResponse?.length || 'undefined')
                 console.log('🔍 Using formatted response from API instead of raw streaming content')
+                console.log('🔍 DEBUG: Full data object received:', data)
+                console.log('🔍 DEBUG: data.fullResponse type:', typeof data.fullResponse)
+                console.log('🔍 DEBUG: data.fullResponse preview:', data.fullResponse?.substring(0, 200) + '...')
+                console.log('🔍 DEBUG: Local fullResponse length:', fullResponse.length)
+                console.log('🔍 DEBUG: Local fullResponse preview:', fullResponse.substring(0, 200) + '...')
                 
                 // Use the formatted response from the API, not the raw streaming content
                 const finalFormattedResponse = data.fullResponse || fullResponse
