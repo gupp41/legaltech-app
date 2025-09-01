@@ -59,10 +59,10 @@ async function handleWebhookEvent(event: any) {
   console.log(`🔔 Processing webhook event: ${event.type}`)
   console.log(`🔔 Event data:`, JSON.stringify(event.data.object, null, 2))
 
-  // Initialize Supabase client
+  // Initialize Supabase client with service role key (bypasses RLS)
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
   switch (event.type) {
