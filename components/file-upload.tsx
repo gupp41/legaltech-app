@@ -108,7 +108,7 @@ export function FileUpload({ onUploadComplete, className }: FileUploadProps) {
       <CardContent className="p-6">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-900">Upload Legal Document</h3>
+            <h3 className="text-lg font-semibold text-foreground">Upload Legal Document</h3>
             <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
               <SelectTrigger className="w-40">
                 <SelectValue />
@@ -127,7 +127,7 @@ export function FileUpload({ onUploadComplete, className }: FileUploadProps) {
             {...getRootProps()}
             className={cn(
               "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
-              isDragActive ? "border-blue-500 bg-blue-50" : "border-slate-300 hover:border-slate-400",
+              isDragActive ? "border-primary bg-primary/10" : "border-border hover:border-border/80",
               uploading && "cursor-not-allowed opacity-50",
             )}
           >
@@ -138,7 +138,7 @@ export function FileUpload({ onUploadComplete, className }: FileUploadProps) {
               ) : uploadStatus === "error" ? (
                 <AlertCircle className="h-12 w-12 text-red-500" />
               ) : (
-                <Upload className="h-12 w-12 text-slate-400" />
+                <Upload className="h-12 w-12 text-muted-foreground" />
               )}
 
               <div className="space-y-2">
@@ -150,13 +150,13 @@ export function FileUpload({ onUploadComplete, className }: FileUploadProps) {
                     <p className="text-sm text-red-500">{errorMessage}</p>
                   </div>
                 ) : uploading ? (
-                  <p className="text-slate-600">Uploading document...</p>
+                  <p className="text-muted-foreground">Uploading document...</p>
                 ) : isDragActive ? (
                   <p className="text-blue-600">Drop the file here</p>
                 ) : (
                   <div>
-                    <p className="text-slate-600">Drag & drop a legal document here, or click to select</p>
-                    <p className="text-sm text-slate-500">Supports PDF, DOC, DOCX, and TXT files</p>
+                    <p className="text-muted-foreground">Drag & drop a legal document here, or click to select</p>
+                    <p className="text-sm text-muted-foreground">Supports PDF, DOC, DOCX, and TXT files</p>
                   </div>
                 )}
               </div>
@@ -173,7 +173,7 @@ export function FileUpload({ onUploadComplete, className }: FileUploadProps) {
           {uploading && (
             <div className="space-y-2">
               <Progress value={uploadProgress} className="w-full" />
-              <p className="text-sm text-slate-500 text-center">{uploadProgress}% complete</p>
+              <p className="text-sm text-muted-foreground text-center">{uploadProgress}% complete</p>
             </div>
           )}
         </div>

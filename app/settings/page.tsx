@@ -590,11 +590,11 @@ export default function SettingsPage() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Free Plan */}
-                <div className="border rounded-lg p-6 text-center">
+                <div className="border rounded-lg p-6 text-center bg-card">
                   <div className="flex justify-center mb-4">
                     <Shield className="h-12 w-12 text-muted-foreground" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">Free</h3>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Free</h3>
                   <p className="text-3xl font-bold mb-4">$0<span className="text-sm text-muted-foreground">/month</span></p>
                   <ul className="text-left space-y-2 mb-6">
                     {PLAN_FEATURES.free.map((feature, index) => (
@@ -614,11 +614,11 @@ export default function SettingsPage() {
                 </div>
 
                                  {/* Plus Plan */}
-                 <div className="border rounded-lg p-6 text-center bg-blue-50 border-blue-200">
+                 <div className="border rounded-lg p-6 text-center bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
                    <div className="flex justify-center mb-4">
                      <Star className="h-12 w-12 text-blue-600" />
                    </div>
-                   <h3 className="text-xl font-semibold mb-2">Plus</h3>
+                   <h3 className="text-xl font-semibold mb-2 text-foreground">Plus</h3>
                    <div className="mb-4">
                      <div className="flex items-center justify-center gap-4 mb-2">
                        <label className="flex items-center gap-2">
@@ -665,11 +665,11 @@ export default function SettingsPage() {
                  </div>
 
                                  {/* Max Plan */}
-                 <div className="border rounded-lg p-6 text-center bg-purple-50 border-purple-200">
+                 <div className="border rounded-lg p-6 text-center bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
                    <div className="flex justify-center mb-4">
                      <Crown className="h-12 w-12 text-purple-600" />
                    </div>
-                   <h3 className="text-xl font-semibold mb-2">Max</h3>
+                   <h3 className="text-xl font-semibold mb-2 text-foreground">Max</h3>
                    <div className="mb-4">
                      <div className="flex items-center justify-center gap-4 mb-2">
                        <label className="flex items-center gap-2">

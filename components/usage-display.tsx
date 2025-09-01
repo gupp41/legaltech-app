@@ -336,14 +336,14 @@ export function UsageDisplay({ userId }: { userId: string }) {
           const percentage = (current / max) * 100
           if (percentage >= 100) {
             return (
-              <div key={key} className="flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+              <div key={key} className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-red-700 dark:text-red-300 text-sm">
                 <AlertCircle className="h-4 w-4" />
                 <span>{name} limit reached! Upgrade your plan to continue.</span>
               </div>
             )
           } else if (percentage >= 80) {
             return (
-              <div key={key} className="flex items-center gap-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 text-sm">
+              <div key={key} className="flex items-center gap-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-yellow-700 dark:text-yellow-300 text-sm">
                 <AlertCircle className="h-4 w-4" />
                 <span>{name} usage is at {Math.round(percentage)}%. Consider upgrading soon.</span>
               </div>

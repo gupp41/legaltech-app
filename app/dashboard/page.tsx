@@ -2394,7 +2394,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                 <FileText className="h-10 w-10 text-blue-600" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <h3 className="text-lg font-medium text-slate-900 break-words">{currentDoc.filename}</h3>
+                                <h3 className="text-lg font-medium text-foreground break-words">{currentDoc.filename}</h3>
                                 <div className="flex flex-wrap items-center gap-2 mt-2">
                                   <Badge className={getStatusColor(currentDoc.status)}>{currentDoc.status}</Badge>
                                   <Badge variant="outline">{currentDoc.document_type}</Badge>
