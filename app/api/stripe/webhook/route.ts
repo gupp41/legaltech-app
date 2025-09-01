@@ -56,8 +56,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleWebhookEvent(event: any) {
-  console.log(`🔔 Processing webhook event: ${event.type}`)
-  console.log(`🔔 Event data:`, JSON.stringify(event.data.object, null, 2))
+  console.log(`Processing webhook event: ${event.type}`)
 
   // Initialize Supabase client with service role key (bypasses RLS)
   const supabase = createBrowserClient(
@@ -91,9 +90,8 @@ async function handleWebhookEvent(event: any) {
 
 async function handleCheckoutSessionCompleted(session: any, supabase: any) {
   try {
-    console.log(`🔔 Checkout session completed:`, JSON.stringify(session, null, 2))
     const { userId, plan, interval } = session.metadata
-    console.log(`🔔 Processing checkout completion for user ${userId}, plan: ${plan}, interval: ${interval}`)
+    console.log(`Processing checkout completion for user ${userId}, plan: ${plan}, interval: ${interval}`)
 
     // Get subscription details from Stripe if available
     const subscriptionDetails = session.subscription_details || {}
@@ -121,8 +119,6 @@ async function handleCheckoutSessionCompleted(session: any, supabase: any) {
       }
     }
     
-    console.log(`🔔 Upserting subscription data:`, JSON.stringify(subscriptionData, null, 2))
-    
     const { data: upsertResult, error: subError } = await supabase
       .from('subscriptions')
       .upsert(subscriptionData, {
@@ -130,10 +126,8 @@ async function handleCheckoutSessionCompleted(session: any, supabase: any) {
       })
       .select()
 
-    console.log(`🔔 Upsert result:`, { upsertResult, subError })
-
     if (subError) {
-      console.error('🔔 Error creating subscription record:', subError)
+      console.error('Error creating subscription record:', subError)
       throw subError
     }
 

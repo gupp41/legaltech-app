@@ -176,10 +176,7 @@ export default function SettingsPage() {
     }
   }, [user?.id])
 
-  // Debug: Log when user state changes
-  useEffect(() => {
-    console.log('🔍 Settings Debug - User state changed:', user)
-  }, [user])
+
 
   // Load plan features from database
   const loadPlanFeatures = async () => {
@@ -200,7 +197,6 @@ export default function SettingsPage() {
       })
       
       setPlanFeatures(featuresMap)
-      console.log('🔍 Settings Debug - Plan features loaded:', featuresMap)
     } catch (error) {
       console.error('Error in loadPlanFeatures:', error)
     }
@@ -252,9 +248,7 @@ export default function SettingsPage() {
 
   const checkUser = async () => {
     try {
-      console.log('🔍 Settings Debug - checkUser function called')
       const { data: { user: authUser } } = await supabase.auth.getUser()
-      console.log('🔍 Settings Debug - authUser:', authUser)
       if (authUser) {
         // Try to get subscription data from the new consolidated schema
         const { data: subscriptionData, error: subscriptionError } = await supabase
@@ -262,12 +256,6 @@ export default function SettingsPage() {
           .select('*')
           .eq('user_id', authUser.id)
           .single()
-
-        console.log('🔍 Settings Debug - Subscription fetch result:', {
-          subscriptionData,
-          subscriptionError,
-          userId: authUser.id
-        })
 
         if (subscriptionData && !subscriptionError) {
           // Use subscription data (source of truth)
@@ -278,25 +266,13 @@ export default function SettingsPage() {
             plan_start_date: subscriptionData.current_period_start || new Date().toISOString(),
             plan_end_date: subscriptionData.current_period_end || undefined
           })
-
-          console.log('🔍 Settings Debug - User state set from subscription:', {
-            current_plan: subscriptionData.plan_type,
-            plan_start_date: subscriptionData.current_period_start,
-            plan_end_date: subscriptionData.current_period_end
-          })
         } else {
           // Fallback to profiles table if no subscription found
-          console.log('🔍 Settings Debug - No subscription found, falling back to profiles')
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('current_plan, plan_start_date, plan_end_date')
             .eq('id', authUser.id)
             .single()
-
-          console.log('🔍 Settings Debug - Profile fallback result:', {
-            profileData,
-            profileError
-          })
 
           setUser({
             id: authUser.id,
@@ -305,22 +281,15 @@ export default function SettingsPage() {
             plan_start_date: profileData?.plan_start_date || new Date().toISOString(),
             plan_end_date: profileData?.plan_end_date || undefined
           })
-
-          console.log('🔍 Settings Debug - User state set from profile fallback:', {
-            current_plan: profileData?.current_plan || 'free',
-            plan_start_date: profileData?.plan_start_date,
-            plan_end_date: profileData?.plan_end_date
-          })
         }
         
         // Set loading to false since we have user data
         setLoading(false)
       } else {
-        console.log('🔍 Settings Debug - No authUser found')
         setLoading(false)
       }
     } catch (error) {
-      console.error('🔍 Settings Debug - Error in checkUser:', error)
+      console.error('Error in checkUser:', error)
       setLoading(false)
     }
   }
@@ -339,11 +308,9 @@ export default function SettingsPage() {
         .single()
 
       if (!subError && subData) {
-        console.log('🔍 Settings Debug - Subscription data found:', subData)
         setSubscription(subData)
         // No need to override user state - it's already set correctly from checkUser
       } else {
-        console.log('🔍 Settings Debug - No subscription data found:', { subError, subData })
         // Try fallback to old subscriptions table for existing data
         const { data: legacySubData, error: legacySubError } = await supabase
           .from('subscriptions')
@@ -353,7 +320,6 @@ export default function SettingsPage() {
           .single()
 
         if (!legacySubError && legacySubData) {
-          console.log('🔍 Settings Debug - Legacy subscription data found:', legacySubData)
           setSubscription(legacySubData)
         }
       }
@@ -738,10 +704,7 @@ export default function SettingsPage() {
                     <h3 className="text-xl font-semibold text-foreground">
                       {user.current_plan.charAt(0).toUpperCase() + user.current_plan.slice(1)} Plan
                     </h3>
-                    {/* Debug info */}
-                    <p className="text-xs text-gray-500">
-                      Debug: {user.current_plan} (ID: {user.id}) - Live Site
-                    </p>
+
                     <p className="text-muted-foreground">
                       {subscription?.stripe_subscription_id ? 'Active Subscription' : 'Free Plan'}
                     </p>
