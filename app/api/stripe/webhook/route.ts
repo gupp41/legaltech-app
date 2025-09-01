@@ -56,7 +56,8 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleWebhookEvent(event: any) {
-  console.log(`Processing webhook event: ${event.type}`)
+  console.log(`🔔 Processing webhook event: ${event.type}`)
+  console.log(`🔔 Event data:`, JSON.stringify(event.data.object, null, 2))
 
   // Initialize Supabase client
   const supabase = createBrowserClient(
@@ -90,8 +91,9 @@ async function handleWebhookEvent(event: any) {
 
 async function handleCheckoutSessionCompleted(session: any, supabase: any) {
   try {
+    console.log(`🔔 Checkout session completed:`, JSON.stringify(session, null, 2))
     const { userId, plan, interval } = session.metadata
-    console.log(`Processing checkout completion for user ${userId}, plan: ${plan}, interval: ${interval}`)
+    console.log(`🔔 Processing checkout completion for user ${userId}, plan: ${plan}, interval: ${interval}`)
 
     // Get subscription details from Stripe if available
     const subscriptionDetails = session.subscription_details || {}
@@ -103,28 +105,35 @@ async function handleCheckoutSessionCompleted(session: any, supabase: any) {
       : null
 
     // Create or update subscription record in database (ONLY update subscriptions table)
-    const { error: subError } = await supabase
+    const subscriptionData = {
+      user_id: userId,
+      plan_type: plan,
+      status: 'active',
+      start_date: new Date().toISOString(),
+      current_period_start: currentPeriodStart,
+      current_period_end: currentPeriodEnd,
+      stripe_subscription_id: session.subscription,
+      stripe_price_id: subscriptionDetails.items?.data?.[0]?.price?.id,
+      cancel_at_period_end: false,
+      metadata: {
+        interval,
+        checkout_session_id: session.id,
+      }
+    }
+    
+    console.log(`🔔 Upserting subscription data:`, JSON.stringify(subscriptionData, null, 2))
+    
+    const { data: upsertResult, error: subError } = await supabase
       .from('subscriptions')
-      .upsert({
-        user_id: userId,
-        plan_type: plan,
-        status: 'active',
-        start_date: new Date().toISOString(),
-        current_period_start: currentPeriodStart,
-        current_period_end: currentPeriodEnd,
-        stripe_subscription_id: session.subscription,
-        stripe_price_id: subscriptionDetails.items?.data?.[0]?.price?.id,
-        cancel_at_period_end: false,
-        metadata: {
-          interval,
-          checkout_session_id: session.id,
-        }
-      }, {
+      .upsert(subscriptionData, {
         onConflict: 'user_id'
       })
+      .select()
+
+    console.log(`🔔 Upsert result:`, { upsertResult, subError })
 
     if (subError) {
-      console.error('Error creating subscription record:', subError)
+      console.error('🔔 Error creating subscription record:', subError)
       throw subError
     }
 
