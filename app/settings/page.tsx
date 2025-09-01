@@ -253,8 +253,12 @@ export default function SettingsPage() {
         .single()
 
       if (!subError && subData) {
+        console.log('🔍 Settings Debug - Subscription data found:', subData)
         setSubscription(subData)
-        setUser(prev => prev ? { ...prev, current_plan: subData.plan_type } : null)
+        // Don't override current_plan from profiles table - keep the plan from checkUser
+        // setUser(prev => prev ? { ...prev, current_plan: subData.plan_type } : null)
+      } else {
+        console.log('🔍 Settings Debug - No subscription data found:', { subError, subData })
       }
 
       // Fetch usage data
