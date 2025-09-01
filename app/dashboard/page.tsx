@@ -43,6 +43,11 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'analyses' | 'extractions'>('analyses')
   const [refreshingAnalyses, setRefreshingAnalyses] = useState<Set<string>>(new Set())
   const [isCleaningUpAnalyses, setIsCleaningUpAnalyses] = useState(false)
+  const [prettifyPopup, setPrettifyPopup] = useState<{ isOpen: boolean; content: string; title: string }>({
+    isOpen: false,
+    content: '',
+    title: ''
+  })
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -1186,6 +1191,26 @@ This should show the actual NDA text being sent to the AI.
       }
       return newSet
     })
+  }
+
+  const prettifyOutput = (content: string, title: string = 'Prettified Output') => {
+    try {
+      // Try to parse as JSON and format it
+      const parsed = JSON.parse(content)
+      const formatted = JSON.stringify(parsed, null, 2)
+      setPrettifyPopup({
+        isOpen: true,
+        content: formatted,
+        title: title
+      })
+    } catch (e) {
+      // If not JSON, just show the content as-is
+      setPrettifyPopup({
+        isOpen: true,
+        content: content,
+        title: title
+      })
+    }
   }
 
   const getLatestAnalysis = (analyses: any[]) => {
@@ -2557,12 +2582,32 @@ Full text length: ${extractionResult.text?.length || 0} characters
                               {latestAnalysis.results?.analysis ? (
                                 <div className="whitespace-pre-wrap text-sm leading-relaxed">
                                   {latestAnalysis.results.analysis}
+                                  <div className="mt-3 pt-3 border-t border-slate-200">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => prettifyOutput(latestAnalysis.results.analysis, 'Latest Analysis - Raw Content')}
+                                      className="text-xs"
+                                    >
+                                      🔍 Prettify Output
+                                    </Button>
+                                  </div>
                                 </div>
                               ) : latestAnalysis.results && Object.keys(latestAnalysis.results).length > 0 ? (
                                 <div className="prose prose-sm max-w-none">
                                   <pre className="whitespace-pre-wrap">
                                     {JSON.stringify(latestAnalysis.results, null, 2)}
                                   </pre>
+                                  <div className="mt-3 pt-3 border-t border-slate-200">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => prettifyOutput(JSON.stringify(latestAnalysis.results, null, 2), 'Latest Analysis - Results Object')}
+                                      className="text-xs"
+                                    >
+                                      🔍 Prettify Output
+                                    </Button>
+                                  </div>
                                 </div>
                               ) : (
                                 <p className="text-slate-500">Analysis in progress...</p>
@@ -2648,12 +2693,32 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                           {analysis.results?.analysis ? (
                                             <div className="whitespace-pre-wrap text-sm leading-relaxed">
                                               {analysis.results.analysis}
+                                              <div className="mt-3 pt-3 border-t border-slate-200">
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  onClick={() => prettifyOutput(analysis.results.analysis, `Analysis ${analysis.id} - Raw Content`)}
+                                                  className="text-xs"
+                                                >
+                                                  🔍 Prettify Output
+                                                </Button>
+                                              </div>
                                             </div>
                                           ) : analysis.results && Object.keys(analysis.results).length > 0 ? (
                                             <div className="prose prose-sm max-w-none">
                                               <pre className="whitespace-pre-wrap">
                                                 {JSON.stringify(analysis.results, null, 2)}
                                               </pre>
+                                              <div className="mt-3 pt-3 border-t border-slate-200">
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  onClick={() => prettifyOutput(JSON.stringify(analysis.results, null, 2), `Analysis ${analysis.id} - Results Object`)}
+                                                  className="text-xs"
+                                                >
+                                                  🔍 Prettify Output
+                                                </Button>
+                                              </div>
                                             </div>
                                           ) : (
                                             <p className="text-slate-500">Analysis in progress...</p>
@@ -2713,6 +2778,37 @@ Full text length: ${extractionResult.text?.length || 0} characters
           </div>
         </div>
 
+        {/* Prettify Output Popup */}
+        {prettifyPopup.isOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b border-slate-200">
+                <h3 className="text-lg font-semibold text-slate-900">{prettifyPopup.title}</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPrettifyPopup({ isOpen: false, content: '', title: '' })}
+                  className="text-slate-500 hover:text-slate-700"
+                >
+                  ✕
+                </Button>
+              </div>
+              <div className="p-4 overflow-auto max-h-[calc(90vh-120px)]">
+                <pre className="whitespace-pre-wrap text-sm leading-relaxed bg-slate-50 p-4 rounded border overflow-x-auto">
+                  {prettifyPopup.content}
+                </pre>
+              </div>
+              <div className="flex justify-end p-4 border-t border-slate-200">
+                <Button
+                  variant="outline"
+                  onClick={() => setPrettifyPopup({ isOpen: false, content: '', title: '' })}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
