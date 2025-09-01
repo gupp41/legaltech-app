@@ -121,7 +121,7 @@ async function extractTextFromPDF(file: File): Promise<ExtractedText> {
     console.log('Loading PDF document...')
     
     // Create PDF loading task with all options
-    const loadingTask = pdfjsLib.getDocument({ 
+    const loadingTask = (pdfjsLib as any).getDocument({ 
       data: uint8Array,
       // Try to use worker but with better configuration
       disableWorker: false, // Allow worker usage
@@ -264,23 +264,103 @@ To analyze this document, please try:
 
 async function extractTextFromDOCX(file: File): Promise<ExtractedText> {
   try {
-    // For now, return a message that DOCX extraction requires server-side processing
-    // In a production app, you'd upload the DOCX to a server endpoint for processing
-    const message = `Word document (.docx) text extraction requires server-side processing.
+    console.log('Starting DOCX text extraction for:', file.name, file.size, 'bytes')
     
-For now, please upload a text (.txt) file, or copy and paste the document content into a text file.
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined') {
+      throw new Error('DOCX extraction only works in browser environment')
+    }
+    
+    // Dynamically import mammoth only when needed (client-side only)
+    console.log('Importing mammoth...')
+    const mammoth = await import('mammoth')
+    console.log('mammoth imported successfully')
+    
+    console.log('Converting file to ArrayBuffer...')
+    const arrayBuffer = await file.arrayBuffer()
+    console.log('ArrayBuffer size:', arrayBuffer.byteLength)
+    
+    console.log('Extracting text from DOCX...')
+    const result = await mammoth.extractRawText({ arrayBuffer })
+    
+    console.log('DOCX extraction result:', {
+      textLength: result.value.length,
+      messages: result.messages.length
+    })
+    
+    // Log any warnings or messages from mammoth
+    if (result.messages.length > 0) {
+      console.log('Mammoth messages:', result.messages)
+    }
+    
+    const extractedText = result.value.trim()
+    
+    if (extractedText) {
+      const wordCount = extractedText.split(/\s+/).filter(word => word.length > 0).length
+      console.log('DOCX extraction successful, word count:', wordCount)
+      return {
+        text: extractedText,
+        wordCount,
+        success: true
+      }
+    } else {
+      console.warn('DOCX extraction completed but no text content found')
+      const message = `Word document processed: ${file.name}
 
-File: ${file.name}
-Size: ${(file.size / 1024).toFixed(1)} KB`
+No readable text content was found. This could be because:
+- The document contains only images
+- The document is password protected
+- The content is in an unsupported format
+- The document is corrupted
+
+To analyze this document, you may need to:
+1. Save as a text file (.txt) from Word
+2. Copy and paste the content manually
+3. Use a different document format`
+
+      return {
+        text: message,
+        wordCount: message.split(/\s+/).filter(word => word.length > 0).length,
+        success: false,
+        error: 'No text content found in DOCX'
+      }
+    }
+  } catch (error) {
+    console.error('DOCX extraction error:', error)
+    
+    // Provide detailed error information
+    let errorDetails = 'Unknown error'
+    if (error instanceof Error) {
+      errorDetails = `${error.name}: ${error.message}`
+      console.error('Error stack:', error.stack)
+    } else if (typeof error === 'string') {
+      errorDetails = error
+    } else {
+      errorDetails = JSON.stringify(error)
+    }
+    
+    const message = `Word document processing failed: ${file.name}
+
+Error: ${errorDetails}
+
+This could be due to:
+- Unsupported DOCX format
+- Browser compatibility problems
+- File corruption
+- Network connectivity issues
+
+To analyze this document, please try:
+1. Saving as text format (.txt) from Word
+2. Using a different browser
+3. Checking if the file is corrupted
+4. Converting to PDF format`
 
     return {
       text: message,
-      wordCount: message.split(/\s+/).length,
+      wordCount: message.split(/\s+/).filter(word => word.length > 0).length,
       success: false,
-      error: 'DOCX extraction requires server-side processing'
+      error: `DOCX extraction failed: ${errorDetails}`
     }
-  } catch (error) {
-    throw new Error(`DOCX extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 

@@ -1009,12 +1009,14 @@ This should show the actual NDA text being sent to the AI.
                     }
                   } else {
                     // Verify creation by document_id (since we don't have the new ID yet)
-                    // Use .maybeSingle() instead of .single() to handle multiple analyses gracefully
+                    // Get the most recent completed analysis for this document
                     const { data: verificationData, error: verificationError } = await supabase
                       .from('analyses')
-                      .select('id, status, results')
+                      .select('id, status, results, created_at')
                       .eq('document_id', documentId)
                       .eq('status', 'completed')
+                      .order('created_at', { ascending: false })
+                      .limit(1)
                       .maybeSingle()
                     
                     if (verificationError) {
