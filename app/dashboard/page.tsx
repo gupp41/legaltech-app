@@ -6,7 +6,7 @@ import { FileUpload } from "@/components/file-upload"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Download, Trash2, BarChart3, Brain, ChevronLeft, ChevronRight, RefreshCw, Settings } from "lucide-react"
+import { FileText, Download, Trash2, BarChart3, Brain, ChevronLeft, ChevronRight, RefreshCw, Settings, Menu, X, LogOut } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { extractTextFromDocument, truncateText } from "@/lib/document-extractor"
 // Usage tracking is handled server-side in API routes
@@ -48,6 +48,7 @@ export default function Dashboard() {
     content: '',
     title: ''
   })
+  const [hamburgerMenuOpen, setHamburgerMenuOpen] = useState(false)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -2191,331 +2192,78 @@ Full text length: ${extractionResult.text?.length || 0} characters
     <div className="min-h-screen bg-slate-50">
       <div className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center py-6 gap-4">
+          <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Legal Document Dashboard</h1>
               <p className="text-slate-600">Upload and analyze your legal documents with AI</p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
-            <Button 
-              variant="outline" 
-              onClick={() => window.location.href = '/settings'}
-              className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={async () => {
-                try {
-                  console.log('Signing out...')
-                  const { error } = await supabase.auth.signOut()
-                  if (error) {
-                    console.error('Sign out error:', error)
-                  } else {
-                    console.log('Sign out successful, redirecting to login')
-                    window.location.href = '/auth/login'
-                  }
-                } catch (error) {
-                  console.error('Sign out exception:', error)
-                }
-              }}
-            >
-              Sign Out
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={async () => {
-                try {
-                  console.log('Testing upload API...')
-                  const { data: { session } } = await supabase.auth.getSession()
-                  if (!session) {
-                    alert('No session found')
-                    return
-                  }
-                  
-                  const response = await fetch('/api/test-upload', {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': `Bearer ${session.access_token}`
-                    }
-                  })
-                  
-                  const result = await response.json()
-                  console.log('Test upload result:', result)
-                  alert(`Test result: ${response.ok ? 'SUCCESS' : 'FAILED'}\n${JSON.stringify(result, null, 2)}`)
-                } catch (error) {
-                  console.error('Test upload error:', error)
-                  alert(`Test error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-                }
-              }}
-            >
-              Test Upload API
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={async () => {
-                try {
-                  console.log('Resetting usage counts...')
-                  const { data: { session } } = await supabase.auth.getSession()
-                  if (!session) {
-                    alert('No session found')
-                    return
-                  }
-                  
-                  // Reset usage tracking to 0 for current month
-                  const { error: resetError } = await supabase
-                    .from('usage_tracking')
-                    .update({
-                      text_extractions: 0,
-                      analyses_performed: 0,
-                      updated_at: new Date().toISOString()
-                    })
-                    .eq('user_id', user.id)
-                    .eq('month_year', new Date().toISOString().slice(0, 7)) // Current month (YYYY-MM)
-                  
-                  if (resetError) {
-                    console.error('Error resetting usage:', resetError)
-                    alert(`Failed to reset usage: ${resetError.message}`)
-                  } else {
-                    console.log('✅ Usage counts reset successfully')
-                    alert('✅ Usage counts reset successfully!\n\nText Extractions: 0\nAI Analyses: 0\n\nYou can now continue using these features.')
-                    
-                    // Refresh usage data to show updated counts
-                    if ((window as any).refreshUsageData) {
-                      (window as any).refreshUsageData()
-                    }
-                  }
-                } catch (error) {
-                  console.error('Reset usage error:', error)
-                  alert(`Reset error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-                }
-              }}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white"
-            >
-              🔄 Reset Usage Counts
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={async () => {
-                try {
-                  console.log('Resetting all usage counts...')
-                  const { data: { session } } = await supabase.auth.getSession()
-                  if (!session) {
-                    alert('No session found')
-                    return
-                  }
-                  
-                  // Reset ALL usage tracking to 0 for current month
-                  const { error: resetError } = await supabase
-                    .from('usage_tracking')
-                    .update({
-                      documents_uploaded: 0,
-                      storage_used_bytes: 0,
-                      text_extractions: 0,
-                      analyses_performed: 0,
-                      updated_at: new Date().toISOString()
-                    })
-                    .eq('user_id', user.id)
-                    .eq('month_year', new Date().toISOString().slice(0, 7)) // Current month (YYYY-MM)
-                  
-                  if (resetError) {
-                    console.error('Error resetting all usage:', resetError)
-                    alert(`Failed to reset all usage: ${resetError.message}`)
-                  } else {
-                    console.log('✅ All usage counts reset successfully')
-                    alert('✅ All usage counts reset successfully!\n\nDocuments Uploaded: 0\nStorage Used: 0 bytes\nText Extractions: 0\nAI Analyses: 0\n\nYou can now continue using all features.')
-                    
-                    // Refresh usage data to show updated counts
-                    if ((window as any).refreshUsageData) {
-                      (window as any).refreshUsageData()
-                    }
-                  }
-                } catch (error) {
-                  console.error('Reset all usage error:', error)
-                  alert(`Reset error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-                }
-              }}
-              className="bg-red-500 hover:bg-red-600 text-white"
-            >
-              🗑️ Reset All Usage
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={async () => {
-                try {
-                  console.log('Resetting all data...')
-                  const { data: { session } } = await supabase.auth.getSession()
-                  if (!session) {
-                    alert('No session found')
-                    return
-                  }
-                  
-                  // Confirm the action
-                  const confirmed = confirm('⚠️ WARNING: This will delete ALL your text extractions and AI analyses!\n\nThis action cannot be undone.\n\nAre you sure you want to continue?')
-                  if (!confirmed) {
-                    console.log('Reset cancelled by user')
-                    return
-                  }
-                  
-                  console.log('User confirmed reset, proceeding...')
-                  
-                  // Delete all text extractions for the user
-                  const { error: extractionsError } = await supabase
-                    .from('text_extractions')
-                    .delete()
-                    .eq('user_id', user.id)
-                  
-                  if (extractionsError) {
-                    console.error('Error deleting text extractions:', extractionsError)
-                    alert(`Failed to delete text extractions: ${extractionsError.message}`)
-                    return
-                  }
-                  
-                  // Delete all analyses for the user
-                  const { error: analysesError } = await supabase
-                    .from('analyses')
-                    .delete()
-                    .eq('user_id', user.id)
-                  
-                  if (analysesError) {
-                    console.error('Error deleting analyses:', analysesError)
-                    alert(`Failed to delete analyses: ${analysesError.message}`)
-                    return
-                  }
-                  
-                  // Reset usage tracking to 0
-                  const { error: usageError } = await supabase
-                    .from('usage_tracking')
-                    .update({
-                      documents_uploaded: 0,
-                      storage_used_bytes: 0,
-                      text_extractions: 0,
-                      analyses_performed: 0,
-                      updated_at: new Date().toISOString()
-                    })
-                    .eq('user_id', user.id)
-                    .eq('month_year', new Date().toISOString().slice(0, 7))
-                  
-                  if (usageError) {
-                    console.error('Error resetting usage:', usageError)
-                    alert(`Failed to reset usage: ${usageError.message}`)
-                    return
-                  }
-                  
-                  console.log('✅ All data reset successfully')
-                  alert('✅ All data reset successfully!\n\nDeleted:\n- All text extractions\n- All AI analyses\n- Reset usage counts to 0\n\nYou can now start fresh!')
-                  
-                  // Refresh all data
-                  await fetchSavedExtractions()
-                  await fetchAnalyses()
-                  if ((window as any).refreshUsageData) {
-                    (window as any).refreshUsageData()
-                  }
-                } catch (error) {
-                  console.error('Reset all data error:', error)
-                  alert(`Reset error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-                }
-              }}
-              className="bg-purple-500 hover:bg-purple-600 text-white"
-            >
-              💥 Reset All Data
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={async () => {
-                try {
-                  console.log('Resetting current month usage...')
-                  const { data: { session } } = await supabase.auth.getSession()
-                  if (!session) {
-                    alert('No session found')
-                    return
-                  }
-                  
-                  // Get current month
-                  const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
-                  console.log('Resetting usage for month:', currentMonth)
-                  
-                  // Check if usage tracking record exists for current month
-                  const { data: existingUsage, error: checkError } = await supabase
-                    .from('usage_tracking')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .eq('month_year', currentMonth)
-                    .single()
-                  
-                  if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
-                    console.error('Error checking existing usage:', checkError)
-                    alert(`Failed to check existing usage: ${checkError.message}`)
-                    return
-                  }
-                  
-                  if (existingUsage) {
-                    // Update existing record
-                    const { error: updateError } = await supabase
-                      .from('usage_tracking')
-                      .update({
-                        text_extractions: 0,
-                        analyses_performed: 0,
-                        updated_at: new Date().toISOString()
-                      })
-                      .eq('user_id', user.id)
-                      .eq('month_year', currentMonth)
-                    
-                    if (updateError) {
-                      console.error('Error updating usage:', updateError)
-                      alert(`Failed to update usage: ${updateError.message}`)
-                      return
-                    }
-                  } else {
-                    // Create new record for current month
-                    const { error: insertError } = await supabase
-                      .from('usage_tracking')
-                      .insert({
-                        user_id: user.id,
-                        month_year: currentMonth,
-                        documents_uploaded: 0,
-                        storage_used_bytes: 0,
-                        text_extractions: 0,
-                        analyses_performed: 0
-                      })
-                    
-                    if (insertError) {
-                      console.error('Error creating usage record:', insertError)
-                      alert(`Failed to create usage record: ${insertError.message}`)
-                      return
-                    }
-                  }
-                  
-                  console.log('✅ Current month usage reset successfully')
-                  alert('✅ Current month usage reset successfully!\n\nMonth: ' + currentMonth + '\nText Extractions: 0\nAI Analyses: 0\n\nYou can now continue using these features.')
-                  
-                  // Refresh usage data to show updated counts
-                  if ((window as any).refreshUsageData) {
-                    (window as any).refreshUsageData()
-                  }
-                } catch (error) {
-                  console.error('Reset current month usage error:', error)
-                  alert(`Reset error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-                }
-              }}
-              className="bg-green-500 hover:bg-green-600 text-white"
-            >
-              📅 Reset Current Month
-            </Button>
+            
+            {/* Hamburger Menu */}
+            <div className="relative">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setHamburgerMenuOpen(!hamburgerMenuOpen)}
+                className="flex items-center gap-2"
+              >
+                <Menu className="h-4 w-4" />
+                Menu
+              </Button>
+              
+              {/* Dropdown Menu */}
+              {hamburgerMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-slate-200 z-50">
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        window.location.href = '/settings'
+                        setHamburgerMenuOpen(false)
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                    >
+                      <Settings className="h-4 w-4 mr-3" />
+                      Settings
+                    </button>
+                    <button
+                      onClick={async () => {
+                        setHamburgerMenuOpen(false)
+                        try {
+                          console.log('Signing out...')
+                          const { error } = await supabase.auth.signOut()
+                          if (error) {
+                            console.error('Sign out error:', error)
+                          } else {
+                            console.log('Sign out successful, redirecting to login')
+                            window.location.href = '/auth/login'
+                          }
+                        } catch (error) {
+                          console.error('Sign out exception:', error)
+                        }
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                    >
+                      <LogOut className="h-4 w-4 mr-3" />
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
-        {/* Usage Display */}
-        {user?.id && (
-          <div className="mb-8">
+      {/* Subscription Status - moved below header */}
+      {user?.id && (
+        <div className="bg-white border-b border-slate-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <UsageDisplay userId={user.id} />
           </div>
-        )}
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
+        {/* Remove the old UsageDisplay from here since it's now above */}
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Upload Section */}
@@ -3592,6 +3340,272 @@ Full text length: ${extractionResult.text?.length || 0} characters
             </div>
           </div>
         )}
+
+        {/* Reset Buttons - moved to bottom of page */}
+        <div className="mt-12 pt-8 border-t border-slate-200">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <h3 className="text-lg font-semibold text-yellow-800 mb-2">⚠️ Reset Functions</h3>
+            <p className="text-sm text-yellow-700 mb-4">
+              Use these buttons to reset various data. <strong>Warning:</strong> Some operations cannot be undone.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <Button 
+                variant="outline" 
+                onClick={async () => {
+                  try {
+                    console.log('Resetting usage counts...')
+                    const { data: { session } } = await supabase.auth.getSession()
+                    if (!session) {
+                      alert('No session found')
+                      return
+                    }
+                    
+                    // Reset usage tracking to 0 for current month
+                    const { error: resetError } = await supabase
+                      .from('usage_tracking')
+                      .update({
+                        text_extractions: 0,
+                        analyses_performed: 0,
+                        updated_at: new Date().toISOString()
+                      })
+                      .eq('user_id', user.id)
+                      .eq('month_year', new Date().toISOString().slice(0, 7)) // Current month (YYYY-MM)
+                    
+                    if (resetError) {
+                      console.error('Error resetting usage:', resetError)
+                      alert(`Failed to reset usage: ${resetError.message}`)
+                    } else {
+                      console.log('✅ Usage counts reset successfully')
+                      alert('✅ Usage counts reset successfully!\n\nText Extractions: 0\nAI Analyses: 0\n\nYou can now continue using these features.')
+                      
+                      // Refresh usage data to show updated counts
+                      if ((window as any).refreshUsageData) {
+                        (window as any).refreshUsageData()
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Reset usage error:', error)
+                    alert(`Reset error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                  }
+                }}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white"
+              >
+                🔄 Reset Usage Counts
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={async () => {
+                  try {
+                    console.log('Resetting all usage counts...')
+                    const { data: { session } } = await supabase.auth.getSession()
+                    if (!session) {
+                      alert('No session found')
+                      return
+                    }
+                    
+                    // Reset ALL usage tracking to 0 for current month
+                    const { error: resetError } = await supabase
+                      .from('usage_tracking')
+                      .update({
+                        documents_uploaded: 0,
+                        storage_used_bytes: 0,
+                        text_extractions: 0,
+                        analyses_performed: 0,
+                        updated_at: new Date().toISOString()
+                      })
+                      .eq('user_id', user.id)
+                      .eq('month_year', new Date().toISOString().slice(0, 7)) // Current month (YYYY-MM)
+                    
+                    if (resetError) {
+                      console.error('Error resetting all usage:', resetError)
+                      alert(`Failed to reset all usage: ${resetError.message}`)
+                    } else {
+                      console.log('✅ All usage counts reset successfully')
+                      alert('✅ All usage counts reset successfully!\n\nDocuments Uploaded: 0\nStorage Used: 0 bytes\nText Extractions: 0\nAI Analyses: 0\n\nYou can now continue using all features.')
+                      
+                      // Refresh usage data to show updated counts
+                      if ((window as any).refreshUsageData) {
+                        (window as any).refreshUsageData()
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Reset all usage error:', error)
+                    alert(`Reset error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                  }
+                }}
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
+                🗑️ Reset All Usage
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={async () => {
+                  try {
+                    console.log('Resetting all data...')
+                    const { data: { session } } = await supabase.auth.getSession()
+                    if (!session) {
+                      alert('No session found')
+                      return
+                    }
+                    
+                    // Confirm the action
+                    const confirmed = confirm('⚠️ WARNING: This will delete ALL your text extractions and AI analyses!\n\nThis action cannot be undone.\n\nAre you sure you want to continue?')
+                    if (!confirmed) {
+                      console.log('Reset cancelled by user')
+                      return
+                    }
+                    
+                    console.log('User confirmed reset, proceeding...')
+                    
+                    // Delete all text extractions for the user
+                    const { error: extractionsError } = await supabase
+                      .from('text_extractions')
+                      .delete()
+                      .eq('user_id', user.id)
+                    
+                    if (extractionsError) {
+                      console.error('Error deleting text extractions:', extractionsError)
+                      alert(`Failed to delete text extractions: ${extractionsError.message}`)
+                      return
+                    }
+                    
+                    // Delete all analyses for the user
+                    const { error: analysesError } = await supabase
+                      .from('analyses')
+                      .delete()
+                      .eq('user_id', user.id)
+                    
+                    if (analysesError) {
+                      console.error('Error deleting analyses:', analysesError)
+                      alert(`Failed to delete analyses: ${analysesError.message}`)
+                      return
+                    }
+                    
+                    // Reset usage tracking to 0
+                    const { error: usageError } = await supabase
+                      .from('usage_tracking')
+                      .update({
+                        documents_uploaded: 0,
+                        storage_used_bytes: 0,
+                        text_extractions: 0,
+                        analyses_performed: 0,
+                        updated_at: new Date().toISOString()
+                      })
+                      .eq('user_id', user.id)
+                      .eq('month_year', new Date().toISOString().slice(0, 7))
+                    
+                    if (usageError) {
+                      console.error('Error resetting usage:', usageError)
+                      alert(`Failed to reset usage: ${usageError.message}`)
+                      return
+                    }
+                    
+                    console.log('✅ All data reset successfully')
+                    alert('✅ All data reset successfully!\n\nDeleted:\n- All text extractions\n- All AI analyses\n- Reset usage counts to 0\n\nYou can now start fresh!')
+                    
+                    // Refresh all data
+                    await fetchSavedExtractions()
+                    await fetchAnalyses()
+                    if ((window as any).refreshUsageData) {
+                      (window as any).refreshUsageData()
+                    }
+                  } catch (error) {
+                    console.error('Reset all data error:', error)
+                    alert(`Reset error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                  }
+                }}
+                className="bg-purple-500 hover:bg-purple-600 text-white"
+              >
+                💥 Reset All Data
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={async () => {
+                  try {
+                    console.log('Resetting current month usage...')
+                    const { data: { session } } = await supabase.auth.getSession()
+                    if (!session) {
+                      alert('No session found')
+                      return
+                    }
+                    
+                    // Get current month
+                    const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
+                    console.log('Resetting usage for month:', currentMonth)
+                    
+                    // Check if usage tracking record exists for current month
+                    const { data: existingUsage, error: checkError } = await supabase
+                      .from('usage_tracking')
+                      .select('*')
+                      .eq('user_id', user.id)
+                      .eq('month_year', currentMonth)
+                      .single()
+                    
+                    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
+                      console.error('Error checking existing usage:', checkError)
+                      alert(`Failed to check existing usage: ${checkError.message}`)
+                      return
+                    }
+                    
+                    if (existingUsage) {
+                      // Update existing record
+                      const { error: updateError } = await supabase
+                        .from('usage_tracking')
+                        .update({
+                          text_extractions: 0,
+                          analyses_performed: 0,
+                          updated_at: new Date().toISOString()
+                        })
+                        .eq('user_id', user.id)
+                        .eq('month_year', currentMonth)
+                      
+                      if (updateError) {
+                        console.error('Error updating usage:', updateError)
+                        alert(`Failed to update usage: ${updateError.message}`)
+                        return
+                      }
+                    } else {
+                      // Create new record for current month
+                      const { error: insertError } = await supabase
+                        .from('usage_tracking')
+                        .insert({
+                          user_id: user.id,
+                          month_year: currentMonth,
+                          documents_uploaded: 0,
+                          storage_used_bytes: 0,
+                          text_extractions: 0,
+                          analyses_performed: 0
+                        })
+                      
+                      if (insertError) {
+                        console.error('Error creating usage record:', insertError)
+                        alert(`Failed to create usage record: ${insertError.message}`)
+                        return
+                      }
+                    }
+                    
+                    console.log('✅ Current month usage reset successfully')
+                    alert('✅ Current month usage reset successfully!\n\nMonth: ' + currentMonth + '\nText Extractions: 0\nAI Analyses: 0\n\nYou can now continue using these features.')
+                    
+                    // Refresh usage data to show updated counts
+                    if ((window as any).refreshUsageData) {
+                      (window as any).refreshUsageData()
+                    }
+                  } catch (error) {
+                    console.error('Reset current month usage error:', error)
+                    alert(`Reset error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                  }
+                }}
+                className="bg-green-500 hover:bg-green-600 text-white"
+              >
+                📅 Reset Current Month
+              </Button>
+            </div>
+          </div>
+        </div>
 
       </div>
     </div>
