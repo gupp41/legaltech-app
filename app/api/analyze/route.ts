@@ -872,10 +872,13 @@ Analyze the document thoroughly and populate all fields. If a field is not appli
                         
                         // Convert structured analysis to formatted text for display
                         try {
+                          console.log('🔍 API: About to call formatStructuredAnalysis with:', structuredAnalysis)
                           formattedResponse = formatStructuredAnalysis(structuredAnalysis)
                           console.log('✅ Formatted streaming analysis result length:', formattedResponse.length)
+                          console.log('🔍 API: Formatted response preview:', formattedResponse.substring(0, 200) + '...')
                         } catch (formatError) {
                           console.warn('❌ Formatting failed, using raw response:', formatError)
+                          console.log('🔍 API: Format error details:', formatError)
                           formattedResponse = fullResponse
                         }
                       } else {
