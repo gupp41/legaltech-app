@@ -1200,8 +1200,18 @@ This should show the actual NDA text being sent to the AI.
 
   const prettifyOutput = (content: string, title: string = 'Prettified Output') => {
     try {
+      // Clean the content - remove streaming prefixes
+      let cleanContent = content.trim()
+      
+      // Remove common streaming prefixes
+      if (cleanContent.startsWith('Starting AI analysis...')) {
+        cleanContent = cleanContent.replace(/^Starting AI analysis\.\.\.\s*/, '')
+      }
+      cleanContent = cleanContent.replace(/^Analyzing document\.\.\.\s*/, '')
+      cleanContent = cleanContent.replace(/^Processing\.\.\.\s*/, '')
+      
       // Try to parse as JSON and convert it to formatted markdown
-      const parsed = JSON.parse(content)
+      const parsed = JSON.parse(cleanContent)
       
       // Convert the structured analysis to formatted markdown
       let formattedMarkdown = ''
@@ -2565,7 +2575,23 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                       console.log('🔍 DEBUG: Attempting to parse JSON, length:', latestAnalysis.results.analysis.length)
                                       console.log('🔍 DEBUG: JSON preview (first 200 chars):', latestAnalysis.results.analysis.substring(0, 200))
                                       
-                                      const parsed = JSON.parse(latestAnalysis.results.analysis)
+                                      // Clean the analysis content - remove streaming prefixes
+                                      let cleanAnalysis = latestAnalysis.results.analysis.trim()
+                                      
+                                      // Remove common streaming prefixes
+                                      if (cleanAnalysis.startsWith('Starting AI analysis...')) {
+                                        cleanAnalysis = cleanAnalysis.replace(/^Starting AI analysis\.\.\.\s*/, '')
+                                        console.log('🔍 DEBUG: Removed "Starting AI analysis..." prefix')
+                                      }
+                                      
+                                      // Remove any other common prefixes
+                                      cleanAnalysis = cleanAnalysis.replace(/^Analyzing document\.\.\.\s*/, '')
+                                      cleanAnalysis = cleanAnalysis.replace(/^Processing\.\.\.\s*/, '')
+                                      
+                                      console.log('🔍 DEBUG: Cleaned analysis length:', cleanAnalysis.length)
+                                      console.log('🔍 DEBUG: Cleaned analysis preview:', cleanAnalysis.substring(0, 200))
+                                      
+                                      const parsed = JSON.parse(cleanAnalysis)
                                       // Convert to formatted markdown using the same logic as prettifyOutput
                                       let formattedMarkdown = ''
                                       
@@ -2988,7 +3014,23 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                                   console.log('🔍 DEBUG: Attempting to parse analysis JSON, length:', analysis.results.analysis.length)
                                                   console.log('🔍 DEBUG: Analysis JSON preview (first 200 chars):', analysis.results.analysis.substring(0, 200))
                                                   
-                                                  const parsed = JSON.parse(analysis.results.analysis)
+                                                  // Clean the analysis content - remove streaming prefixes
+                                                  let cleanAnalysis = analysis.results.analysis.trim()
+                                                  
+                                                  // Remove common streaming prefixes
+                                                  if (cleanAnalysis.startsWith('Starting AI analysis...')) {
+                                                    cleanAnalysis = cleanAnalysis.replace(/^Starting AI analysis\.\.\.\s*/, '')
+                                                    console.log('🔍 DEBUG: Removed "Starting AI analysis..." prefix from analysis history')
+                                                  }
+                                                  
+                                                  // Remove any other common prefixes
+                                                  cleanAnalysis = cleanAnalysis.replace(/^Analyzing document\.\.\.\s*/, '')
+                                                  cleanAnalysis = cleanAnalysis.replace(/^Processing\.\.\.\s*/, '')
+                                                  
+                                                  console.log('🔍 DEBUG: Cleaned analysis history length:', cleanAnalysis.length)
+                                                  console.log('🔍 DEBUG: Cleaned analysis history preview:', cleanAnalysis.substring(0, 200))
+                                                  
+                                                  const parsed = JSON.parse(cleanAnalysis)
                                                   // Convert to formatted markdown using the same logic as prettifyOutput
                                                   let formattedMarkdown = ''
                                                   
