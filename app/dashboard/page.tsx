@@ -2189,11 +2189,12 @@ Full text length: ${extractionResult.text?.length || 0} characters
     <div className="min-h-screen bg-slate-50">
       <div className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center py-6 gap-4">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Legal Document Dashboard</h1>
               <p className="text-slate-600">Upload and analyze your legal documents with AI</p>
             </div>
+            <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
             <Button 
               variant="outline" 
               onClick={() => window.location.href = '/settings'}
@@ -2501,6 +2502,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
             >
               📅 Reset Current Month
             </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -2576,13 +2578,13 @@ Full text length: ${extractionResult.text?.length || 0} characters
                 {/* Document Navigation */}
                 <Card>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                                               <CardTitle className="flex items-center space-x-2">
                           <FileText className="h-5 w-5" />
                           <span>Document {currentDocumentIndex + 1} of {documents.length}</span>
                         </CardTitle>
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <Button
                               variant="outline"
                               size="sm"
@@ -2606,7 +2608,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                               Fix Analyses
                             </Button>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <Button
                               variant="outline"
                               size="sm"
