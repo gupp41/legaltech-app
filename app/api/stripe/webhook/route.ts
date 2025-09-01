@@ -93,7 +93,16 @@ async function handleCheckoutSessionCompleted(session: any, supabase: any) {
     const { userId, plan, interval } = session.metadata
     console.log(`Processing checkout completion for user ${userId}, plan: ${plan}, interval: ${interval}`)
 
-    // Create subscription record in database
+    // Get subscription details from Stripe if available
+    const subscriptionDetails = session.subscription_details || {}
+    const currentPeriodStart = subscriptionDetails.current_period_start 
+      ? new Date(subscriptionDetails.current_period_start * 1000).toISOString()
+      : new Date().toISOString()
+    const currentPeriodEnd = subscriptionDetails.current_period_end 
+      ? new Date(subscriptionDetails.current_period_end * 1000).toISOString()
+      : null
+
+    // Create subscription record in database (ONLY update subscriptions table)
     const { error: subError } = await supabase
       .from('subscriptions')
       .insert({
@@ -101,7 +110,11 @@ async function handleCheckoutSessionCompleted(session: any, supabase: any) {
         plan_type: plan,
         status: 'active',
         start_date: new Date().toISOString(),
+        current_period_start: currentPeriodStart,
+        current_period_end: currentPeriodEnd,
         stripe_subscription_id: session.subscription,
+        stripe_price_id: subscriptionDetails.items?.data?.[0]?.price?.id,
+        cancel_at_period_end: false,
         metadata: {
           interval,
           checkout_session_id: session.id,
@@ -113,21 +126,9 @@ async function handleCheckoutSessionCompleted(session: any, supabase: any) {
       throw subError
     }
 
-    // Update user's current plan in profiles table
-    const { error: userError } = await supabase
-      .from('profiles')
-      .update({
-        current_plan: plan,
-        plan_start_date: new Date().toISOString(),
-      })
-      .eq('id', userId)
-
-    if (userError) {
-      console.error('Error updating user plan:', userError)
-      throw userError
-    }
-
-    console.log(`✅ Successfully upgraded user ${userId} to ${plan} plan`)
+    // Database trigger will automatically sync to profiles table
+    // No need to manually update profiles!
+    console.log(`✅ Successfully created subscription for user ${userId} to ${plan} plan`)
   } catch (error) {
     console.error('Error in handleCheckoutSessionCompleted:', error)
     throw error
@@ -164,13 +165,29 @@ async function handleSubscriptionUpdated(subscription: any, supabase: any) {
   try {
     console.log(`Updating subscription ${subscription.id}`)
 
+    // ONLY update subscriptions table with enhanced Stripe data
     const { error } = await supabase
       .from('subscriptions')
       .update({
         status: subscription.status,
-        end_date: subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null,
+        current_period_start: subscription.current_period_start 
+          ? new Date(subscription.current_period_start * 1000).toISOString()
+          : null,
+        current_period_end: subscription.current_period_end 
+          ? new Date(subscription.current_period_end * 1000).toISOString()
+          : null,
+        cancel_at_period_end: subscription.cancel_at_period_end,
+        trial_start: subscription.trial_start 
+          ? new Date(subscription.trial_start * 1000).toISOString()
+          : null,
+        trial_end: subscription.trial_end 
+          ? new Date(subscription.trial_end * 1000).toISOString()
+          : null,
+        updated_at: new Date().toISOString()
       })
       .eq('stripe_subscription_id', subscription.id)
+
+    // Database trigger will automatically sync to profiles table
 
     if (error) {
       console.error('Error updating subscription record:', error)
@@ -194,35 +211,25 @@ async function handleSubscriptionDeleted(subscription: any, supabase: any) {
       return
     }
 
-    // Update subscription record
+    // ONLY update subscriptions table
     const { error } = await supabase
       .from('subscriptions')
       .update({
         status: 'cancelled',
-        end_date: new Date().toISOString(),
+        current_period_end: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
       .eq('stripe_subscription_id', subscription.id)
+
+    // Database trigger will automatically sync to profiles table
+    // (will set to 'free' plan when subscription ends)
 
     if (error) {
       console.error('Error updating subscription record:', error)
       throw error
     }
 
-    // Downgrade user to free plan
-    const { error: userError } = await supabase
-      .from('users')
-      .update({
-        current_plan: 'free',
-        plan_end_date: new Date().toISOString(),
-      })
-      .eq('id', userId)
-
-    if (userError) {
-      console.error('Error downgrading user plan:', userError)
-      throw error
-    }
-
-    console.log(`✅ User ${userId} downgraded to free plan`)
+    console.log(`✅ Subscription ${subscription.id} cancelled`)
   } catch (error) {
     console.error('Error in handleSubscriptionDeleted:', error)
     throw error
@@ -239,9 +246,11 @@ async function handlePaymentSucceeded(invoice: any, supabase: any) {
         .from('subscriptions')
         .update({
           status: 'active',
-          last_payment_date: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         })
         .eq('stripe_subscription_id', invoice.subscription)
+
+      // Database trigger will automatically sync to profiles table
 
       if (error) {
         console.error('Error updating subscription payment status:', error)

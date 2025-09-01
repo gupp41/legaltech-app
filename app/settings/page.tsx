@@ -75,41 +75,67 @@ const PLAN_LIMITS = {
   }
 }
 
-const PLAN_FEATURES = {
-  free: [
-    "Basic document management",
-    "Standard AI analysis quality",
-    "Email support (48-hour response)",
-    "Basic export options",
-    "User dashboard",
-    "Document history"
-  ],
-  plus: [
-    "Everything in Free, plus:",
-    "Advanced document organization",
-    "Priority AI analysis",
-    "Enhanced export options",
-    "Email support (24-hour response)",
-    "Basic analytics dashboard",
-    "Team collaboration (up to 3 users)",
-    "Document templates",
-    "Advanced search and filtering"
-  ],
-  max: [
-    "Everything in Plus, plus:",
-    "Unlimited everything",
-    "Priority processing",
-    "Advanced analytics and reporting",
-    "Team management (up to 10 users)",
-    "API access for integrations",
-    "Custom branding options",
-    "Phone + email support (4-hour response)",
-    "Bulk operations",
-    "Advanced security features",
-    "Compliance reporting",
-    "Custom workflows",
-    "White-label options"
-  ]
+// Helper function to get plan features from database
+const getPlanFeatures = async (planType: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('plan_details')
+      .select('features')
+      .eq('plan_type', planType)
+      .single()
+    
+    if (error || !data) {
+      console.error('Error fetching plan features:', error)
+      return getDefaultPlanFeatures(planType)
+    }
+    
+    return data.features || []
+  } catch (error) {
+    console.error('Error in getPlanFeatures:', error)
+    return getDefaultPlanFeatures(planType)
+  }
+}
+
+// Fallback plan features if database query fails
+const getDefaultPlanFeatures = (planType: string) => {
+  const defaultFeatures = {
+    free: [
+      "Basic document management",
+      "Standard AI analysis quality",
+      "Email support (48-hour response)",
+      "Basic export options",
+      "User dashboard",
+      "Document history"
+    ],
+    plus: [
+      "Everything in Free, plus:",
+      "Advanced document organization",
+      "Priority AI analysis",
+      "Enhanced export options",
+      "Email support (24-hour response)",
+      "Basic analytics dashboard",
+      "Team collaboration (up to 3 users)",
+      "Document templates",
+      "Advanced search and filtering"
+    ],
+    max: [
+      "Everything in Plus, plus:",
+      "Unlimited everything",
+      "Priority processing",
+      "Advanced analytics and reporting",
+      "Team management (up to 10 users)",
+      "API access for integrations",
+      "Custom branding options",
+      "Phone + email support (4-hour response)",
+      "Bulk operations",
+      "Advanced security features",
+      "Compliance reporting",
+      "Custom workflows",
+      "White-label options"
+    ]
+  }
+  
+  return defaultFeatures[planType as keyof typeof defaultFeatures] || []
 }
 
 export default function SettingsPage() {
@@ -118,6 +144,7 @@ export default function SettingsPage() {
   const [usage, setUsage] = useState<UsageData | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("account")
+  const [planFeatures, setPlanFeatures] = useState<{[key: string]: string[]}>({})
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -153,6 +180,36 @@ export default function SettingsPage() {
   useEffect(() => {
     console.log('🔍 Settings Debug - User state changed:', user)
   }, [user])
+
+  // Load plan features from database
+  const loadPlanFeatures = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('plan_details')
+        .select('plan_type, features')
+        .in('plan_type', ['free', 'plus', 'max'])
+      
+      if (error) {
+        console.error('Error loading plan features:', error)
+        return
+      }
+      
+      const featuresMap: {[key: string]: string[]} = {}
+      data.forEach(plan => {
+        featuresMap[plan.plan_type] = plan.features || []
+      })
+      
+      setPlanFeatures(featuresMap)
+      console.log('🔍 Settings Debug - Plan features loaded:', featuresMap)
+    } catch (error) {
+      console.error('Error in loadPlanFeatures:', error)
+    }
+  }
+
+  // Load plan features on component mount
+  useEffect(() => {
+    loadPlanFeatures()
+  }, [])
 
   // Check for successful payment and refresh data
   useEffect(() => {
@@ -199,32 +256,62 @@ export default function SettingsPage() {
       const { data: { user: authUser } } = await supabase.auth.getUser()
       console.log('🔍 Settings Debug - authUser:', authUser)
       if (authUser) {
-        // Fetch user profile data including current plan
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('current_plan, plan_start_date, plan_end_date')
-          .eq('id', authUser.id)
+        // Try to get subscription data from the new consolidated schema
+        const { data: subscriptionData, error: subscriptionError } = await supabase
+          .from('user_subscriptions')
+          .select('*')
+          .eq('user_id', authUser.id)
           .single()
 
-        console.log('🔍 Settings Debug - Profile fetch result:', {
-          profileData,
-          profileError,
+        console.log('🔍 Settings Debug - Subscription fetch result:', {
+          subscriptionData,
+          subscriptionError,
           userId: authUser.id
         })
 
-        setUser({
-          id: authUser.id,
-          email: authUser.email || '',
-          current_plan: profileData?.current_plan || 'free',
-          plan_start_date: profileData?.plan_start_date || new Date().toISOString(),
-          plan_end_date: profileData?.plan_end_date || undefined
-        })
+        if (subscriptionData && !subscriptionError) {
+          // Use subscription data (source of truth)
+          setUser({
+            id: authUser.id,
+            email: authUser.email || '',
+            current_plan: subscriptionData.plan_type,
+            plan_start_date: subscriptionData.current_period_start || new Date().toISOString(),
+            plan_end_date: subscriptionData.current_period_end || undefined
+          })
 
-        console.log('🔍 Settings Debug - User state set to:', {
-          current_plan: profileData?.current_plan || 'free',
-          plan_start_date: profileData?.plan_start_date || new Date().toISOString(),
-          plan_end_date: profileData?.plan_end_date || undefined
-        })
+          console.log('🔍 Settings Debug - User state set from subscription:', {
+            current_plan: subscriptionData.plan_type,
+            plan_start_date: subscriptionData.current_period_start,
+            plan_end_date: subscriptionData.current_period_end
+          })
+        } else {
+          // Fallback to profiles table if no subscription found
+          console.log('🔍 Settings Debug - No subscription found, falling back to profiles')
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('current_plan, plan_start_date, plan_end_date')
+            .eq('id', authUser.id)
+            .single()
+
+          console.log('🔍 Settings Debug - Profile fallback result:', {
+            profileData,
+            profileError
+          })
+
+          setUser({
+            id: authUser.id,
+            email: authUser.email || '',
+            current_plan: profileData?.current_plan || 'free',
+            plan_start_date: profileData?.plan_start_date || new Date().toISOString(),
+            plan_end_date: profileData?.plan_end_date || undefined
+          })
+
+          console.log('🔍 Settings Debug - User state set from profile fallback:', {
+            current_plan: profileData?.current_plan || 'free',
+            plan_start_date: profileData?.plan_start_date,
+            plan_end_date: profileData?.plan_end_date
+          })
+        }
         
         // Set loading to false since we have user data
         setLoading(false)
@@ -244,21 +331,31 @@ export default function SettingsPage() {
     try {
       setLoading(true)
       
-      // Fetch user subscription data
+      // Fetch user subscription data using the new consolidated view
       const { data: subData, error: subError } = await supabase
-        .from('subscriptions')
+        .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('status', 'active')
         .single()
 
       if (!subError && subData) {
         console.log('🔍 Settings Debug - Subscription data found:', subData)
         setSubscription(subData)
-        // Don't override current_plan from profiles table - keep the plan from checkUser
-        // setUser(prev => prev ? { ...prev, current_plan: subData.plan_type } : null)
+        // No need to override user state - it's already set correctly from checkUser
       } else {
         console.log('🔍 Settings Debug - No subscription data found:', { subError, subData })
+        // Try fallback to old subscriptions table for existing data
+        const { data: legacySubData, error: legacySubError } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .single()
+
+        if (!legacySubError && legacySubData) {
+          console.log('🔍 Settings Debug - Legacy subscription data found:', legacySubData)
+          setSubscription(legacySubData)
+        }
       }
 
       // Fetch usage data
@@ -672,7 +769,7 @@ export default function SettingsPage() {
                   <h3 className="text-xl font-semibold mb-2 text-foreground">Free</h3>
                   <p className="text-3xl font-bold mb-4">$0<span className="text-sm text-muted-foreground">/month</span></p>
                   <ul className="text-left space-y-2 mb-6">
-                    {PLAN_FEATURES.free.map((feature, index) => (
+                    {(planFeatures.free || getDefaultPlanFeatures('free')).map((feature, index) => (
                       <li key={index} className="flex items-center gap-2 text-sm">
                         <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
                         {feature}
@@ -723,7 +820,7 @@ export default function SettingsPage() {
                      <p className="text-sm text-blue-600">{getPlusSavings()}</p>
                    </div>
                    <ul className="text-left space-y-2 mb-6">
-                     {PLAN_FEATURES.plus.map((feature, index) => (
+                     {(planFeatures.plus || getDefaultPlanFeatures('plus')).map((feature, index) => (
                        <li key={index} className="flex items-center gap-2 text-sm">
                          <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
                          {feature}
@@ -774,7 +871,7 @@ export default function SettingsPage() {
                      <p className="text-sm text-purple-600">{getMaxSavings()}</p>
                    </div>
                    <ul className="text-left space-y-2 mb-6">
-                     {PLAN_FEATURES.max.map((feature, index) => (
+                     {(planFeatures.max || getDefaultPlanFeatures('max')).map((feature, index) => (
                        <li key={index} className="flex items-center gap-2 text-sm">
                          <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
                          {feature}
