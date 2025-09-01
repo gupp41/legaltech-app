@@ -80,38 +80,59 @@ export class UsageTracker {
   async getPlanLimits(userId: string): Promise<UsageLimits> {
     console.log('🔍 DEBUG: Getting plan limits for user:', userId)
     
-    // First try to get from profiles table
-    const { data: profile, error: profileError } = await this.supabase
-      .from('profiles')
-      .select('current_plan')
-      .eq('id', userId)
-      .single()
-
-    if (profileError) {
-      console.log('🔍 DEBUG: Profile query failed, trying subscriptions table:', profileError)
-      
-      // Fallback to subscriptions table
+    try {
+      // First try to get from the user_subscriptions view (consolidated schema)
       const { data: subscription, error: subError } = await this.supabase
+        .from('user_subscriptions')
+        .select('plan_type, status')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single()
+
+      if (!subError && subscription) {
+        const plan = subscription.plan_type || 'free'
+        console.log('🔍 DEBUG: Got plan from user_subscriptions view:', plan)
+        return await this.getLimitsForPlan(plan)
+      }
+
+      console.log('🔍 DEBUG: user_subscriptions query failed, trying profiles table:', subError)
+      
+      // Fallback to profiles table
+      const { data: profile, error: profileError } = await this.supabase
+        .from('profiles')
+        .select('current_plan')
+        .eq('id', userId)
+        .single()
+
+      if (!profileError && profile) {
+        const plan = profile.current_plan || 'free'
+        console.log('🔍 DEBUG: Got plan from profiles:', plan)
+        return await this.getLimitsForPlan(plan)
+      }
+
+      console.log('🔍 DEBUG: Profile query also failed, trying subscriptions table:', profileError)
+      
+      // Final fallback to subscriptions table
+      const { data: subscriptionFallback, error: subFallbackError } = await this.supabase
         .from('subscriptions')
         .select('plan_type')
         .eq('user_id', userId)
         .eq('status', 'active')
         .single()
 
-      if (subError) {
-        console.log('🔍 DEBUG: Subscription query also failed:', subError)
-        console.log('🔍 DEBUG: Using default free plan limits')
-        return this.getDefaultLimits()
+      if (!subFallbackError && subscriptionFallback) {
+        const plan = subscriptionFallback.plan_type || 'free'
+        console.log('🔍 DEBUG: Got plan from subscriptions fallback:', plan)
+        return await this.getLimitsForPlan(plan)
       }
 
-      const plan = subscription?.plan_type || 'free'
-      console.log('🔍 DEBUG: Got plan from subscriptions:', plan)
-      return this.getLimitsForPlan(plan)
+      console.log('🔍 DEBUG: All queries failed, using default free plan limits')
+      console.log('🔍 DEBUG: Errors:', { subError, profileError, subFallbackError })
+      return await this.getDefaultLimits()
+    } catch (error) {
+      console.error('🔍 DEBUG: Exception in getPlanLimits:', error)
+      return await this.getDefaultLimits()
     }
-
-    const plan = profile?.current_plan || 'free'
-    console.log('🔍 DEBUG: Got plan from profiles:', plan)
-    return this.getLimitsForPlan(plan)
   }
 
   /**
@@ -274,9 +295,34 @@ export class UsageTracker {
   }
 
   /**
-   * Get limits for a specific plan
+   * Get limits for a specific plan from database
    */
-  private getLimitsForPlan(plan: string): UsageLimits {
+  private async getLimitsForPlan(plan: string): Promise<UsageLimits> {
+    try {
+      // Try to get limits from plan_details table
+      const { data: planDetails, error } = await this.supabase
+        .from('plan_details')
+        .select('limits')
+        .eq('plan_type', plan)
+        .single()
+
+      if (!error && planDetails && planDetails.limits) {
+        const limits = planDetails.limits
+        console.log('🔍 DEBUG: Got limits from plan_details for', plan, ':', limits)
+        return {
+          maxDocuments: limits.documents || 0,
+          maxAnalyses: limits.analyses || 0,
+          maxStorageBytes: limits.storage || 0,
+          maxExtractions: limits.extractions || 0
+        }
+      }
+
+      console.log('🔍 DEBUG: Failed to get limits from plan_details, using hardcoded fallback for', plan)
+    } catch (error) {
+      console.log('🔍 DEBUG: Exception getting limits from plan_details:', error)
+    }
+
+    // Fallback to hardcoded limits
     switch (plan) {
       case 'plus':
         return {
@@ -306,8 +352,8 @@ export class UsageTracker {
   /**
    * Get default limits (fallback)
    */
-  private getDefaultLimits(): UsageLimits {
-    return this.getLimitsForPlan('free')
+  private async getDefaultLimits(): Promise<UsageLimits> {
+    return await this.getLimitsForPlan('free')
   }
 
   /**
