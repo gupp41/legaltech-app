@@ -2505,7 +2505,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
         {/* Usage Display */}
         {user?.id && (
           <div className="mb-8">
@@ -2513,7 +2513,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
           </div>
         )}
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Upload Section */}
           <div className="lg:col-span-1">
             <FileUpload onUploadComplete={handleUploadComplete} />
@@ -2532,7 +2532,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
             </div>
 
             {/* Stats Cards */}
-            <div className="mt-6 grid grid-cols-2 gap-4">
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-2">
@@ -2581,58 +2581,57 @@ Full text length: ${extractionResult.text?.length || 0} characters
                           <FileText className="h-5 w-5" />
                           <span>Document {currentDocumentIndex + 1} of {documents.length}</span>
                         </CardTitle>
-                        <div className="flex items-center space-x-2">
-                                                      <div className="flex items-center space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  fetchDocuments()
-                                  fetchAnalyses()
-                                }}
-                                className="text-xs"
-                              >
-                                <RefreshCw className="h-3 w-3 mr-1" />
-                                Refresh
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleFixAnalyses}
-                                className="text-xs"
-                                title="Fix any stuck or orphaned analyses"
-                              >
-                                <Brain className="h-3 w-3 mr-1" />
-                                Fix Analyses
-                              </Button>
-
-                            </div>
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                fetchDocuments()
+                                fetchAnalyses()
+                              }}
+                              className="text-xs"
+                            >
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Refresh
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleFixAnalyses}
+                              className="text-xs"
+                              title="Fix any stuck or orphaned analyses"
+                            >
+                              <Brain className="h-3 w-3 mr-1" />
+                              Fix Analyses
+                            </Button>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={goToPreviousDocument}
+                              disabled={currentDocumentIndex === 0}
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                              Previous
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={goToNextDocument}
+                              disabled={currentDocumentIndex === documents.length - 1}
+                            >
+                              Next
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={goToPreviousDocument}
-                          disabled={currentDocumentIndex === 0}
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                          Previous
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={goToNextDocument}
-                          disabled={currentDocumentIndex === documents.length - 1}
-                        >
-                          Next
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
                     {/* Document Thumbnails */}
-                    <div className="flex space-x-2 mb-4 overflow-x-auto pb-2">
+                    <div className="flex flex-wrap gap-2 mb-4">
                       {documents.map((doc, index) => (
                         <button
                           key={doc.id}
@@ -2660,14 +2659,14 @@ Full text length: ${extractionResult.text?.length || 0} characters
                       
                       return (
                         <div className="border border-slate-200 rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center space-x-4">
+                          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+                            <div className="flex items-start space-x-4">
                               <div className="flex-shrink-0">
                                 <FileText className="h-10 w-10 text-blue-600" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <h3 className="text-lg font-medium text-slate-900">{currentDoc.filename}</h3>
-                                <div className="flex items-center space-x-4 mt-2">
+                                <h3 className="text-lg font-medium text-slate-900 break-words">{currentDoc.filename}</h3>
+                                <div className="flex flex-wrap items-center gap-2 mt-2">
                                   <Badge className={getStatusColor(currentDoc.status)}>{currentDoc.status}</Badge>
                                   <Badge variant="outline">{currentDoc.document_type}</Badge>
                                   <span className="text-sm text-slate-500">{formatFileSize(currentDoc.file_size)}</span>
@@ -2677,42 +2676,46 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                 </div>
                               </div>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <Button 
-                                onClick={() => handleConvertToText(currentDoc.id)}
-                                className="bg-blue-600 hover:bg-blue-700 text-white"
-                              >
-                                <FileText className="h-4 w-4 mr-2" />
-                                Convert to Text
-                              </Button>
-                              <Button 
-                                onClick={() => handleAnalyze(currentDoc.id)}
-                                disabled={analyzingDocuments.has(currentDoc.id)}
-                                className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
-                              >
-                                {analyzingDocuments.has(currentDoc.id) ? (
-                                  <>
-                                    <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-white"></div>
-                                    Analyzing...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Brain className="h-4 w-4 mr-2" />
-                                    Analyze with AI
-                                  </>
-                                )}
-                              </Button>
-                              <Button variant="outline" size="sm" onClick={() => window.open(currentDoc.file_url, "_blank")}>
-                                <Download className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDelete(currentDoc.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-4 sm:mt-0">
+                              <div className="flex flex-col sm:flex-row gap-2">
+                                <Button 
+                                  onClick={() => handleConvertToText(currentDoc.id)}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                                >
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  Convert to Text
+                                </Button>
+                                <Button 
+                                  onClick={() => handleAnalyze(currentDoc.id)}
+                                  disabled={analyzingDocuments.has(currentDoc.id)}
+                                  className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+                                >
+                                  {analyzingDocuments.has(currentDoc.id) ? (
+                                    <>
+                                      <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-white"></div>
+                                      Analyzing...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Brain className="h-4 w-4 mr-2" />
+                                      Analyze with AI
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button variant="outline" size="sm" onClick={() => window.open(currentDoc.file_url, "_blank")}>
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDelete(currentDoc.id)}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -2742,7 +2745,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                         </CardTitle>
                         
                         {/* Tab Navigation */}
-                        <div className="flex space-x-1 mt-4">
+                        <div className="flex flex-col sm:flex-row gap-2 mt-4">
                           <Button
                             variant={activeTab === 'analyses' ? 'default' : 'outline'}
                             size="sm"
