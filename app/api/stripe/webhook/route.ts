@@ -113,9 +113,9 @@ async function handleCheckoutSessionCompleted(session: any, supabase: any) {
       throw subError
     }
 
-    // Update user's current plan
+    // Update user's current plan in profiles table
     const { error: userError } = await supabase
-      .from('users')
+      .from('profiles')
       .update({
         current_plan: plan,
         plan_start_date: new Date().toISOString(),
