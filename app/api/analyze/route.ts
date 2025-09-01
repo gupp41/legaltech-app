@@ -955,6 +955,7 @@ Analyze the document thoroughly and populate all fields. If a field is not appli
                       controller.enqueue(`data: ${JSON.stringify({ content, partial: fullResponse })}\n\n`)
                     }
                   } catch (e) {
+                    console.log('🔍 API: Skipping malformed JSON chunk:', e)
                     // Skip malformed JSON
                   }
                 }
