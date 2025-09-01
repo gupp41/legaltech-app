@@ -1242,7 +1242,9 @@ This should show the actual NDA text being sent to the AI.
             formattedMarkdown += `- Description: ${item.description}\n`
             formattedMarkdown += `- Impact: ${item.impact}\n`
             formattedMarkdown += `- Recommendation: ${item.recommendation}\n\n`
+            formattedMarkdown += '\n'
           })
+          formattedMarkdown += '\n'
         }
         
         if (parsed.risk_analysis.medium_risk_items && parsed.risk_analysis.medium_risk_items.length > 0) {
@@ -2588,9 +2590,11 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                             formattedMarkdown += `- Description: ${item.description}\n`
                                             formattedMarkdown += `- Impact: ${item.impact}\n`
                                             formattedMarkdown += `- Recommendation: ${item.recommendation}\n\n`
-                                            
+                                            formattedMarkdown += '\n'
                                           })
-                                          //formattedMarkdown += '\n'formattedMarkdown += '\n'
+                                          formattedMarkdown += '\n'
+                                          //formattedMarkdown += '\n'
+                                          
                                         }
                                         
                                         if (parsed.risk_analysis.medium_risk_items && parsed.risk_analysis.medium_risk_items.length > 0) {
@@ -2976,6 +2980,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                         formattedMarkdown += `- Impact: ${item.impact}\n`
                                                         formattedMarkdown += `- Recommendation: ${item.recommendation}\n\n`
                                                       })
+                                                      formattedMarkdown += '\n'
                                                     }
                                                     
                                                     if (parsed.risk_analysis.medium_risk_items && parsed.risk_analysis.medium_risk_items.length > 0) {

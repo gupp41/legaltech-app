@@ -43,6 +43,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
         formatted += `- Impact: ${item.impact}\n`
         formatted += `- Recommendation: ${item.recommendation}\n\n`
       })
+      formatted += '\n'
     }
     
     if (analysis.risk_analysis.medium_risk_items && analysis.risk_analysis.medium_risk_items.length > 0) {
@@ -53,6 +54,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
         formatted += `- Impact: ${item.impact}\n`
         formatted += `- Recommendation: ${item.recommendation}\n\n`
       })
+      formatted += '\n'
     }
     
     if (analysis.risk_analysis.low_risk_items && analysis.risk_analysis.low_risk_items.length > 0) {
@@ -63,6 +65,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
         formatted += `- Impact: ${item.impact}\n`
         formatted += `- Recommendation: ${item.recommendation}\n\n`
       })
+      formatted += '\n'
     }
   }
   
