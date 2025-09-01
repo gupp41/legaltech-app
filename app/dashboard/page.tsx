@@ -1227,7 +1227,24 @@ This should show the actual NDA text being sent to the AI.
         }
         if (parsed.summary.overall_assessment) {
           const assessment = parsed.summary.overall_assessment.replace('_', ' ').toUpperCase()
-          formattedMarkdown += `**Overall Risk Assessment:** ${assessment}\n\n`
+          // Add color coding and emoji based on risk level
+          let riskEmoji = '⚠️'
+          let riskColor = 'text-yellow-600'
+          let bgColor = 'yellow'
+          if (assessment.includes('HIGH')) {
+            riskEmoji = '🔴'
+            riskColor = 'text-red-600'
+            bgColor = 'red'
+          } else if (assessment.includes('LOW')) {
+            riskEmoji = '🟢'
+            riskColor = 'text-green-600'
+            bgColor = 'green'
+          } else if (assessment.includes('MEDIUM')) {
+            riskEmoji = '🟡'
+            riskColor = 'text-yellow-600'
+            bgColor = 'yellow'
+          }
+          formattedMarkdown += `## 🎯 Overall Risk Assessment\n\n<div class="bg-${bgColor}-50 border-2 border-${bgColor}-300 rounded-lg p-4 mb-4">\n<div class="text-center">\n<h3 class="${riskColor} font-bold text-2xl mb-2">${riskEmoji} ${assessment}</h3>\n<p class="text-gray-600 text-sm">Based on comprehensive analysis of document clauses and terms</p>\n</div>\n</div>\n\n`
         }
         if (parsed.summary.key_obligations && parsed.summary.key_obligations.length > 0) {
           formattedMarkdown += `**Key Obligations:**\n`
@@ -2606,7 +2623,24 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                         }
                                         if (parsed.summary.overall_assessment) {
                                           const assessment = parsed.summary.overall_assessment.replace('_', ' ').toUpperCase()
-                                          formattedMarkdown += `**Overall Risk Assessment:** ${assessment}\n\n`
+                                          // Add color coding and emoji based on risk level
+                                          let riskEmoji = '⚠️'
+                                          let riskColor = 'text-yellow-600'
+                                          let bgColor = 'yellow'
+                                          if (assessment.includes('HIGH')) {
+                                            riskEmoji = '🔴'
+                                            riskColor = 'text-red-600'
+                                            bgColor = 'red'
+                                          } else if (assessment.includes('LOW')) {
+                                            riskEmoji = '🟢'
+                                            riskColor = 'text-green-600'
+                                            bgColor = 'green'
+                                          } else if (assessment.includes('MEDIUM')) {
+                                            riskEmoji = '🟡'
+                                            riskColor = 'text-yellow-600'
+                                            bgColor = 'yellow'
+                                          }
+                                          formattedMarkdown += `## 🎯 Overall Risk Assessment\n\n<div class="bg-${bgColor}-50 border-2 border-${bgColor}-300 rounded-lg p-4 mb-4">\n<div class="text-center">\n<h3 class="${riskColor} font-bold text-2xl mb-2">${riskEmoji} ${assessment}</h3>\n<p class="text-gray-600 text-sm">Based on comprehensive analysis of document clauses and terms</p>\n</div>\n</div>\n\n`
                                         }
                                         if (parsed.summary.key_obligations && parsed.summary.key_obligations.length > 0) {
                                           formattedMarkdown += `**Key Obligations:**\n`
@@ -3045,7 +3079,24 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                                     }
                                                     if (parsed.summary.overall_assessment) {
                                                       const assessment = parsed.summary.overall_assessment.replace('_', ' ').toUpperCase()
-                                                      formattedMarkdown += `**Overall Risk Assessment:** ${assessment}\n\n`
+                                                      // Add color coding and emoji based on risk level
+                                                      let riskEmoji = '⚠️'
+                                                      let riskColor = 'text-yellow-600'
+                                                      let bgColor = 'yellow'
+                                                      if (assessment.includes('HIGH')) {
+                                                        riskEmoji = '🔴'
+                                                        riskColor = 'text-red-600'
+                                                        bgColor = 'red'
+                                                      } else if (assessment.includes('LOW')) {
+                                                        riskEmoji = '🟢'
+                                                        riskColor = 'text-green-600'
+                                                        bgColor = 'green'
+                                                      } else if (assessment.includes('MEDIUM')) {
+                                                        riskEmoji = '🟡'
+                                                        riskColor = 'text-yellow-600'
+                                                        bgColor = 'yellow'
+                                                      }
+                                                      formattedMarkdown += `## 🎯 Overall Risk Assessment\n\n<div class="bg-${bgColor}-50 border-2 border-${bgColor}-300 rounded-lg p-4 mb-4">\n<div class="text-center">\n<h3 class="${riskColor} font-bold text-2xl mb-2">${riskEmoji} ${assessment}</h3>\n<p class="text-gray-600 text-sm">Based on comprehensive analysis of document clauses and terms</p>\n</div>\n</div>\n\n`
                                                     }
                                                     if (parsed.summary.key_obligations && parsed.summary.key_obligations.length > 0) {
                                                       formattedMarkdown += `**Key Obligations:**\n`
