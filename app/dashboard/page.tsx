@@ -13,6 +13,7 @@ import { extractTextFromDocument, truncateText } from "@/lib/document-extractor"
 import { UsageDisplay } from "@/components/usage-display"
 import { ThemeToggle } from "@/components/theme-toggle"
 
+
 interface Document {
   id: string
   filename: string
@@ -1223,7 +1224,7 @@ This should show the actual NDA text being sent to the AI.
           parsed.summary.key_obligations.forEach((obligation: string) => {
             formattedMarkdown += `• ${obligation}\n`
           })
-          formattedMarkdown += '\n'
+          //formattedMarkdown += '\n'
         }
       }
       
@@ -1267,39 +1268,43 @@ This should show the actual NDA text being sent to the AI.
       
       // Identified Clauses Section
       if (parsed.identified_clauses) {
-        formattedMarkdown += `# Identified Clauses\n\n`
+        formattedMarkdown += `# 🕵️ Identified Clauses\n\n`
         
         if (parsed.identified_clauses.key_terms && parsed.identified_clauses.key_terms.length > 0) {
-          formattedMarkdown += `## Key Terms\n\n`
+          formattedMarkdown += `## 🗝️ Key Terms\n\n`
           parsed.identified_clauses.key_terms.forEach((term: any) => {
-            formattedMarkdown += `**${term.name}** (${term.importance.toUpperCase()})\n`
+            const termEmoji = term.importance === 'critical' ? '🔴' : term.importance === 'important' ? '🟡' : '🟢'
+            formattedMarkdown += `**${termEmoji} ${term.name}** (${term.importance.toUpperCase()})\n`
             formattedMarkdown += `- Description: ${term.description}\n`
             formattedMarkdown += `- Implications: ${term.implications}\n\n`
           })
         }
         
         if (parsed.identified_clauses.conditions && parsed.identified_clauses.conditions.length > 0) {
-          formattedMarkdown += `## Conditions\n\n`
+          formattedMarkdown += `## 📜 Conditions\n\n`
           parsed.identified_clauses.conditions.forEach((condition: any) => {
-            formattedMarkdown += `**${condition.name}** (${condition.importance.toUpperCase()})\n`
+            const conditionEmoji = condition.importance === 'critical' ? '🔴' : condition.importance === 'important' ? '🟡' : '🟢'
+            formattedMarkdown += `**${conditionEmoji} ${condition.name}** (${condition.importance.toUpperCase()})\n`
             formattedMarkdown += `- Description: ${condition.description}\n`
             formattedMarkdown += `- Implications: ${condition.implications}\n\n`
           })
         }
         
         if (parsed.identified_clauses.obligations && parsed.identified_clauses.obligations.length > 0) {
-          formattedMarkdown += `## Obligations\n\n`
+          formattedMarkdown += `## 🤝 Obligations\n\n`
           parsed.identified_clauses.obligations.forEach((obligation: any) => {
-            formattedMarkdown += `**${obligation.name}** (${obligation.importance.toUpperCase()})\n`
+            const obligationEmoji = obligation.importance === 'critical' ? '🔴' : obligation.importance === 'important' ? '🟡' : '🟢'
+            formattedMarkdown += `**${obligationEmoji} ${obligation.name}** (${obligation.importance.toUpperCase()})\n`
             formattedMarkdown += `- Description: ${obligation.description}\n`
             formattedMarkdown += `- Implications: ${obligation.implications}\n\n`
           })
         }
         
         if (parsed.identified_clauses.rights && parsed.identified_clauses.rights.length > 0) {
-          formattedMarkdown += `## Rights\n\n`
+          formattedMarkdown += `## ⚖️ Rights\n\n`
           parsed.identified_clauses.rights.forEach((right: any) => {
-            formattedMarkdown += `**${right.name}** (${right.importance.toUpperCase()})\n`
+            const rightEmoji = right.importance === 'critical' ? '🔴' : right.importance === 'important' ? '🟡' : '🟢'
+            formattedMarkdown += `**${rightEmoji} ${right.name}** (${right.importance.toUpperCase()})\n`
             formattedMarkdown += `- Description: ${right.description}\n`
             formattedMarkdown += `- Implications: ${right.implications}\n\n`
           })
@@ -1308,10 +1313,10 @@ This should show the actual NDA text being sent to the AI.
       
       // Missing Clauses Section
       if (parsed.missing_clauses) {
-        formattedMarkdown += `# Missing Clauses & Recommendations\n\n`
+        formattedMarkdown += `# 📝 Missing Clauses & Recommendations\n\n`
         
         if (parsed.missing_clauses.recommended_additions && parsed.missing_clauses.recommended_additions.length > 0) {
-          formattedMarkdown += `## Recommended Additions\n\n`
+          formattedMarkdown += `## ➕ Recommended Additions\n\n`
           parsed.missing_clauses.recommended_additions.forEach((addition: string) => {
             formattedMarkdown += `• ${addition}\n`
           })
@@ -1319,7 +1324,7 @@ This should show the actual NDA text being sent to the AI.
         }
         
         if (parsed.missing_clauses.industry_standards && parsed.missing_clauses.industry_standards.length > 0) {
-          formattedMarkdown += `## Industry Standards to Consider\n\n`
+          formattedMarkdown += `## 🏭 Industry Standards to Consider\n\n`
           parsed.missing_clauses.industry_standards.forEach((standard: string) => {
             formattedMarkdown += `• ${standard}\n`
           })
@@ -1327,7 +1332,7 @@ This should show the actual NDA text being sent to the AI.
         }
         
         if (parsed.missing_clauses.compliance_gaps && parsed.missing_clauses.compliance_gaps.length > 0) {
-          formattedMarkdown += `## Compliance Gaps\n\n`
+          formattedMarkdown += `## ⚠️ Compliance Gaps\n\n`
           parsed.missing_clauses.compliance_gaps.forEach((gap: string) => {
             formattedMarkdown += `• ${gap}\n`
           })
@@ -1337,14 +1342,14 @@ This should show the actual NDA text being sent to the AI.
       
       // Compliance Section
       if (parsed.compliance_considerations) {
-        formattedMarkdown += `# Compliance Considerations\n\n`
+        formattedMarkdown += `# ✅ Compliance Considerations\n\n`
         if (parsed.compliance_considerations.compliance_score) {
           const score = parsed.compliance_considerations.compliance_score.replace('_', ' ').toUpperCase()
           formattedMarkdown += `**Compliance Score:** ${score}\n\n`
         }
         
         if (parsed.compliance_considerations.regulatory_requirements && parsed.compliance_considerations.regulatory_requirements.length > 0) {
-          formattedMarkdown += `## Regulatory Requirements\n\n`
+          formattedMarkdown += `## 🏛️ Regulatory Requirements\n\n`
           parsed.compliance_considerations.regulatory_requirements.forEach((req: string) => {
             formattedMarkdown += `• ${req}\n`
           })
@@ -1352,7 +1357,7 @@ This should show the actual NDA text being sent to the AI.
         }
         
         if (parsed.compliance_considerations.industry_standards && parsed.compliance_considerations.industry_standards.length > 0) {
-          formattedMarkdown += `## Industry Standards\n\n`
+          formattedMarkdown += `## 🏭 Industry Standards\n\n`
           parsed.compliance_considerations.industry_standards.forEach((standard: string) => {
             formattedMarkdown += `• ${standard}\n`
           })
@@ -1360,7 +1365,7 @@ This should show the actual NDA text being sent to the AI.
         }
         
         if (parsed.compliance_considerations.potential_violations && parsed.compliance_considerations.potential_violations.length > 0) {
-          formattedMarkdown += `## Potential Violations\n\n`
+          formattedMarkdown += `## 🚨 Potential Violations\n\n`
           parsed.compliance_considerations.potential_violations.forEach((violation: string) => {
             formattedMarkdown += `• ${violation}\n`
           })
@@ -1370,10 +1375,10 @@ This should show the actual NDA text being sent to the AI.
       
       // Recommendations Section
       if (parsed.recommendations) {
-        formattedMarkdown += `# Recommendations\n\n`
+        formattedMarkdown += `# 💡 Recommendations\n\n`
         
         if (parsed.recommendations.negotiation_points && parsed.recommendations.negotiation_points.length > 0) {
-          formattedMarkdown += `## Negotiation Points\n\n`
+          formattedMarkdown += `## ⚖️ Negotiation Points\n\n`
           parsed.recommendations.negotiation_points.forEach((point: string) => {
             formattedMarkdown += `• ${point}\n`
           })
@@ -1381,7 +1386,7 @@ This should show the actual NDA text being sent to the AI.
         }
         
         if (parsed.recommendations.improvements && parsed.recommendations.improvements.length > 0) {
-          formattedMarkdown += `## Suggested Improvements\n\n`
+          formattedMarkdown += `## 📈 Suggested Improvements\n\n`
           parsed.recommendations.improvements.forEach((improvement: string) => {
             formattedMarkdown += `• ${improvement}\n`
           })
@@ -1389,7 +1394,7 @@ This should show the actual NDA text being sent to the AI.
         }
         
         if (parsed.recommendations.red_flags && parsed.recommendations.red_flags.length > 0) {
-          formattedMarkdown += `## Red Flags\n\n`
+          formattedMarkdown += `## 🚩 Red Flags\n\n`
           parsed.recommendations.red_flags.forEach((flag: string) => {
             formattedMarkdown += `• ${flag}\n`
           })
@@ -1397,7 +1402,7 @@ This should show the actual NDA text being sent to the AI.
         }
         
         if (parsed.recommendations.next_steps && parsed.recommendations.next_steps.length > 0) {
-          formattedMarkdown += `## Next Steps\n\n`
+          formattedMarkdown += `## ⏭️ Next Steps\n\n`
           parsed.recommendations.next_steps.forEach((step: string) => {
             formattedMarkdown += `• ${step}\n`
           })
@@ -1407,7 +1412,7 @@ This should show the actual NDA text being sent to the AI.
       
       // Technical Details Section
       if (parsed.technical_details) {
-        formattedMarkdown += `# Technical Details\n\n`
+        formattedMarkdown += `# ⚙️ Technical Details\n\n`
         
         if (parsed.technical_details.contract_value) {
           formattedMarkdown += `**Contract Value:** ${parsed.technical_details.contract_value}\n`
@@ -2539,7 +2544,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                               
                               {/* Display analysis content with proper formatting */}
                               {latestAnalysis.results?.analysis ? (
-                                <div className="prose prose-sm max-w-none">
+                                <div className="prose prose-sm max-w-none analysis-bullets">
                                   {/* Try to parse and format the analysis content */}
                                   {(() => {
                                     try {
@@ -2565,7 +2570,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                           parsed.summary.key_obligations.forEach((obligation: string) => {
                                             formattedMarkdown += `• ${obligation}\n`
                                           })
-                                          formattedMarkdown += '\n'
+                                          //formattedMarkdown += '\n'
                                         }
                                       }
                                       
@@ -2583,7 +2588,9 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                             formattedMarkdown += `- Description: ${item.description}\n`
                                             formattedMarkdown += `- Impact: ${item.impact}\n`
                                             formattedMarkdown += `- Recommendation: ${item.recommendation}\n\n`
+                                            
                                           })
+                                          //formattedMarkdown += '\n'formattedMarkdown += '\n'
                                         }
                                         
                                         if (parsed.risk_analysis.medium_risk_items && parsed.risk_analysis.medium_risk_items.length > 0) {
@@ -2593,6 +2600,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                             formattedMarkdown += `- Description: ${item.description}\n`
                                             formattedMarkdown += `- Impact: ${item.impact}\n`
                                             formattedMarkdown += `- Recommendation: ${item.recommendation}\n\n`
+                                            formattedMarkdown += '\n'
                                           })
                                         }
                                         
@@ -2603,45 +2611,52 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                             formattedMarkdown += `- Description: ${item.description}\n`
                                             formattedMarkdown += `- Impact: ${item.impact}\n`
                                             formattedMarkdown += `- Recommendation: ${item.recommendation}\n\n`
+                                            formattedMarkdown += '\n'
                                           })
                                         }
                                       }
                                       
                                       // Identified Clauses Section
                                       if (parsed.identified_clauses) {
-                                        formattedMarkdown += `# Identified Clauses\n\n`
+                                        formattedMarkdown += `# 🕵️ Identified Clauses\n\n`
                                         
                                         if (parsed.identified_clauses.key_terms && parsed.identified_clauses.key_terms.length > 0) {
-                                          formattedMarkdown += `## Key Terms\n\n`
+                                          formattedMarkdown += `## 🗝️ Key Terms\n\n`
                                           parsed.identified_clauses.key_terms.forEach((term: any) => {
-                                            formattedMarkdown += `**${term.name}** (${term.importance.toUpperCase()})\n`
+                                            const termEmoji = term.importance === 'critical' ? '🔴' : term.importance === 'important' ? '🟡' : '🟢'
+                                            formattedMarkdown += `**${termEmoji} ${term.name}** (${term.importance.toUpperCase()})\n`
                                             formattedMarkdown += `- Description: ${term.description}\n`
                                             formattedMarkdown += `- Implications: ${term.implications}\n\n`
+                                            formattedMarkdown += '\n'
                                           })
                                         }
                                         
                                         if (parsed.identified_clauses.conditions && parsed.identified_clauses.conditions.length > 0) {
-                                          formattedMarkdown += `## Conditions\n\n`
+                                          formattedMarkdown += `## 📜 Conditions\n\n`
                                           parsed.identified_clauses.conditions.forEach((condition: any) => {
-                                            formattedMarkdown += `**${condition.name}** (${condition.importance.toUpperCase()})\n`
+                                            const conditionEmoji = condition.importance === 'critical' ? '🔴' : condition.importance === 'important' ? '🟡' : '🟢'
+                                            formattedMarkdown += `**${conditionEmoji} ${condition.name}** (${condition.importance.toUpperCase()})\n`
                                             formattedMarkdown += `- Description: ${condition.description}\n`
                                             formattedMarkdown += `- Implications: ${condition.implications}\n\n`
+                                            formattedMarkdown += '\n'
                                           })
                                         }
                                         
                                                                                  if (parsed.identified_clauses.obligations && parsed.identified_clauses.obligations.length > 0) {
-                                           formattedMarkdown += `## Obligations\n\n`
+                                           formattedMarkdown += `## 🤝 Obligations\n\n`
                                            parsed.identified_clauses.obligations.forEach((obligation: any) => {
-                                             formattedMarkdown += `**${obligation.name}** (${obligation.importance.toUpperCase()})\n`
+                                             const obligationEmoji = obligation.importance === 'critical' ? '🔴' : obligation.importance === 'important' ? '🟡' : '🟢'
+                                             formattedMarkdown += `**${obligationEmoji} ${obligation.name}** (${obligation.importance.toUpperCase()})\n`
                                              formattedMarkdown += `- Description: ${obligation.description}\n`
                                              formattedMarkdown += `- Implications: ${obligation.implications}\n\n`
                                            })
                                          }
                                         
                                         if (parsed.identified_clauses.rights && parsed.identified_clauses.rights.length > 0) {
-                                          formattedMarkdown += `## Rights\n\n`
+                                          formattedMarkdown += `## ⚖️ Rights\n\n`
                                           parsed.identified_clauses.rights.forEach((right: any) => {
-                                            formattedMarkdown += `**${right.name}** (${right.importance.toUpperCase()})\n`
+                                            const rightEmoji = right.importance === 'critical' ? '🔴' : right.importance === 'important' ? '🟡' : '🟢'
+                                            formattedMarkdown += `**${rightEmoji} ${right.name}** (${right.importance.toUpperCase()})\n`
                                             formattedMarkdown += `- Description: ${right.description}\n`
                                             formattedMarkdown += `- Implications: ${right.implications}\n\n`
                                           })
@@ -2650,10 +2665,10 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                       
                                       // Missing Clauses Section
                                       if (parsed.missing_clauses) {
-                                        formattedMarkdown += `# Missing Clauses & Recommendations\n\n`
+                                        formattedMarkdown += `# 📝 Missing Clauses & Recommendations\n\n`
                                         
                                         if (parsed.missing_clauses.recommended_additions && parsed.missing_clauses.recommended_additions.length > 0) {
-                                          formattedMarkdown += `## Recommended Additions\n\n`
+                                          formattedMarkdown += `## ➕ Recommended Additions\n\n`
                                           parsed.missing_clauses.recommended_additions.forEach((addition: string) => {
                                             formattedMarkdown += `• ${addition}\n`
                                           })
@@ -2661,7 +2676,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         }
                                         
                                         if (parsed.missing_clauses.industry_standards && parsed.missing_clauses.industry_standards.length > 0) {
-                                          formattedMarkdown += `## Industry Standards to Consider\n\n`
+                                          formattedMarkdown += `## 🏭 Industry Standards to Consider\n\n`
                                           parsed.missing_clauses.industry_standards.forEach((standard: string) => {
                                             formattedMarkdown += `• ${standard}\n`
                                           })
@@ -2669,7 +2684,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         }
                                         
                                         if (parsed.missing_clauses.compliance_gaps && parsed.missing_clauses.compliance_gaps.length > 0) {
-                                          formattedMarkdown += `## Compliance Gaps\n\n`
+                                          formattedMarkdown += `## ⚠️ Compliance Gaps\n\n`
                                           parsed.missing_clauses.compliance_gaps.forEach((gap: string) => {
                                             formattedMarkdown += `• ${gap}\n`
                                           })
@@ -2679,14 +2694,14 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                       
                                       // Compliance Section
                                       if (parsed.compliance_considerations) {
-                                        formattedMarkdown += `# Compliance Considerations\n\n`
+                                        formattedMarkdown += `# ✅ Compliance Considerations\n\n`
                                         if (parsed.compliance_considerations.compliance_score) {
                                           const score = parsed.compliance_considerations.compliance_score.replace('_', ' ').toUpperCase()
                                           formattedMarkdown += `**Compliance Score:** ${score}\n\n`
                                         }
                                         
                                         if (parsed.compliance_considerations.regulatory_requirements && parsed.compliance_considerations.regulatory_requirements.length > 0) {
-                                          formattedMarkdown += `## Regulatory Requirements\n\n`
+                                          formattedMarkdown += `## 🏛️ Regulatory Requirements\n\n`
                                           parsed.compliance_considerations.regulatory_requirements.forEach((req: string) => {
                                             formattedMarkdown += `• ${req}\n`
                                           })
@@ -2694,7 +2709,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         }
                                         
                                         if (parsed.compliance_considerations.industry_standards && parsed.compliance_considerations.industry_standards.length > 0) {
-                                          formattedMarkdown += `## Industry Standards\n\n`
+                                          formattedMarkdown += `## 🏭 Industry Standards\n\n`
                                           parsed.compliance_considerations.industry_standards.forEach((standard: string) => {
                                             formattedMarkdown += `• ${standard}\n`
                                           })
@@ -2702,7 +2717,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         }
                                         
                                         if (parsed.compliance_considerations.potential_violations && parsed.compliance_considerations.potential_violations.length > 0) {
-                                          formattedMarkdown += `## Potential Violations\n\n`
+                                          formattedMarkdown += `## 🚨 Potential Violations\n\n`
                                           parsed.compliance_considerations.potential_violations.forEach((violation: string) => {
                                             formattedMarkdown += `• ${violation}\n`
                                           })
@@ -2712,10 +2727,10 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                       
                                       // Recommendations Section
                                       if (parsed.recommendations) {
-                                        formattedMarkdown += `# Recommendations\n\n`
+                                        formattedMarkdown += `# 💡 Recommendations\n\n`
                                         
                                         if (parsed.recommendations.negotiation_points && parsed.recommendations.negotiation_points.length > 0) {
-                                          formattedMarkdown += `## Negotiation Points\n\n`
+                                          formattedMarkdown += `## ⚖️ Negotiation Points\n\n`
                                           parsed.recommendations.negotiation_points.forEach((point: string) => {
                                             formattedMarkdown += `• ${point}\n`
                                           })
@@ -2723,7 +2738,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         }
                                         
                                         if (parsed.recommendations.improvements && parsed.recommendations.improvements.length > 0) {
-                                          formattedMarkdown += `## Suggested Improvements\n\n`
+                                          formattedMarkdown += `## 📈 Suggested Improvements\n\n`
                                           parsed.recommendations.improvements.forEach((improvement: string) => {
                                             formattedMarkdown += `• ${improvement}\n`
                                           })
@@ -2731,7 +2746,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         }
                                         
                                         if (parsed.recommendations.red_flags && parsed.recommendations.red_flags.length > 0) {
-                                          formattedMarkdown += `## Red Flags\n\n`
+                                          formattedMarkdown += `## 🚩 Red Flags\n\n`
                                           parsed.recommendations.red_flags.forEach((flag: string) => {
                                             formattedMarkdown += `• ${flag}\n`
                                           })
@@ -2739,7 +2754,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                         }
                                         
                                         if (parsed.recommendations.next_steps && parsed.recommendations.next_steps.length > 0) {
-                                          formattedMarkdown += `## Next Steps\n\n`
+                                          formattedMarkdown += `## ⏭️ Next Steps\n\n`
                                           parsed.recommendations.next_steps.forEach((step: string) => {
                                             formattedMarkdown += `• ${step}\n`
                                           })
@@ -2749,7 +2764,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                       
                                       // Technical Details Section
                                       if (parsed.technical_details) {
-                                        formattedMarkdown += `# Technical Details\n\n`
+                                        formattedMarkdown += `# ⚙️ Technical Details\n\n`
                                         
                                         if (parsed.technical_details.contract_value) {
                                           formattedMarkdown += `**Contract Value:** ${parsed.technical_details.contract_value}\n`
@@ -2821,7 +2836,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                   </div>
                                 </div>
                               ) : latestAnalysis.results && Object.keys(latestAnalysis.results).length > 0 ? (
-                                <div className="prose prose-sm max-w-none">
+                                <div className="prose prose-sm max-w-none analysis-bullets">
                                   <p className="text-slate-500">Analysis results available but no formatted content found.</p>
                                   <div className="mt-3 pt-3 border-t border-slate-200">
                                     <Button
@@ -2916,7 +2931,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                       {expandedAnalyses.has(analysis.id) && (
                                         <div className="mt-3 pt-3 border-t">
                                           {analysis.results?.analysis ? (
-                                            <div className="prose prose-sm max-w-none">
+                                            <div className="prose prose-sm max-w-none analysis-bullets">
                                               {/* Try to parse and format the analysis content */}
                                               {(() => {
                                                 try {
@@ -2942,7 +2957,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                       parsed.summary.key_obligations.forEach((obligation: string) => {
                                                         formattedMarkdown += `• ${obligation}\n`
                                                       })
-                                                      formattedMarkdown += '\n'
+                                                      //formattedMarkdown += '\n'
                                                     }
                                                   }
                                                   
@@ -2986,39 +3001,43 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                   
                                                   // Identified Clauses Section
                                                   if (parsed.identified_clauses) {
-                                                    formattedMarkdown += `# Identified Clauses\n\n`
+                                                    formattedMarkdown += `# 🕵️ Identified Clauses\n\n`
                                                     
                                                     if (parsed.identified_clauses.key_terms && parsed.identified_clauses.key_terms.length > 0) {
-                                                      formattedMarkdown += `## Key Terms\n\n`
+                                                      formattedMarkdown += `## 🗝️ Key Terms\n\n`
                                                       parsed.identified_clauses.key_terms.forEach((term: any) => {
-                                                        formattedMarkdown += `**${term.name}** (${term.importance.toUpperCase()})\n`
+                                                        const termEmoji = term.importance === 'critical' ? '🔴' : term.importance === 'important' ? '🟡' : '🟢'
+                                                        formattedMarkdown += `**${termEmoji} ${term.name}** (${term.importance.toUpperCase()})\n`
                                                         formattedMarkdown += `- Description: ${term.description}\n`
                                                         formattedMarkdown += `- Implications: ${term.implications}\n\n`
                                                       })
                                                     }
                                                     
                                                     if (parsed.identified_clauses.conditions && parsed.identified_clauses.conditions.length > 0) {
-                                                      formattedMarkdown += `## Conditions\n\n`
+                                                      formattedMarkdown += `## 📜 Conditions\n\n`
                                                       parsed.identified_clauses.conditions.forEach((condition: any) => {
-                                                        formattedMarkdown += `**${condition.name}** (${condition.importance.toUpperCase()})\n`
+                                                        const conditionEmoji = condition.importance === 'critical' ? '🔴' : condition.importance === 'important' ? '🟡' : '🟢'
+                                                        formattedMarkdown += `**${conditionEmoji} ${condition.name}** (${condition.importance.toUpperCase()})\n`
                                                         formattedMarkdown += `- Description: ${condition.description}\n`
                                                         formattedMarkdown += `- Implications: ${condition.implications}\n\n`
                                                       })
                                                     }
                                                     
                                                     if (parsed.identified_clauses.obligations && parsed.identified_clauses.obligations.length > 0) {
-                                                      formattedMarkdown += `## Obligations\n\n`
+                                                      formattedMarkdown += `## 🤝 Obligations\n\n`
                                                       parsed.identified_clauses.obligations.forEach((obligation: any) => {
-                                                        formattedMarkdown += `**${obligation.name}** (${obligation.importance.toUpperCase()})\n`
+                                                        const obligationEmoji = obligation.importance === 'critical' ? '🔴' : obligation.importance === 'important' ? '🟡' : '🟢'
+                                                        formattedMarkdown += `**${obligationEmoji} ${obligation.name}** (${obligation.importance.toUpperCase()})\n`
                                                         formattedMarkdown += `- Description: ${obligation.description}\n`
                                                         formattedMarkdown += `- Implications: ${obligation.implications}\n\n`
                                                       })
                                                     }
                                                     
                                                     if (parsed.identified_clauses.rights && parsed.identified_clauses.rights.length > 0) {
-                                                      formattedMarkdown += `## Rights\n\n`
+                                                      formattedMarkdown += `## ⚖️ Rights\n\n`
                                                       parsed.identified_clauses.rights.forEach((right: any) => {
-                                                        formattedMarkdown += `**${right.name}** (${right.importance.toUpperCase()})\n`
+                                                        const rightEmoji = right.importance === 'critical' ? '🔴' : right.importance === 'important' ? '🟡' : '🟢'
+                                                        formattedMarkdown += `**${rightEmoji} ${right.name}** (${right.importance.toUpperCase()})\n`
                                                         formattedMarkdown += `- Description: ${right.description}\n`
                                                         formattedMarkdown += `- Implications: ${right.implications}\n\n`
                                                       })
@@ -3027,10 +3046,10 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                   
                                                   // Missing Clauses Section
                                                   if (parsed.missing_clauses) {
-                                                    formattedMarkdown += `# Missing Clauses & Recommendations\n\n`
+                                                    formattedMarkdown += `# 📝 Missing Clauses & Recommendations\n\n`
                                                     
                                                     if (parsed.missing_clauses.recommended_additions && parsed.missing_clauses.recommended_additions.length > 0) {
-                                                      formattedMarkdown += `## Recommended Additions\n\n`
+                                                      formattedMarkdown += `## ➕ Recommended Additions\n\n`
                                                       parsed.missing_clauses.recommended_additions.forEach((addition: string) => {
                                                         formattedMarkdown += `• ${addition}\n`
                                                       })
@@ -3038,7 +3057,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     }
                                                     
                                                     if (parsed.missing_clauses.industry_standards && parsed.missing_clauses.industry_standards.length > 0) {
-                                                      formattedMarkdown += `## Industry Standards to Consider\n\n`
+                                                      formattedMarkdown += `## 🏭 Industry Standards to Consider\n\n`
                                                       parsed.missing_clauses.industry_standards.forEach((standard: string) => {
                                                         formattedMarkdown += `• ${standard}\n`
                                                       })
@@ -3046,7 +3065,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     }
                                                     
                                                     if (parsed.missing_clauses.compliance_gaps && parsed.missing_clauses.compliance_gaps.length > 0) {
-                                                      formattedMarkdown += `## Compliance Gaps\n\n`
+                                                      formattedMarkdown += `## ⚠️ Compliance Gaps\n\n`
                                                       parsed.missing_clauses.compliance_gaps.forEach((gap: string) => {
                                                         formattedMarkdown += `• ${gap}\n`
                                                       })
@@ -3056,14 +3075,14 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                   
                                                   // Compliance Section
                                                   if (parsed.compliance_considerations) {
-                                                    formattedMarkdown += `# Compliance Considerations\n\n`
+                                                    formattedMarkdown += `# ✅ Compliance Considerations\n\n`
                                                     if (parsed.compliance_considerations.compliance_score) {
                                                       const score = parsed.compliance_considerations.compliance_score.replace('_', ' ').toUpperCase()
                                                       formattedMarkdown += `**Compliance Score:** ${score}\n\n`
                                                     }
                                                     
                                                     if (parsed.compliance_considerations.regulatory_requirements && parsed.compliance_considerations.regulatory_requirements.length > 0) {
-                                                      formattedMarkdown += `## Regulatory Requirements\n\n`
+                                                      formattedMarkdown += `## 🏛️ Regulatory Requirements\n\n`
                                                       parsed.compliance_considerations.regulatory_requirements.forEach((req: string) => {
                                                         formattedMarkdown += `• ${req}\n`
                                                       })
@@ -3071,7 +3090,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     }
                                                     
                                                     if (parsed.compliance_considerations.industry_standards && parsed.compliance_considerations.industry_standards.length > 0) {
-                                                      formattedMarkdown += `## Industry Standards\n\n`
+                                                      formattedMarkdown += `## 🏭 Industry Standards\n\n`
                                                       parsed.compliance_considerations.industry_standards.forEach((standard: string) => {
                                                         formattedMarkdown += `• ${standard}\n`
                                                       })
@@ -3079,7 +3098,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     }
                                                     
                                                     if (parsed.compliance_considerations.potential_violations && parsed.compliance_considerations.potential_violations.length > 0) {
-                                                      formattedMarkdown += `## Potential Violations\n\n`
+                                                      formattedMarkdown += `## 🚨 Potential Violations\n\n`
                                                       parsed.compliance_considerations.potential_violations.forEach((violation: string) => {
                                                         formattedMarkdown += `• ${violation}\n`
                                                       })
@@ -3089,10 +3108,10 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                   
                                                   // Recommendations Section
                                                   if (parsed.recommendations) {
-                                                    formattedMarkdown += `# Recommendations\n\n`
+                                                    formattedMarkdown += `# 💡 Recommendations\n\n`
                                                     
                                                     if (parsed.recommendations.negotiation_points && parsed.recommendations.negotiation_points.length > 0) {
-                                                      formattedMarkdown += `## Negotiation Points\n\n`
+                                                      formattedMarkdown += `## ⚖️ Negotiation Points\n\n`
                                                       parsed.recommendations.negotiation_points.forEach((point: string) => {
                                                         formattedMarkdown += `• ${point}\n`
                                                       })
@@ -3100,7 +3119,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     }
                                                     
                                                     if (parsed.recommendations.improvements && parsed.recommendations.improvements.length > 0) {
-                                                      formattedMarkdown += `## Suggested Improvements\n\n`
+                                                      formattedMarkdown += `## 📈 Suggested Improvements\n\n`
                                                       parsed.recommendations.improvements.forEach((improvement: string) => {
                                                         formattedMarkdown += `• ${improvement}\n`
                                                       })
@@ -3108,7 +3127,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     }
                                                     
                                                     if (parsed.recommendations.red_flags && parsed.recommendations.red_flags.length > 0) {
-                                                      formattedMarkdown += `## Red Flags\n\n`
+                                                      formattedMarkdown += `## 🚩 Red Flags\n\n`
                                                       parsed.recommendations.red_flags.forEach((flag: string) => {
                                                         formattedMarkdown += `• ${flag}\n`
                                                       })
@@ -3116,7 +3135,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                     }
                                                     
                                                     if (parsed.recommendations.next_steps && parsed.recommendations.next_steps.length > 0) {
-                                                      formattedMarkdown += `## Next Steps\n\n`
+                                                      formattedMarkdown += `## ⏭️ Next Steps\n\n`
                                                       parsed.recommendations.next_steps.forEach((step: string) => {
                                                         formattedMarkdown += `• ${step}\n`
                                                       })
@@ -3126,7 +3145,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                   
                                                   // Technical Details Section
                                                   if (parsed.technical_details) {
-                                                    formattedMarkdown += `# Technical Details\n\n`
+                                                    formattedMarkdown += `# ⚙️ Technical Details\n\n`
                                                     
                                                     if (parsed.technical_details.contract_value) {
                                                       formattedMarkdown += `**Contract Value:** ${parsed.technical_details.contract_value}\n`
@@ -3198,7 +3217,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                               </div>
                                             </div>
                                           ) : analysis.results && Object.keys(analysis.results).length > 0 ? (
-                                            <div className="prose prose-sm max-w-none">
+                                            <div className="prose prose-sm max-w-none analysis-bullets">
                                               <p className="text-slate-500">Analysis results available but no formatted content found.</p>
                                               <div className="mt-3 pt-3 border-t border-slate-200">
                                                 <Button

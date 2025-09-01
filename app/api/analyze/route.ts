@@ -25,7 +25,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
     analysis.summary.key_obligations.forEach(obligation => {
       formatted += `• ${obligation}\n`
     })
-    formatted += '\n'
+    //formatted += '\n'
   }
   
   // Risk Analysis Section
@@ -68,10 +68,10 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
   
   // Identified Clauses Section
   if (analysis.identified_clauses) {
-    formatted += `# Identified Clauses\n\n`
+    formatted += `# 🕵️ Identified Clauses\n\n`
     
     if (analysis.identified_clauses.key_terms && analysis.identified_clauses.key_terms.length > 0) {
-    formatted += `## Key Terms\n\n`
+    formatted += `## 🗝️ Key Terms\n\n`
     analysis.identified_clauses.key_terms.forEach(term => {
       formatted += `**${term.name}** (${term.importance.toUpperCase()})\n`
       formatted += `- Description: ${term.description}\n`
@@ -80,7 +80,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
   }
   
   if (analysis.identified_clauses.conditions.length > 0) {
-    formatted += `## Conditions\n\n`
+    formatted += `## 📜 Conditions\n\n`
     analysis.identified_clauses.conditions.forEach(condition => {
       formatted += `**${condition.name}** (${condition.importance.toUpperCase()})\n`
       formatted += `- Description: ${condition.description}\n`
@@ -89,7 +89,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
   }
   
   if (analysis.identified_clauses.obligations.length > 0) {
-    formatted += `## Obligations\n\n`
+    formatted += `## 🤝 Obligations\n\n`
     analysis.identified_clauses.obligations.forEach(obligation => {
       formatted += `**${obligation.name}** (${obligation.importance.toUpperCase()})\n`
       formatted += `- Description: ${obligation.description}\n`
@@ -98,7 +98,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
   }
   
   if (analysis.identified_clauses.rights.length > 0) {
-    formatted += `## Rights\n\n`
+    formatted += `## ⚖️ Rights\n\n`
     analysis.identified_clauses.rights.forEach(right => {
       formatted += `**${right.name}** (${right.importance.toUpperCase()})\n`
       formatted += `- Description: ${right.description}\n`
@@ -107,10 +107,10 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
   }
   
   // Missing Clauses Section
-  formatted += `# Missing Clauses & Recommendations\n\n`
+  formatted += `# 📝 Missing Clauses & Recommendations\n\n`
   
   if (analysis.missing_clauses.recommended_additions.length > 0) {
-    formatted += `## Recommended Additions\n\n`
+    formatted += `## ➕ Recommended Additions\n\n`
     analysis.missing_clauses.recommended_additions.forEach(addition => {
       formatted += `• ${addition}\n`
     })
@@ -118,7 +118,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
   }
   
   if (analysis.missing_clauses.industry_standards.length > 0) {
-    formatted += `## Industry Standards to Consider\n\n`
+    formatted += `## 🏭 Industry Standards to Consider\n\n`
     analysis.missing_clauses.industry_standards.forEach(standard => {
       formatted += `• ${standard}\n`
     })
@@ -126,7 +126,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
   }
   
   if (analysis.missing_clauses.compliance_gaps.length > 0) {
-    formatted += `## Compliance Gaps\n\n`
+    formatted += `## ⚠️ Compliance Gaps\n\n`
     analysis.missing_clauses.compliance_gaps.forEach(gap => {
       formatted += `• ${gap}\n`
     })
@@ -134,11 +134,11 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
   }
   
   // Compliance Section
-  formatted += `# Compliance Considerations\n\n`
+  formatted += `# ✅ Compliance Considerations\n\n`
   formatted += `**Compliance Score:** ${analysis.compliance_considerations.compliance_score.replace('_', ' ').toUpperCase()}\n\n`
   
   if (analysis.compliance_considerations.regulatory_requirements.length > 0) {
-    formatted += `## Regulatory Requirements\n\n`
+    formatted += `## 🏛️ Regulatory Requirements\n\n`
     analysis.compliance_considerations.regulatory_requirements.forEach(req => {
       formatted += `• ${req}\n`
     })
@@ -146,7 +146,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
   }
   
   if (analysis.compliance_considerations.industry_standards.length > 0) {
-    formatted += `## Industry Standards\n\n`
+    formatted += `## 📋 Industry Standards\n\n`
     analysis.compliance_considerations.industry_standards.forEach(standard => {
       formatted += `• ${standard}\n`
     })
@@ -154,7 +154,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
   }
   
   if (analysis.compliance_considerations.potential_violations.length > 0) {
-    formatted += `## Potential Violations\n\n`
+    formatted += `## 🚨 Potential Violations\n\n`
     analysis.compliance_considerations.potential_violations.forEach(violation => {
       formatted += `• ${violation}\n`
     })
@@ -162,10 +162,10 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
   }
   
   // Recommendations Section
-  formatted += `# Recommendations\n\n`
+  formatted += `# 💡 Recommendations\n\n`
   
   if (analysis.recommendations.negotiation_points.length > 0) {
-    formatted += `## Negotiation Points\n\n`
+    formatted += `## ⚖️ Negotiation Points\n\n`
     analysis.recommendations.negotiation_points.forEach(point => {
       formatted += `• ${point}\n`
     })
@@ -173,7 +173,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
   }
   
   if (analysis.recommendations && analysis.recommendations.improvements && analysis.recommendations.improvements.length > 0) {
-    formatted += `## Suggested Improvements\n\n`
+    formatted += `## 📈 Suggested Improvements\n\n`
     analysis.recommendations.improvements.forEach(improvement => {
       formatted += `• ${improvement}\n`
     })
@@ -181,7 +181,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
   }
   
   if (analysis.recommendations && analysis.recommendations.red_flags && analysis.recommendations.red_flags.length > 0) {
-    formatted += `## Red Flags\n\n`
+    formatted += `## 🚩 Red Flags\n\n`
     analysis.recommendations.red_flags.forEach(flag => {
       formatted += `• ${flag}\n`
     })
@@ -189,7 +189,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
   }
   
   if (analysis.recommendations && analysis.recommendations.next_steps && analysis.recommendations.next_steps.length > 0) {
-    formatted += `## Next Steps\n\n`
+    formatted += `## ⏭️ Next Steps\n\n`
     analysis.recommendations.next_steps.forEach(step => {
       formatted += `• ${step}\n`
     })
@@ -198,7 +198,7 @@ function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
   
   // Technical Details Section
   if (analysis.technical_details) {
-    formatted += `# Technical Details\n\n`
+    formatted += `# ⚙️ Technical Details\n\n`
     
     if (analysis.technical_details.contract_value) {
       formatted += `**Contract Value:** ${analysis.technical_details.contract_value}\n`

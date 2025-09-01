@@ -123,3 +123,43 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom styles for analysis section bullet points */
+@layer components {
+  /* Reduce spacing between bullet points in analysis */
+  .prose ul {
+    margin: 0.25rem 0 !important;
+  }
+  
+  .prose li {
+    margin: 0.125rem 0 !important;
+    padding: 0 !important;
+  }
+  
+  .prose ul li {
+    margin: 0.125rem 0 !important;
+    padding: 0 !important;
+    line-height: 1.3 !important;
+  }
+  
+  /* Target specific analysis sections */
+  .prose .analysis-bullets ul {
+    margin: 0.125rem 0 !important;
+  }
+  
+  .prose .analysis-bullets li {
+    margin: 0.0625rem 0 !important;
+    padding: 0 !important;
+    line-height: 1.2 !important;
+  }
+  
+  /* Even tighter spacing for key obligations and risk items */
+  .prose .analysis-bullets ul:has(li:contains("•")) {
+    margin: 0.0625rem 0 !important;
+  }
+  
+  .prose .analysis-bullets li:contains("•") {
+    margin: 0.03125rem 0 !important;
+    line-height: 1.1 !important;
+  }
+}

@@ -104,7 +104,7 @@ The app will be available at `http://localhost:3000`
 ✅ **Export & Sharing**: Multiple formats with secure link generation
 ✅ **Responsive Design**: Mobile-friendly interface
 
-## Next Steps
+## ⏭️ Next Steps
 
 1. **Customize AI Prompts**: Modify the analysis prompts in the API routes
 2. **Add Stripe Integration**: Implement subscription plans
