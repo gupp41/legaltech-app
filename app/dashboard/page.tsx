@@ -2805,8 +2805,276 @@ Full text length: ${extractionResult.text?.length || 0} characters
                               
                               {/* Display analysis content with proper formatting */}
                               {latestAnalysis.results?.analysis ? (
-                                <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                                  {latestAnalysis.results.analysis}
+                                <div className="prose prose-sm max-w-none">
+                                  {/* Try to parse and format the analysis content */}
+                                  {(() => {
+                                    try {
+                                      const parsed = JSON.parse(latestAnalysis.results.analysis)
+                                      // Convert to formatted markdown using the same logic as prettifyOutput
+                                      let formattedMarkdown = ''
+                                      
+                                      // Summary Section
+                                      if (parsed.summary) {
+                                        formattedMarkdown += `# Document Analysis Summary\n\n`
+                                        if (parsed.summary.document_purpose) {
+                                          formattedMarkdown += `**Document Purpose:** ${parsed.summary.document_purpose}\n\n`
+                                        }
+                                        if (parsed.summary.document_type) {
+                                          formattedMarkdown += `**Document Type:** ${parsed.summary.document_type}\n\n`
+                                        }
+                                        if (parsed.summary.overall_assessment) {
+                                          const assessment = parsed.summary.overall_assessment.replace('_', ' ').toUpperCase()
+                                          formattedMarkdown += `**Overall Risk Assessment:** ${assessment}\n\n`
+                                        }
+                                        if (parsed.summary.key_obligations && parsed.summary.key_obligations.length > 0) {
+                                          formattedMarkdown += `**Key Obligations:**\n`
+                                          parsed.summary.key_obligations.forEach((obligation: string) => {
+                                            formattedMarkdown += `• ${obligation}\n`
+                                          })
+                                          formattedMarkdown += '\n'
+                                        }
+                                      }
+                                      
+                                      // Risk Analysis Section
+                                      if (parsed.risk_analysis) {
+                                        formattedMarkdown += `# Risk Analysis\n\n`
+                                        if (parsed.risk_analysis.risk_summary) {
+                                          formattedMarkdown += `${parsed.risk_analysis.risk_summary}\n\n`
+                                        }
+                                        
+                                        if (parsed.risk_analysis.high_risk_items && parsed.risk_analysis.high_risk_items.length > 0) {
+                                          formattedMarkdown += `## 🔴 High Risk Items\n\n`
+                                          parsed.risk_analysis.high_risk_items.forEach((item: any) => {
+                                            formattedMarkdown += `**${item.clause}**\n`
+                                            formattedMarkdown += `- Description: ${item.description}\n`
+                                            formattedMarkdown += `- Impact: ${item.impact}\n`
+                                            formattedMarkdown += `- Recommendation: ${item.recommendation}\n\n`
+                                          })
+                                        }
+                                        
+                                        if (parsed.risk_analysis.medium_risk_items && parsed.risk_analysis.medium_risk_items.length > 0) {
+                                          formattedMarkdown += `## 🟡 Medium Risk Items\n\n`
+                                          parsed.risk_analysis.medium_risk_items.forEach((item: any) => {
+                                            formattedMarkdown += `**${item.clause}**\n`
+                                            formattedMarkdown += `- Description: ${item.description}\n`
+                                            formattedMarkdown += `- Impact: ${item.impact}\n`
+                                            formattedMarkdown += `- Recommendation: ${item.recommendation}\n\n`
+                                          })
+                                        }
+                                        
+                                        if (parsed.risk_analysis.low_risk_items && parsed.risk_analysis.low_risk_items.length > 0) {
+                                          formattedMarkdown += `## 🟢 Low Risk Items\n\n`
+                                          parsed.risk_analysis.low_risk_items.forEach((item: any) => {
+                                            formattedMarkdown += `**${item.clause}**\n`
+                                            formattedMarkdown += `- Description: ${item.description}\n`
+                                            formattedMarkdown += `- Impact: ${item.impact}\n`
+                                            formattedMarkdown += `- Recommendation: ${item.recommendation}\n\n`
+                                          })
+                                        }
+                                      }
+                                      
+                                      // Identified Clauses Section
+                                      if (parsed.identified_clauses) {
+                                        formattedMarkdown += `# Identified Clauses\n\n`
+                                        
+                                        if (parsed.identified_clauses.key_terms && parsed.identified_clauses.key_terms.length > 0) {
+                                          formattedMarkdown += `## Key Terms\n\n`
+                                          parsed.identified_clauses.key_terms.forEach((term: any) => {
+                                            formattedMarkdown += `**${term.name}** (${term.importance.toUpperCase()})\n`
+                                            formattedMarkdown += `- Description: ${term.description}\n`
+                                            formattedMarkdown += `- Implications: ${term.implications}\n\n`
+                                          })
+                                        }
+                                        
+                                        if (parsed.identified_clauses.conditions && parsed.identified_clauses.conditions.length > 0) {
+                                          formattedMarkdown += `## Conditions\n\n`
+                                          parsed.identified_clauses.conditions.forEach((condition: any) => {
+                                            formattedMarkdown += `**${condition.name}** (${condition.importance.toUpperCase()})\n`
+                                            formattedMarkdown += `- Description: ${condition.description}\n`
+                                            formattedMarkdown += `- Implications: ${condition.implications}\n\n`
+                                          })
+                                        }
+                                        
+                                                                                 if (parsed.identified_clauses.obligations && parsed.identified_clauses.obligations.length > 0) {
+                                           formattedMarkdown += `## Obligations\n\n`
+                                           parsed.identified_clauses.obligations.forEach((obligation: any) => {
+                                             formattedMarkdown += `**${obligation.name}** (${obligation.importance.toUpperCase()})\n`
+                                             formattedMarkdown += `- Description: ${obligation.description}\n`
+                                             formattedMarkdown += `- Implications: ${obligation.implications}\n\n`
+                                           })
+                                         }
+                                        
+                                        if (parsed.identified_clauses.rights && parsed.identified_clauses.rights.length > 0) {
+                                          formattedMarkdown += `## Rights\n\n`
+                                          parsed.identified_clauses.rights.forEach((right: any) => {
+                                            formattedMarkdown += `**${right.name}** (${right.importance.toUpperCase()})\n`
+                                            formattedMarkdown += `- Description: ${right.description}\n`
+                                            formattedMarkdown += `- Implications: ${right.implications}\n\n`
+                                          })
+                                        }
+                                      }
+                                      
+                                      // Missing Clauses Section
+                                      if (parsed.missing_clauses) {
+                                        formattedMarkdown += `# Missing Clauses & Recommendations\n\n`
+                                        
+                                        if (parsed.missing_clauses.recommended_additions && parsed.missing_clauses.recommended_additions.length > 0) {
+                                          formattedMarkdown += `## Recommended Additions\n\n`
+                                          parsed.missing_clauses.recommended_additions.forEach((addition: string) => {
+                                            formattedMarkdown += `• ${addition}\n`
+                                          })
+                                          formattedMarkdown += '\n'
+                                        }
+                                        
+                                        if (parsed.missing_clauses.industry_standards && parsed.missing_clauses.industry_standards.length > 0) {
+                                          formattedMarkdown += `## Industry Standards to Consider\n\n`
+                                          parsed.missing_clauses.industry_standards.forEach((standard: string) => {
+                                            formattedMarkdown += `• ${standard}\n`
+                                          })
+                                          formattedMarkdown += '\n'
+                                        }
+                                        
+                                        if (parsed.missing_clauses.compliance_gaps && parsed.missing_clauses.compliance_gaps.length > 0) {
+                                          formattedMarkdown += `## Compliance Gaps\n\n`
+                                          parsed.missing_clauses.compliance_gaps.forEach((gap: string) => {
+                                            formattedMarkdown += `• ${gap}\n`
+                                          })
+                                          formattedMarkdown += '\n'
+                                        }
+                                      }
+                                      
+                                      // Compliance Section
+                                      if (parsed.compliance_considerations) {
+                                        formattedMarkdown += `# Compliance Considerations\n\n`
+                                        if (parsed.compliance_considerations.compliance_score) {
+                                          const score = parsed.compliance_considerations.compliance_score.replace('_', ' ').toUpperCase()
+                                          formattedMarkdown += `**Compliance Score:** ${score}\n\n`
+                                        }
+                                        
+                                        if (parsed.compliance_considerations.regulatory_requirements && parsed.compliance_considerations.regulatory_requirements.length > 0) {
+                                          formattedMarkdown += `## Regulatory Requirements\n\n`
+                                          parsed.compliance_considerations.regulatory_requirements.forEach((req: string) => {
+                                            formattedMarkdown += `• ${req}\n`
+                                          })
+                                          formattedMarkdown += '\n'
+                                        }
+                                        
+                                        if (parsed.compliance_considerations.industry_standards && parsed.compliance_considerations.industry_standards.length > 0) {
+                                          formattedMarkdown += `## Industry Standards\n\n`
+                                          parsed.compliance_considerations.industry_standards.forEach((standard: string) => {
+                                            formattedMarkdown += `• ${standard}\n`
+                                          })
+                                          formattedMarkdown += '\n'
+                                        }
+                                        
+                                        if (parsed.compliance_considerations.potential_violations && parsed.compliance_considerations.potential_violations.length > 0) {
+                                          formattedMarkdown += `## Potential Violations\n\n`
+                                          parsed.compliance_considerations.potential_violations.forEach((violation: string) => {
+                                            formattedMarkdown += `• ${violation}\n`
+                                          })
+                                          formattedMarkdown += '\n'
+                                        }
+                                      }
+                                      
+                                      // Recommendations Section
+                                      if (parsed.recommendations) {
+                                        formattedMarkdown += `# Recommendations\n\n`
+                                        
+                                        if (parsed.recommendations.negotiation_points && parsed.recommendations.negotiation_points.length > 0) {
+                                          formattedMarkdown += `## Negotiation Points\n\n`
+                                          parsed.recommendations.negotiation_points.forEach((point: string) => {
+                                            formattedMarkdown += `• ${point}\n`
+                                          })
+                                          formattedMarkdown += '\n'
+                                        }
+                                        
+                                        if (parsed.recommendations.improvements && parsed.recommendations.improvements.length > 0) {
+                                          formattedMarkdown += `## Suggested Improvements\n\n`
+                                          parsed.recommendations.improvements.forEach((improvement: string) => {
+                                            formattedMarkdown += `• ${improvement}\n`
+                                          })
+                                          formattedMarkdown += '\n'
+                                        }
+                                        
+                                        if (parsed.recommendations.red_flags && parsed.recommendations.red_flags.length > 0) {
+                                          formattedMarkdown += `## Red Flags\n\n`
+                                          parsed.recommendations.red_flags.forEach((flag: string) => {
+                                            formattedMarkdown += `• ${flag}\n`
+                                          })
+                                          formattedMarkdown += '\n'
+                                        }
+                                        
+                                        if (parsed.recommendations.next_steps && parsed.recommendations.next_steps.length > 0) {
+                                          formattedMarkdown += `## Next Steps\n\n`
+                                          parsed.recommendations.next_steps.forEach((step: string) => {
+                                            formattedMarkdown += `• ${step}\n`
+                                          })
+                                          formattedMarkdown += '\n'
+                                        }
+                                      }
+                                      
+                                      // Technical Details Section
+                                      if (parsed.technical_details) {
+                                        formattedMarkdown += `# Technical Details\n\n`
+                                        
+                                        if (parsed.technical_details.contract_value) {
+                                          formattedMarkdown += `**Contract Value:** ${parsed.technical_details.contract_value}\n`
+                                        }
+                                        if (parsed.technical_details.duration) {
+                                          formattedMarkdown += `**Duration:** ${parsed.technical_details.duration}\n`
+                                        }
+                                        if (parsed.technical_details.governing_law) {
+                                          formattedMarkdown += `**Governing Law:** ${parsed.technical_details.governing_law}\n`
+                                        }
+                                        if (parsed.technical_details.jurisdiction) {
+                                          formattedMarkdown += `**Jurisdiction:** ${parsed.technical_details.jurisdiction}\n`
+                                        }
+                                        
+                                        if (parsed.technical_details.parties_involved && parsed.technical_details.parties_involved.length > 0) {
+                                          formattedMarkdown += `**Parties Involved:** ${parsed.technical_details.parties_involved.join(', ')}\n`
+                                        }
+                                      }
+                                      
+                                      // Render the formatted markdown
+                                      return (
+                                        <div 
+                                          className="whitespace-pre-wrap text-sm leading-relaxed"
+                                          dangerouslySetInnerHTML={{ 
+                                            __html: formattedMarkdown
+                                              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                              .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                                              .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mb-2">$1</h1>')
+                                              .replace(/^## (.*$)/gm, '<h2 class="text-lg font-semibold mb-2 mt-4">$1</h2>')
+                                              .replace(/^### (.*$)/gm, '<h3 class="text-base font-medium mb-2 mt-3">$1</h3>')
+                                              .replace(/^• (.*$)/gm, '<li class="ml-4">$1</li>')
+                                              .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
+                                              .replace(/\n\n/g, '</p><p class="mb-2">')
+                                              .replace(/^/g, '<p class="mb-2">')
+                                              .replace(/$/g, '</p>')
+                                          }}
+                                        />
+                                      )
+                                    } catch (e) {
+                                      // If parsing fails, show the raw content with a prettify button
+                                      return (
+                                        <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                                          {latestAnalysis.results.analysis}
+                                          <div className="mt-3 pt-3 border-t border-slate-200">
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => prettifyOutput(latestAnalysis.results.analysis, 'Latest Analysis - Raw Content')}
+                                              className="text-xs"
+                                            >
+                                              🔍 Prettify Output
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      )
+                                    }
+                                  })()}
+                                  
+                                  {/* Debug button - only show if needed */}
                                   <div className="mt-3 pt-3 border-t border-slate-200">
                                     <Button
                                       variant="outline"
@@ -2814,15 +3082,13 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                       onClick={() => prettifyOutput(latestAnalysis.results.analysis, 'Latest Analysis - Raw Content')}
                                       className="text-xs"
                                     >
-                                      🔍 Prettify Output
+                                      🔍 Show Raw JSON (Debug)
                                     </Button>
                                   </div>
                                 </div>
                               ) : latestAnalysis.results && Object.keys(latestAnalysis.results).length > 0 ? (
                                 <div className="prose prose-sm max-w-none">
-                                  <pre className="whitespace-pre-wrap">
-                                    {JSON.stringify(latestAnalysis.results, null, 2)}
-                                  </pre>
+                                  <p className="text-slate-500">Analysis results available but no formatted content found.</p>
                                   <div className="mt-3 pt-3 border-t border-slate-200">
                                     <Button
                                       variant="outline"
@@ -2830,7 +3096,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                       onClick={() => prettifyOutput(JSON.stringify(latestAnalysis.results, null, 2), 'Latest Analysis - Results Object')}
                                       className="text-xs"
                                     >
-                                      🔍 Prettify Output
+                                      🔍 Show Raw Results (Debug)
                                     </Button>
                                   </div>
                                 </div>
@@ -2916,8 +3182,276 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                       {expandedAnalyses.has(analysis.id) && (
                                         <div className="mt-3 pt-3 border-t">
                                           {analysis.results?.analysis ? (
-                                            <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                                              {analysis.results.analysis}
+                                            <div className="prose prose-sm max-w-none">
+                                              {/* Try to parse and format the analysis content */}
+                                              {(() => {
+                                                try {
+                                                  const parsed = JSON.parse(analysis.results.analysis)
+                                                  // Convert to formatted markdown using the same logic as prettifyOutput
+                                                  let formattedMarkdown = ''
+                                                  
+                                                  // Summary Section
+                                                  if (parsed.summary) {
+                                                    formattedMarkdown += `# Document Analysis Summary\n\n`
+                                                    if (parsed.summary.document_purpose) {
+                                                      formattedMarkdown += `**Document Purpose:** ${parsed.summary.document_purpose}\n\n`
+                                                    }
+                                                    if (parsed.summary.document_type) {
+                                                      formattedMarkdown += `**Document Type:** ${parsed.summary.document_type}\n\n`
+                                                    }
+                                                    if (parsed.summary.overall_assessment) {
+                                                      const assessment = parsed.summary.overall_assessment.replace('_', ' ').toUpperCase()
+                                                      formattedMarkdown += `**Overall Risk Assessment:** ${assessment}\n\n`
+                                                    }
+                                                    if (parsed.summary.key_obligations && parsed.summary.key_obligations.length > 0) {
+                                                      formattedMarkdown += `**Key Obligations:**\n`
+                                                      parsed.summary.key_obligations.forEach((obligation: string) => {
+                                                        formattedMarkdown += `• ${obligation}\n`
+                                                      })
+                                                      formattedMarkdown += '\n'
+                                                    }
+                                                  }
+                                                  
+                                                  // Risk Analysis Section
+                                                  if (parsed.risk_analysis) {
+                                                    formattedMarkdown += `# Risk Analysis\n\n`
+                                                    if (parsed.risk_analysis.risk_summary) {
+                                                      formattedMarkdown += `${parsed.risk_analysis.risk_summary}\n\n`
+                                                    }
+                                                    
+                                                    if (parsed.risk_analysis.high_risk_items && parsed.risk_analysis.high_risk_items.length > 0) {
+                                                      formattedMarkdown += `## 🔴 High Risk Items\n\n`
+                                                      parsed.risk_analysis.high_risk_items.forEach((item: any) => {
+                                                        formattedMarkdown += `**${item.clause}**\n`
+                                                        formattedMarkdown += `- Description: ${item.description}\n`
+                                                        formattedMarkdown += `- Impact: ${item.impact}\n`
+                                                        formattedMarkdown += `- Recommendation: ${item.recommendation}\n\n`
+                                                      })
+                                                    }
+                                                    
+                                                    if (parsed.risk_analysis.medium_risk_items && parsed.risk_analysis.medium_risk_items.length > 0) {
+                                                      formattedMarkdown += `## 🟡 Medium Risk Items\n\n`
+                                                      parsed.risk_analysis.medium_risk_items.forEach((item: any) => {
+                                                        formattedMarkdown += `**${item.clause}**\n`
+                                                        formattedMarkdown += `- Description: ${item.description}\n`
+                                                        formattedMarkdown += `- Impact: ${item.impact}\n`
+                                                        formattedMarkdown += `- Recommendation: ${item.recommendation}\n\n`
+                                                      })
+                                                    }
+                                                    
+                                                    if (parsed.risk_analysis.low_risk_items && parsed.risk_analysis.low_risk_items.length > 0) {
+                                                      formattedMarkdown += `## 🟢 Low Risk Items\n\n`
+                                                      parsed.risk_analysis.low_risk_items.forEach((item: any) => {
+                                                        formattedMarkdown += `**${item.clause}**\n`
+                                                        formattedMarkdown += `- Description: ${item.description}\n`
+                                                        formattedMarkdown += `- Impact: ${item.impact}\n`
+                                                        formattedMarkdown += `- Recommendation: ${item.recommendation}\n\n`
+                                                      })
+                                                    }
+                                                  }
+                                                  
+                                                  // Identified Clauses Section
+                                                  if (parsed.identified_clauses) {
+                                                    formattedMarkdown += `# Identified Clauses\n\n`
+                                                    
+                                                    if (parsed.identified_clauses.key_terms && parsed.identified_clauses.key_terms.length > 0) {
+                                                      formattedMarkdown += `## Key Terms\n\n`
+                                                      parsed.identified_clauses.key_terms.forEach((term: any) => {
+                                                        formattedMarkdown += `**${term.name}** (${term.importance.toUpperCase()})\n`
+                                                        formattedMarkdown += `- Description: ${term.description}\n`
+                                                        formattedMarkdown += `- Implications: ${term.implications}\n\n`
+                                                      })
+                                                    }
+                                                    
+                                                    if (parsed.identified_clauses.conditions && parsed.identified_clauses.conditions.length > 0) {
+                                                      formattedMarkdown += `## Conditions\n\n`
+                                                      parsed.identified_clauses.conditions.forEach((condition: any) => {
+                                                        formattedMarkdown += `**${condition.name}** (${condition.importance.toUpperCase()})\n`
+                                                        formattedMarkdown += `- Description: ${condition.description}\n`
+                                                        formattedMarkdown += `- Implications: ${condition.implications}\n\n`
+                                                      })
+                                                    }
+                                                    
+                                                    if (parsed.identified_clauses.obligations && parsed.identified_clauses.obligations.length > 0) {
+                                                      formattedMarkdown += `## Obligations\n\n`
+                                                      parsed.identified_clauses.obligations.forEach((obligation: any) => {
+                                                        formattedMarkdown += `**${obligation.name}** (${obligation.importance.toUpperCase()})\n`
+                                                        formattedMarkdown += `- Description: ${obligation.description}\n`
+                                                        formattedMarkdown += `- Implications: ${obligation.implications}\n\n`
+                                                      })
+                                                    }
+                                                    
+                                                    if (parsed.identified_clauses.rights && parsed.identified_clauses.rights.length > 0) {
+                                                      formattedMarkdown += `## Rights\n\n`
+                                                      parsed.identified_clauses.rights.forEach((right: any) => {
+                                                        formattedMarkdown += `**${right.name}** (${right.importance.toUpperCase()})\n`
+                                                        formattedMarkdown += `- Description: ${right.description}\n`
+                                                        formattedMarkdown += `- Implications: ${right.implications}\n\n`
+                                                      })
+                                                    }
+                                                  }
+                                                  
+                                                  // Missing Clauses Section
+                                                  if (parsed.missing_clauses) {
+                                                    formattedMarkdown += `# Missing Clauses & Recommendations\n\n`
+                                                    
+                                                    if (parsed.missing_clauses.recommended_additions && parsed.missing_clauses.recommended_additions.length > 0) {
+                                                      formattedMarkdown += `## Recommended Additions\n\n`
+                                                      parsed.missing_clauses.recommended_additions.forEach((addition: string) => {
+                                                        formattedMarkdown += `• ${addition}\n`
+                                                      })
+                                                      formattedMarkdown += '\n'
+                                                    }
+                                                    
+                                                    if (parsed.missing_clauses.industry_standards && parsed.missing_clauses.industry_standards.length > 0) {
+                                                      formattedMarkdown += `## Industry Standards to Consider\n\n`
+                                                      parsed.missing_clauses.industry_standards.forEach((standard: string) => {
+                                                        formattedMarkdown += `• ${standard}\n`
+                                                      })
+                                                      formattedMarkdown += '\n'
+                                                    }
+                                                    
+                                                    if (parsed.missing_clauses.compliance_gaps && parsed.missing_clauses.compliance_gaps.length > 0) {
+                                                      formattedMarkdown += `## Compliance Gaps\n\n`
+                                                      parsed.missing_clauses.compliance_gaps.forEach((gap: string) => {
+                                                        formattedMarkdown += `• ${gap}\n`
+                                                      })
+                                                      formattedMarkdown += '\n'
+                                                    }
+                                                  }
+                                                  
+                                                  // Compliance Section
+                                                  if (parsed.compliance_considerations) {
+                                                    formattedMarkdown += `# Compliance Considerations\n\n`
+                                                    if (parsed.compliance_considerations.compliance_score) {
+                                                      const score = parsed.compliance_considerations.compliance_score.replace('_', ' ').toUpperCase()
+                                                      formattedMarkdown += `**Compliance Score:** ${score}\n\n`
+                                                    }
+                                                    
+                                                    if (parsed.compliance_considerations.regulatory_requirements && parsed.compliance_considerations.regulatory_requirements.length > 0) {
+                                                      formattedMarkdown += `## Regulatory Requirements\n\n`
+                                                      parsed.compliance_considerations.regulatory_requirements.forEach((req: string) => {
+                                                        formattedMarkdown += `• ${req}\n`
+                                                      })
+                                                      formattedMarkdown += '\n'
+                                                    }
+                                                    
+                                                    if (parsed.compliance_considerations.industry_standards && parsed.compliance_considerations.industry_standards.length > 0) {
+                                                      formattedMarkdown += `## Industry Standards\n\n`
+                                                      parsed.compliance_considerations.industry_standards.forEach((standard: string) => {
+                                                        formattedMarkdown += `• ${standard}\n`
+                                                      })
+                                                      formattedMarkdown += '\n'
+                                                    }
+                                                    
+                                                    if (parsed.compliance_considerations.potential_violations && parsed.compliance_considerations.potential_violations.length > 0) {
+                                                      formattedMarkdown += `## Potential Violations\n\n`
+                                                      parsed.compliance_considerations.potential_violations.forEach((violation: string) => {
+                                                        formattedMarkdown += `• ${violation}\n`
+                                                      })
+                                                      formattedMarkdown += '\n'
+                                                    }
+                                                  }
+                                                  
+                                                  // Recommendations Section
+                                                  if (parsed.recommendations) {
+                                                    formattedMarkdown += `# Recommendations\n\n`
+                                                    
+                                                    if (parsed.recommendations.negotiation_points && parsed.recommendations.negotiation_points.length > 0) {
+                                                      formattedMarkdown += `## Negotiation Points\n\n`
+                                                      parsed.recommendations.negotiation_points.forEach((point: string) => {
+                                                        formattedMarkdown += `• ${point}\n`
+                                                      })
+                                                      formattedMarkdown += '\n'
+                                                    }
+                                                    
+                                                    if (parsed.recommendations.improvements && parsed.recommendations.improvements.length > 0) {
+                                                      formattedMarkdown += `## Suggested Improvements\n\n`
+                                                      parsed.recommendations.improvements.forEach((improvement: string) => {
+                                                        formattedMarkdown += `• ${improvement}\n`
+                                                      })
+                                                      formattedMarkdown += '\n'
+                                                    }
+                                                    
+                                                    if (parsed.recommendations.red_flags && parsed.recommendations.red_flags.length > 0) {
+                                                      formattedMarkdown += `## Red Flags\n\n`
+                                                      parsed.recommendations.red_flags.forEach((flag: string) => {
+                                                        formattedMarkdown += `• ${flag}\n`
+                                                      })
+                                                      formattedMarkdown += '\n'
+                                                    }
+                                                    
+                                                    if (parsed.recommendations.next_steps && parsed.recommendations.next_steps.length > 0) {
+                                                      formattedMarkdown += `## Next Steps\n\n`
+                                                      parsed.recommendations.next_steps.forEach((step: string) => {
+                                                        formattedMarkdown += `• ${step}\n`
+                                                      })
+                                                      formattedMarkdown += '\n'
+                                                    }
+                                                  }
+                                                  
+                                                  // Technical Details Section
+                                                  if (parsed.technical_details) {
+                                                    formattedMarkdown += `# Technical Details\n\n`
+                                                    
+                                                    if (parsed.technical_details.contract_value) {
+                                                      formattedMarkdown += `**Contract Value:** ${parsed.technical_details.contract_value}\n`
+                                                    }
+                                                    if (parsed.technical_details.duration) {
+                                                      formattedMarkdown += `**Duration:** ${parsed.technical_details.duration}\n`
+                                                    }
+                                                    if (parsed.technical_details.governing_law) {
+                                                      formattedMarkdown += `**Governing Law:** ${parsed.technical_details.governing_law}\n`
+                                                    }
+                                                    if (parsed.technical_details.jurisdiction) {
+                                                      formattedMarkdown += `**Jurisdiction:** ${parsed.technical_details.jurisdiction}\n`
+                                                    }
+                                                    
+                                                    if (parsed.technical_details.parties_involved && parsed.technical_details.parties_involved.length > 0) {
+                                                      formattedMarkdown += `**Parties Involved:** ${parsed.technical_details.parties_involved.join(', ')}\n`
+                                                    }
+                                                  }
+                                                  
+                                                  // Render the formatted markdown
+                                                  return (
+                                                    <div 
+                                                      className="whitespace-pre-wrap text-sm leading-relaxed"
+                                                      dangerouslySetInnerHTML={{ 
+                                                        __html: formattedMarkdown
+                                                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                                          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                                                          .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mb-2">$1</h1>')
+                                                          .replace(/^## (.*$)/gm, '<h2 class="text-lg font-semibold mb-2 mt-4">$1</h2>')
+                                                          .replace(/^### (.*$)/gm, '<h3 class="text-base font-medium mb-2 mt-3">$1</h3>')
+                                                          .replace(/^• (.*$)/gm, '<li class="ml-4">$1</li>')
+                                                          .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
+                                                          .replace(/\n\n/g, '</p><p class="mb-2">')
+                                                          .replace(/^/g, '<p class="mb-2">')
+                                                          .replace(/$/g, '</p>')
+                                                      }}
+                                                    />
+                                                  )
+                                                } catch (e) {
+                                                  // If parsing fails, show the raw content with a prettify button
+                                                  return (
+                                                    <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                                                      {analysis.results.analysis}
+                                                      <div className="mt-3 pt-3 border-t border-slate-200">
+                                                        <Button
+                                                          variant="outline"
+                                                          size="sm"
+                                                          onClick={() => prettifyOutput(analysis.results.analysis, `Analysis ${analysis.id} - Raw Content`)}
+                                                          className="text-xs"
+                                                        >
+                                                          🔍 Prettify Output
+                                                        </Button>
+                                                      </div>
+                                                    </div>
+                                                  )
+                                                }
+                                              })()}
+                                              
+                                              {/* Debug button - only show if needed */}
                                               <div className="mt-3 pt-3 border-t border-slate-200">
                                                 <Button
                                                   variant="outline"
@@ -2925,15 +3459,13 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                   onClick={() => prettifyOutput(analysis.results.analysis, `Analysis ${analysis.id} - Raw Content`)}
                                                   className="text-xs"
                                                 >
-                                                  🔍 Prettify Output
+                                                  🔍 Show Raw JSON (Debug)
                                                 </Button>
                                               </div>
                                             </div>
                                           ) : analysis.results && Object.keys(analysis.results).length > 0 ? (
                                             <div className="prose prose-sm max-w-none">
-                                              <pre className="whitespace-pre-wrap">
-                                                {JSON.stringify(analysis.results, null, 2)}
-                                              </pre>
+                                              <p className="text-slate-500">Analysis results available but no formatted content found.</p>
                                               <div className="mt-3 pt-3 border-t border-slate-200">
                                                 <Button
                                                   variant="outline"
@@ -2941,7 +3473,7 @@ Full text length: ${extractionResult.text?.length || 0} characters
                                                   onClick={() => prettifyOutput(JSON.stringify(analysis.results, null, 2), `Analysis ${analysis.id} - Results Object`)}
                                                   className="text-xs"
                                                 >
-                                                  🔍 Prettify Output
+                                                  🔍 Show Raw Results (Debug)
                                                 </Button>
                                               </div>
                                             </div>
