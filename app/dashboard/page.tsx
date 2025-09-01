@@ -2562,6 +2562,9 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                   {/* Try to parse and format the analysis content */}
                                   {(() => {
                                     try {
+                                      console.log('🔍 DEBUG: Attempting to parse JSON, length:', latestAnalysis.results.analysis.length)
+                                      console.log('🔍 DEBUG: JSON preview (first 200 chars):', latestAnalysis.results.analysis.substring(0, 200))
+                                      
                                       const parsed = JSON.parse(latestAnalysis.results.analysis)
                                       // Convert to formatted markdown using the same logic as prettifyOutput
                                       let formattedMarkdown = ''
@@ -2822,7 +2825,25 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                     } catch (e) {
                                       // If parsing fails, show the raw content with a prettify button
                                       console.error('Latest analysis formatting error:', e)
-                                      console.log('Raw latest analysis content:', latestAnalysis.results.analysis)
+                                      console.log('Raw latest analysis content length:', latestAnalysis.results.analysis.length)
+                                      console.log('Raw latest analysis content preview:', latestAnalysis.results.analysis.substring(0, 500))
+                                      
+                                      // Try to identify the specific JSON error
+                                      let errorMessage = 'Unknown error'
+                                      if (e instanceof Error) {
+                                        errorMessage = e.message
+                                        if (errorMessage.includes('position')) {
+                                          const positionMatch = errorMessage.match(/position (\d+)/)
+                                          if (positionMatch) {
+                                            const position = parseInt(positionMatch[1])
+                                            const contextStart = Math.max(0, position - 50)
+                                            const contextEnd = Math.min(latestAnalysis.results.analysis.length, position + 50)
+                                            const context = latestAnalysis.results.analysis.substring(contextStart, contextEnd)
+                                            console.log('🔍 DEBUG: JSON error context around position', position, ':', context)
+                                          }
+                                        }
+                                      }
+                                      
                                       return (
                                         <div className="whitespace-pre-wrap text-sm leading-relaxed">
                                           <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-3">
@@ -2830,7 +2851,10 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                               ⚠️ Analysis formatting failed. Showing raw content.
                                             </p>
                                             <p className="text-yellow-700 text-xs mt-1">
-                                              Error: {e instanceof Error ? e.message : 'Unknown error'}
+                                              Error: {errorMessage}
+                                            </p>
+                                            <p className="text-yellow-700 text-xs mt-1">
+                                              Content length: {latestAnalysis.results.analysis.length} characters
                                             </p>
                                           </div>
                                           {latestAnalysis.results.analysis}
@@ -2961,6 +2985,9 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                               {/* Try to parse and format the analysis content */}
                                               {(() => {
                                                 try {
+                                                  console.log('🔍 DEBUG: Attempting to parse analysis JSON, length:', analysis.results.analysis.length)
+                                                  console.log('🔍 DEBUG: Analysis JSON preview (first 200 chars):', analysis.results.analysis.substring(0, 200))
+                                                  
                                                   const parsed = JSON.parse(analysis.results.analysis)
                                                   // Convert to formatted markdown using the same logic as prettifyOutput
                                                   let formattedMarkdown = ''
@@ -3214,7 +3241,25 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                                 } catch (e) {
                                                   // If parsing fails, show the raw content with a prettify button
                                                   console.error('Analysis formatting error:', e)
-                                                  console.log('Raw analysis content:', analysis.results.analysis)
+                                                  console.log('Raw analysis content length:', analysis.results.analysis.length)
+                                                  console.log('Raw analysis content preview:', analysis.results.analysis.substring(0, 500))
+                                                  
+                                                  // Try to identify the specific JSON error
+                                                  let errorMessage = 'Unknown error'
+                                                  if (e instanceof Error) {
+                                                    errorMessage = e.message
+                                                    if (errorMessage.includes('position')) {
+                                                      const positionMatch = errorMessage.match(/position (\d+)/)
+                                                      if (positionMatch) {
+                                                        const position = parseInt(positionMatch[1])
+                                                        const contextStart = Math.max(0, position - 50)
+                                                        const contextEnd = Math.min(analysis.results.analysis.length, position + 50)
+                                                        const context = analysis.results.analysis.substring(contextStart, contextEnd)
+                                                        console.log('🔍 DEBUG: Analysis JSON error context around position', position, ':', context)
+                                                      }
+                                                    }
+                                                  }
+                                                  
                                                   return (
                                                     <div className="whitespace-pre-wrap text-sm leading-relaxed">
                                                       <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-3">
@@ -3222,7 +3267,10 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                                           ⚠️ Analysis formatting failed. Showing raw content.
                                                         </p>
                                                         <p className="text-yellow-700 text-xs mt-1">
-                                                          Error: {e instanceof Error ? e.message : 'Unknown error'}
+                                                          Error: {errorMessage}
+                                                        </p>
+                                                        <p className="text-yellow-700 text-xs mt-1">
+                                                          Content length: {analysis.results.analysis.length} characters
                                                         </p>
                                                       </div>
                                                       {analysis.results.analysis}
