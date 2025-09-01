@@ -102,10 +102,10 @@ async function handleCheckoutSessionCompleted(session: any, supabase: any) {
       ? new Date(subscriptionDetails.current_period_end * 1000).toISOString()
       : null
 
-    // Create subscription record in database (ONLY update subscriptions table)
+    // Create or update subscription record in database (ONLY update subscriptions table)
     const { error: subError } = await supabase
       .from('subscriptions')
-      .insert({
+      .upsert({
         user_id: userId,
         plan_type: plan,
         status: 'active',
@@ -119,6 +119,8 @@ async function handleCheckoutSessionCompleted(session: any, supabase: any) {
           interval,
           checkout_session_id: session.id,
         }
+      }, {
+        onConflict: 'user_id'
       })
 
     if (subError) {
