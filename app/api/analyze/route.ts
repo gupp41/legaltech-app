@@ -812,6 +812,7 @@ Analyze the document thoroughly and populate all fields. If a field is not appli
                       console.log('🔍 Raw streaming content preview:', fullResponse.substring(0, 200) + '...')
                       
                                             // Try multiple JSON parsing approaches
+                      console.log('🔍 API: Starting JSON parsing approaches for response length:', fullResponse.length)
                       let parsed = null
                       let parseMethod = 'none'
                       let formattedResponse = ''
