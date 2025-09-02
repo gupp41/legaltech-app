@@ -32,8 +32,22 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (docError || !document) {
+      console.log('📄 Document lookup failed:', { documentId, docError })
+      
+      // Let's also check what documents are available
+      const { data: allDocs } = await supabase
+        .from('documents')
+        .select('id, name, filename')
+        .limit(5)
+      
+      console.log('📄 Available documents:', allDocs)
+      
       return NextResponse.json(
-        { error: 'Document not found' },
+        { 
+          error: 'Document not found', 
+          documentId,
+          availableDocuments: allDocs?.map(d => ({ id: d.id, name: d.name, filename: d.filename }))
+        },
         { status: 404 }
       )
     }
