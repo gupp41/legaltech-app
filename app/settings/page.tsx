@@ -972,7 +972,8 @@ export default function SettingsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {subscription?.stripe_subscription_id ? (
+
+              {subscription?.stripe_subscription_id || (subscription?.current_period_start && subscription?.current_period_end) ? (
                 <div className="space-y-4">
                   <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex items-center gap-2">
@@ -980,7 +981,7 @@ export default function SettingsPage() {
                       <span className="text-green-800 font-medium">Active Stripe Subscription</span>
                     </div>
                     <p className="text-green-700 text-sm mt-1">
-                      Subscription ID: {subscription.stripe_subscription_id}
+                      Subscription ID: {subscription.stripe_subscription_id || 'Not available (webhook issue)'}
                     </p>
                   </div>
                   
@@ -1004,6 +1005,22 @@ export default function SettingsPage() {
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">End Date</label>
                         <p className="text-gray-900 dark:text-gray-100 mt-1">
                           {new Date(subscription.end_date).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+                    {subscription.current_period_start && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Current Period Start</label>
+                        <p className="text-gray-900 dark:text-gray-100 mt-1">
+                          {new Date(subscription.current_period_start).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+                    {subscription.current_period_end && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Current Period End</label>
+                        <p className="text-gray-900 dark:text-gray-100 mt-1">
+                          {new Date(subscription.current_period_end).toLocaleDateString()}
                         </p>
                       </div>
                     )}
