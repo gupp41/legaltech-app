@@ -9,11 +9,10 @@ import { Progress } from "@/components/ui/progress"
 import { Upload, FileText, AlertCircle, CheckCircle } from "lucide-react"
 import { cn, ensurePublicUrl } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
+import type { FileUploadProps } from '@/types/shared'
+import { debug } from '@/lib/utils/debug'
 
-interface FileUploadProps {
-  onUploadComplete?: (file: any) => void
-  className?: string
-}
+// FileUploadProps interface is now imported from shared types
 
 export function FileUpload({ onUploadComplete, className }: FileUploadProps) {
   const [uploading, setUploading] = useState(false)

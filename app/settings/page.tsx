@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from '@/lib/supabase/client'
+import type { User, Subscription, UsageData } from '@/types/shared'
+import { debug } from '@/lib/utils/debug'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -30,31 +32,7 @@ import {
 import { UsageDisplay } from "@/components/usage-display"
 import { ThemeToggle } from "@/components/theme-toggle"
 
-interface User {
-  id: string
-  email: string
-  current_plan: string
-  plan_start_date: string
-  plan_end_date?: string
-}
-
-interface Subscription {
-  id: string
-  plan_type: string
-  status: string
-  start_date: string
-  end_date?: string
-  stripe_subscription_id?: string
-  current_period_start?: string
-  current_period_end?: string
-}
-
-interface UsageData {
-  documents_uploaded: number
-  analyses_performed: number
-  storage_used_bytes: number
-  text_extractions: number
-}
+// User, Subscription, and UsageData interfaces are now imported from shared types
 
 const PLAN_LIMITS = {
   free: {

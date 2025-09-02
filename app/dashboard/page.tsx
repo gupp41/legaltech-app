@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import { createClient } from '@/lib/supabase/client'
 import { parseJsonWithFallbacks, extractAnalysisData } from '@/lib/utils/json-parser'
 import { handleError, getUserFriendlyErrorMessage } from '@/lib/utils/error-handler'
+import { debug } from '@/lib/utils/debug'
+import type { Document } from '@/types/shared'
 import { FileUpload } from "@/components/file-upload"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,19 +18,7 @@ import { UsageDisplay } from "@/components/usage-display"
 import { ThemeToggle } from "@/components/theme-toggle"
 
 
-interface Document {
-  id: string
-  filename: string
-  file_url: string
-  file_size: number
-  file_type: string
-  document_type: string
-  status: string
-  created_at: string
-  storage_path?: string
-  jurisdiction?: string
-  client_name?: string
-}
+// Document interface is now imported from shared types
 
 export default function Dashboard() {
   const [documents, setDocuments] = useState<Document[]>([])
@@ -953,8 +943,8 @@ This should show the actual NDA text being sent to the AI.
             
             try {
               const data = JSON.parse(line.slice(6))
-              console.log('🔍 Parsed data:', data)
-              console.log('🔍 DEBUG: Line content:', line)
+                    debug.debug('STREAMING', 'Parsed data:', data)
+      debug.debug('STREAMING', 'Line content:', line)
               console.log('🔍 DEBUG: Parsed data keys:', Object.keys(data))
               console.log('🔍 DEBUG: Has done property:', 'done' in data)
               console.log('🔍 DEBUG: Has fullResponse property:', 'fullResponse' in data)

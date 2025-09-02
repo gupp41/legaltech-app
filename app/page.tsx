@@ -7,6 +7,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { createClient } from '@/lib/supabase/client'
 import { ThemeToggle } from "@/components/theme-toggle"
+import { commonButtonStyles } from '@/lib/utils/button-styles'
 
 export default function HomePage() {
   const [emailConfirmation, setEmailConfirmation] = useState<{
@@ -157,7 +158,7 @@ export default function HomePage() {
               </CardDescription>
             </CardHeader>
             <CardHeader className="text-center">
-              <Button asChild className="w-full bg-blue-600 hover:bg-blue-700">
+              <Button asChild className={commonButtonStyles.primaryAction + " w-full"}>
                 <Link href="/auth/login">Continue to Sign In</Link>
               </Button>
             </CardHeader>
@@ -183,7 +184,7 @@ export default function HomePage() {
             <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
               <Link href="/auth/login">Sign in</Link>
             </Button>
-            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base px-3 sm:px-4">
+            <Button asChild className={commonButtonStyles.primaryAction + " text-sm sm:text-base px-3 sm:px-4"}>
               <Link href="/auth/signup">Get started</Link>
             </Button>
           </div>
@@ -201,7 +202,7 @@ export default function HomePage() {
             processing speed by 10x with our intelligent automation platform.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-6 sm:px-8 w-full sm:w-auto">
+            <Button asChild size="lg" className={commonButtonStyles.ctaButton + " h-12 px-6 sm:px-8 w-full sm:w-auto"}>
               <Link href="/auth/signup">Start free trial</Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="h-12 px-6 sm:px-8 bg-transparent w-full sm:w-auto">
@@ -300,7 +301,7 @@ export default function HomePage() {
           <p className="text-lg sm:text-xl mb-8 text-blue-100">
             Join leading law firms and HR departments already saving time and reducing costs
           </p>
-          <Button asChild size="lg" className="h-12 px-6 sm:px-8 bg-white text-blue-600 hover:bg-gray-100 hover:text-blue-700 border-0 shadow-lg">
+                            <Button asChild size="lg" className={commonButtonStyles.ctaButton + " h-12 px-6 sm:px-8"}>
             <Link href="/auth/signup">Start your free trial</Link>
           </Button>
         </div>

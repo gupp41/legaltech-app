@@ -6,21 +6,10 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { AlertCircle, CheckCircle, Crown, Star, Zap } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import type { UsageData, PlanLimits } from '@/types/shared'
+import { debug } from '@/lib/utils/debug'
 
-interface UsageData {
-  current_plan: string
-  documents_uploaded: number
-  analyses_performed: number
-  storage_used_bytes: number
-  text_extractions: number
-}
-
-interface PlanLimits {
-  maxDocuments: number
-  maxAnalyses: number
-  maxStorageBytes: number
-  maxExtractions: number
-}
+// UsageData and PlanLimits interfaces are now imported from shared types
 
 const getPlanLimits = (plan: string): PlanLimits => {
   switch (plan) {
