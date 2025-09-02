@@ -184,12 +184,12 @@ export default function HomePage() {
             </div>
             <h1 className="text-xl font-bold text-foreground">LegalTech AI</h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <ThemeToggle />
-            <Button asChild variant="ghost">
+            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
               <Link href="/auth/login">Sign in</Link>
             </Button>
-            <Button asChild className="bg-blue-600 hover:bg-blue-700">
+            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-sm sm:text-base px-3 sm:px-4">
               <Link href="/auth/signup">Get started</Link>
             </Button>
           </div>
@@ -197,20 +197,20 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 text-center">
+      <section className="container mx-auto px-4 py-12 sm:py-20 text-center">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-5xl font-bold text-foreground mb-6">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-tight">
             Automate Your Legal Workflows with <span className="text-blue-600">AI-Powered Analysis</span>
           </h1>
-          <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+          <p className="text-lg sm:text-xl text-muted-foreground mb-8 leading-relaxed">
             Transform how you handle contracts, compliance checks, and legal research. Cut costs by 60% and improve
             processing speed by 10x with our intelligent automation platform.
           </p>
-          <div className="flex items-center justify-center gap-4">
-            <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 h-12 px-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 h-12 px-6 sm:px-8 w-full sm:w-auto">
               <Link href="/auth/signup">Start free trial</Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="h-12 px-8 bg-transparent">
+            <Button asChild variant="outline" size="lg" className="h-12 px-6 sm:px-8 bg-transparent w-full sm:w-auto">
               <Link href="#features">Learn more</Link>
             </Button>
           </div>
@@ -218,10 +218,10 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="container mx-auto px-4 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-foreground mb-4">Powerful Features for Legal Professionals</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+      <section id="features" className="container mx-auto px-4 py-12 sm:py-20">
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">Powerful Features for Legal Professionals</h2>
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
             Everything you need to streamline legal processes and make data-driven decisions
           </p>
         </div>
@@ -300,29 +300,29 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-blue-600 text-white py-20">
+      <section className="bg-blue-600 text-white py-12 sm:py-20">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Legal Practice?</h2>
-          <p className="text-xl mb-8 text-blue-100">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4">Ready to Transform Your Legal Practice?</h2>
+          <p className="text-lg sm:text-xl mb-8 text-blue-100">
             Join leading law firms and HR departments already saving time and reducing costs
           </p>
-          <Button asChild size="lg" variant="secondary" className="h-12 px-8">
+          <Button asChild size="lg" variant="secondary" className="h-12 px-6 sm:px-8">
             <Link href="/auth/signup">Start your free trial</Link>
           </Button>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-white py-12">
+      <footer className="bg-slate-900 text-white py-8 sm:py-12">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <div className="bg-blue-600 p-2 rounded-lg">
                 <Scale className="h-5 w-5 text-white" />
               </div>
               <span className="font-semibold">LegalTech AI</span>
             </div>
-            <p className="text-muted-foreground">© 2024 LegalTech AI. All rights reserved.</p>
+            <p className="text-muted-foreground text-sm sm:text-base">© 2024 LegalTech AI. All rights reserved.</p>
           </div>
         </div>
       </footer>
