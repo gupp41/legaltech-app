@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from '@/lib/supabase/client'
+import { parseJsonWithFallbacks, extractAnalysisData } from '@/lib/utils/json-parser'
+import { handleError, getUserFriendlyErrorMessage } from '@/lib/utils/error-handler'
 import { FileUpload } from "@/components/file-upload"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -1318,7 +1320,11 @@ This should show the actual NDA text being sent to the AI.
       cleanContent = cleanContent.replace(/^Processing\.\.\.\s*/, '')
       
       // Try to parse as JSON and convert it to formatted markdown
-      const parsed = JSON.parse(cleanContent)
+      const parseResult = parseJsonWithFallbacks(cleanContent)
+      if (!parseResult.success) {
+        throw new Error(`JSON parsing failed: ${parseResult.error}`)
+      }
+      const parsed = parseResult.data
       
       // Convert the structured analysis to formatted markdown
       let formattedMarkdown = ''
@@ -2838,25 +2844,11 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                     // Don't escape newlines, carriage returns, or tabs as they might be part of the JSON structure
                                     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove only problematic control characters
                                   
-                                  let parsed
-                                  try {
-                                    parsed = JSON.parse(cleanAnalysis)
-                                  } catch (parseError) {
-                                    console.error('🔍 Navigation JSON Parse Error:', parseError)
-                                    
-                                    // Try to parse the original analysis without cleaning
-                                    console.log('🔍 Attempting to parse original analysis for navigation without cleaning')
-                                    try {
-                                      const originalAnalysis = latestAnalysis.results.analysis.trim()
-                                        .replace(/^Starting AI analysis\.\.\.\s*/, '')
-                                        .replace(/^Analyzing document\.\.\.\s*/, '')
-                                        .replace(/^Processing\.\.\.\s*/, '')
-                                      parsed = JSON.parse(originalAnalysis)
-                                      console.log('🔍 Successfully parsed original analysis for navigation')
-                                    } catch (originalParseError) {
-                                      console.error('🔍 Original analysis also failed to parse for navigation:', originalParseError)
-                                      return null
-                                    }
+                                  const parseResult = extractAnalysisData(latestAnalysis.results.analysis)
+                                  const parsed = parseResult.success ? parseResult.data : null
+                                  if (!parseResult.success) {
+                                    console.error('🔍 Navigation JSON Parse Error:', parseResult.error)
+                                    return null
                                   }
                                   
                                   const sections = []
@@ -2965,30 +2957,11 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                         }
                                       }
                                       
-                                      let parsed
-                                      try {
-                                        parsed = JSON.parse(cleanAnalysis)
-                                      } catch (parseError) {
-                                        console.error('🔍 JSON Parse Error:', parseError)
-                                        const position = (parseError as Error).message.match(/position (\d+)/)?.[1]
-                                        if (position) {
-                                          const pos = parseInt(position)
-                                          console.error('🔍 Problematic JSON section:', cleanAnalysis.substring(pos - 100 || 0, pos + 100 || 200))
-                                        }
-                                        
-                                        // Try to parse the original analysis without cleaning
-                                        console.log('🔍 Attempting to parse original analysis without cleaning')
-                                        try {
-                                          const originalAnalysis = latestAnalysis.results.analysis.trim()
-                                            .replace(/^Starting AI analysis\.\.\.\s*/, '')
-                                            .replace(/^Analyzing document\.\.\.\s*/, '')
-                                            .replace(/^Processing\.\.\.\s*/, '')
-                                          parsed = JSON.parse(originalAnalysis)
-                                          console.log('🔍 Successfully parsed original analysis')
-                                        } catch (originalParseError) {
-                                          console.error('🔍 Original analysis also failed to parse:', originalParseError)
-                                          throw new Error('Unable to parse analysis data. The analysis may be corrupted.')
-                                        }
+                                      const parseResult = extractAnalysisData(latestAnalysis.results.analysis)
+                                      const parsed = parseResult.success ? parseResult.data : null
+                                      if (!parseResult.success) {
+                                        console.error('🔍 JSON Parse Error:', parseResult.error)
+                                        throw new Error('Unable to parse analysis data. The analysis may be corrupted.')
                                       }
                                       // Convert to formatted markdown using the same logic as prettifyOutput
                                       let formattedMarkdown = ''
@@ -3499,16 +3472,10 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                                     throw new Error('Analysis data appears incomplete. Please try analyzing the document again.')
                                                   }
                                                   
-                                                  let parsed
-                                                  try {
-                                                    parsed = JSON.parse(cleanAnalysis)
-                                                  } catch (parseError) {
-                                                    console.error('🔍 JSON Parse Error:', parseError)
-                                                    const position = (parseError as Error).message.match(/position (\d+)/)?.[1]
-                                        if (position) {
-                                          const pos = parseInt(position)
-                                          console.error('🔍 Problematic JSON section:', cleanAnalysis.substring(pos - 100 || 0, pos + 100 || 200))
-                                        }
+                                                  const parseResult = extractAnalysisData(latestAnalysis.results.analysis)
+                                                  const parsed = parseResult.success ? parseResult.data : null
+                                                  if (!parseResult.success) {
+                                                    console.error('🔍 JSON Parse Error:', parseResult.error)
                                                     throw new Error('Unable to parse analysis data. The analysis may be corrupted.')
                                                   }
                                                   // Convert to formatted markdown using the same logic as prettifyOutput

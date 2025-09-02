@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server"
 import mammoth from "mammoth"
 import { usageTracker } from "@/lib/usage-tracker"
 import { StructuredAnalysis } from "@/types/analysis"
+import { parseJsonWithFallbacks, extractAnalysisData } from '@/lib/utils/json-parser'
+import { handleError, createApiErrorResponse, handleExternalServiceError } from '@/lib/utils/error-handler'
 
 // Helper function to format structured analysis into readable text
 function formatStructuredAnalysis(analysis: StructuredAnalysis): string {
@@ -821,53 +823,36 @@ Analyze the document thoroughly and populate all fields. If a field is not appli
                       let parseMethod = 'none'
                       let formattedResponse = ''
                       
-                      // Method 1: Try parsing the raw content directly
-                      try {
-                        parsed = JSON.parse(fullResponse)
-                        parseMethod = 'direct'
-                        console.log('✅ Successfully parsed JSON directly')
-                      } catch (directError) {
-                        console.log('🔍 Direct parsing failed, trying cleanup...')
+                      // Use the new JSON parsing utilities
+                      const parseResult = extractAnalysisData(fullResponse)
+                      if (parseResult.success) {
+                        parsed = parseResult.data
+                        parseMethod = parseResult.method || 'extracted'
+                        console.log(`✅ Successfully parsed JSON using method: ${parseMethod}`)
+                      } else {
+                        console.log('🔍 All parsing methods failed, trying manual extraction...')
                         
-                        // Method 2: Try with minimal cleanup
+                        // Method 3: Try to extract key information manually
                         try {
-                          let cleanedContent = fullResponse
-                            // Remove trailing commas before closing braces/brackets (most common issue)
-                            .replace(/,\s*([}\]])/g, '$1')
-                            // Fix missing quotes on keys (but be careful)
-                            .replace(/(?<!")(?<!\\)(\w+):\s*"/g, '"$2": "')
-                            .replace(/(?<!")(?<!\\)(\w+):\s*\[/g, '"$2": [')
-                            .replace(/(?<!")(?<!\\)(\w+):\s*\{/g, '"$2": {')
-                            .replace(/(?<!")(?<!\\)(\w+):\s*([^"\[\{,\s][^,]*?)(?=,|\s*[}\]])/g, '"$2": "$3"')
+                          const documentPurposeMatch = fullResponse.match(/"document_purpose":\s*"([^"]+)"/)
+                          const documentTypeMatch = fullResponse.match(/"document_type":\s*"([^"]+)"/)
+                          const overallAssessmentMatch = fullResponse.match(/"overall_assessment":\s*"([^"]+)"/)
                           
-                          parsed = JSON.parse(cleanedContent)
-                          parseMethod = 'cleaned'
-                          console.log('✅ Successfully parsed JSON after cleanup')
-                        } catch (cleanupError) {
-                          console.log('🔍 Cleanup parsing failed, trying manual extraction...')
-                          
-                          // Method 3: Try to extract key information manually
-                          try {
-                            const documentPurposeMatch = fullResponse.match(/"document_purpose":\s*"([^"]+)"/)
-                            const documentTypeMatch = fullResponse.match(/"document_type":\s*"([^"]+)"/)
-                            const overallAssessmentMatch = fullResponse.match(/"overall_assessment":\s*"([^"]+)"/)
-                            
-                            if (documentPurposeMatch) {
-                              // Create a more complete structured object for manual extraction
-                              parsed = {
-                                summary: {
-                                  document_purpose: documentPurposeMatch[1],
-                                  document_type: documentTypeMatch ? documentTypeMatch[1] : 'Unknown',
-                                  overall_assessment: overallAssessmentMatch ? overallAssessmentMatch[1] : 'medium_risk',
-                                  key_obligations: []
-                                }
+                          if (documentPurposeMatch) {
+                            // Create a more complete structured object for manual extraction
+                            parsed = {
+                              summary: {
+                                document_purpose: documentPurposeMatch[1],
+                                document_type: documentTypeMatch ? documentTypeMatch[1] : 'Unknown',
+                                overall_assessment: overallAssessmentMatch ? overallAssessmentMatch[1] : 'medium_risk',
+                                key_obligations: []
                               }
-                              parseMethod = 'manual'
-                              console.log('✅ Successfully extracted key information manually')
                             }
-                          } catch (manualError) {
-                            console.log('🔍 Manual extraction also failed')
+                            parseMethod = 'manual'
+                            console.log('✅ Successfully extracted key information manually')
                           }
+                        } catch (manualError) {
+                          console.log('🔍 Manual extraction also failed')
                         }
                       }
                       
@@ -1106,7 +1091,11 @@ Analyze the document thoroughly and populate all fields. If a field is not appli
         
         console.log('🔍 Cleaned content preview:', cleanedContent.substring(0, 200) + '...')
         
-        const parsed = JSON.parse(cleanedContent)
+        const parseResult = parseJsonWithFallbacks(cleanedContent)
+        if (!parseResult.success) {
+          throw new Error(`JSON parsing failed: ${parseResult.error}`)
+        }
+        const parsed = parseResult.data
         if (parsed && typeof parsed === 'object') {
           structuredAnalysis = parsed as StructuredAnalysis
           console.log('✅ Successfully parsed structured analysis')
