@@ -292,16 +292,16 @@ export default function SettingsPage() {
           .select('*')
           .eq('user_id', authUser.id)
           .eq('status', 'active')
-          .single()
 
-        if (subscriptionData && !subscriptionError) {
+        if (subscriptionData && subscriptionData.length > 0 && !subscriptionError) {
           // Use subscription data (source of truth)
+          const activeSubscription = subscriptionData[0]
           setUser({
             id: authUser.id,
             email: authUser.email || '',
-            current_plan: subscriptionData.plan_type,
-            plan_start_date: subscriptionData.start_date || new Date().toISOString(),
-            plan_end_date: subscriptionData.end_date || undefined
+            current_plan: activeSubscription.plan_type,
+            plan_start_date: activeSubscription.start_date || new Date().toISOString(),
+            plan_end_date: activeSubscription.end_date || undefined
           })
         } else {
           // Fallback to profiles table if no subscription found
@@ -343,14 +343,14 @@ export default function SettingsPage() {
         .select('*')
         .eq('user_id', user.id)
         .eq('status', 'active')
-        .single()
 
-      if (!subError && subData) {
-        setSubscription(subData)
-        console.log('🔍 Found subscription data:', subData)
+      if (!subError && subData && subData.length > 0) {
+        setSubscription(subData[0]) // Use the first active subscription
+        console.log('🔍 Found subscription data:', subData[0])
       } else {
         console.log('🔍 No subscription data found:', subError?.message)
         console.log('🔍 User ID being searched:', user.id)
+        console.log('🔍 Raw subscription data:', subData)
         setSubscription(null)
       }
 
@@ -1039,12 +1039,12 @@ export default function SettingsPage() {
                 </div>
               ) : user?.current_plan && user.current_plan !== 'free' ? (
                 <div className="space-y-4">
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                     <div className="flex items-center gap-2">
-                      <Star className="h-5 w-5 text-blue-600" />
-                      <span className="text-blue-800 font-medium">{user.current_plan.charAt(0).toUpperCase() + user.current_plan.slice(1)} Plan Active</span>
+                      <Star className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <span className="text-blue-800 dark:text-blue-300 font-medium">{user.current_plan.charAt(0).toUpperCase() + user.current_plan.slice(1)} Plan Active</span>
                     </div>
-                    <p className="text-blue-700 text-sm mt-1">
+                    <p className="text-blue-700 dark:text-blue-300 text-sm mt-1">
                       You're currently on the {user.current_plan} plan. This appears to be a manual upgrade or promotional access.
                     </p>
                   </div>
