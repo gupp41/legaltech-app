@@ -3079,12 +3079,30 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                     .replace(/"description "([^"]*)"([^,}]*)/g, '"description": "$1"$2') // Fix missing colon after description
                                     .replace(/,\s*}/g, '}') // Remove trailing commas before closing braces
                                     .replace(/,\s*]/g, ']') // Remove trailing commas before closing brackets
-                                    .replace(/\n/g, '\\n') // Escape newlines
-                                    .replace(/\r/g, '\\r') // Escape carriage returns
-                                    .replace(/\t/g, '\\t') // Escape tabs
-                                    .replace(/[\x00-\x1F\x7F]/g, '') // Remove other control characters
+                                    // Don't escape newlines, carriage returns, or tabs as they might be part of the JSON structure
+                                    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove only problematic control characters
                                   
-                                  const parsed = JSON.parse(cleanAnalysis)
+                                  let parsed
+                                  try {
+                                    parsed = JSON.parse(cleanAnalysis)
+                                  } catch (parseError) {
+                                    console.error('🔍 Navigation JSON Parse Error:', parseError)
+                                    
+                                    // Try to parse the original analysis without cleaning
+                                    console.log('🔍 Attempting to parse original analysis for navigation without cleaning')
+                                    try {
+                                      const originalAnalysis = latestAnalysis.results.analysis.trim()
+                                        .replace(/^Starting AI analysis\.\.\.\s*/, '')
+                                        .replace(/^Analyzing document\.\.\.\s*/, '')
+                                        .replace(/^Processing\.\.\.\s*/, '')
+                                      parsed = JSON.parse(originalAnalysis)
+                                      console.log('🔍 Successfully parsed original analysis for navigation')
+                                    } catch (originalParseError) {
+                                      console.error('🔍 Original analysis also failed to parse for navigation:', originalParseError)
+                                      return null
+                                    }
+                                  }
+                                  
                                   const sections = []
                                   
                                   if (parsed.summary) sections.push({ id: 'summary', title: '📋 Summary', emoji: '📋' })
