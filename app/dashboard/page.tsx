@@ -2888,9 +2888,13 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               </Button>
                               <div 
                                 id={`more-dropdown-${currentDoc.id}`}
-                                className={`absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-[9999] ${openDropdowns.has(currentDoc.id) ? 'block' : 'hidden'}`}
+                                className={`absolute mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-[9999] ${openDropdowns.has(currentDoc.id) ? 'block' : 'hidden'} right-0 sm:right-0 sm:w-48 w-40`}
                                 onClick={(e) => e.stopPropagation()}
-                                style={{ zIndex: 9999, position: 'absolute', top: '100%', right: '0' }}
+                                style={{ 
+                                  zIndex: 9999, 
+                                  position: 'absolute', 
+                                  top: '100%'
+                                }}
                                 data-debug={`isOpen: ${openDropdowns.has(currentDoc.id)}, docId: ${currentDoc.id}`}
                               >
                                 <div className="py-1">
@@ -2925,8 +2929,8 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                     className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                                   >
                                     <Trash2 className="h-4 w-4 mr-2 flex-shrink-0" />
-                                    <span className="hidden sm:inline">Delete Document</span>
-                                    <span className="sm:hidden">Delete</span>
+                                    <span className="hidden md:inline">Delete Document</span>
+                                    <span className="md:hidden">Delete</span>
                                   </button>
                                 </div>
                               </div>
