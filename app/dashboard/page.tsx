@@ -51,6 +51,7 @@ export default function Dashboard() {
     title: ''
   })
   const [hamburgerMenuOpen, setHamburgerMenuOpen] = useState(false)
+  const [activeSection, setActiveSection] = useState<string>('')
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -59,6 +60,27 @@ export default function Dashboard() {
 
   useEffect(() => {
     checkUser()
+  }, [])
+
+  // Scroll listener for active section tracking
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = ['summary', 'risk-analysis', 'identified-clauses', 'missing-clauses', 'compliance', 'recommendations', 'technical-details']
+      const scrollPosition = window.scrollY + 100 // Offset for sticky nav
+
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const element = document.getElementById(sections[i])
+        if (element && element.offsetTop <= scrollPosition) {
+          setActiveSection(sections[i])
+          break
+        }
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    handleScroll() // Initial check
+
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   // Fetch documents when user is available
@@ -2328,42 +2350,49 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
           <nav className="flex items-center space-x-2 text-sm">
             <button 
               onClick={() => {
-                setSelectedDocument(null)
-                setCurrentDocumentId(null)
+                setCurrentDocumentIndex(-1)
+                setShowDocumentDetail(false)
               }}
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               Document Analysis
             </button>
-            {selectedDocument && (
-              <>
-                <span className="text-muted-foreground">/</span>
-                <button 
-                  onClick={() => {
-                    // Keep current document selected, just scroll to top
-                    window.scrollTo({ top: 0, behavior: 'smooth' })
-                  }}
-                  className="text-muted-foreground hover:text-foreground transition-colors max-w-xs truncate"
-                  title={selectedDocument.filename}
-                >
-                  {selectedDocument.filename}
-                </button>
-                {currentAnalyses.length > 0 && (
-                  <>
-                    <span className="text-muted-foreground">/</span>
-                    <span className="text-foreground font-medium">
-                      {new Date(currentAnalyses[0].created_at).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
-                  </>
-                )}
-              </>
-            )}
+            {(() => {
+              const currentDoc = getCurrentDocument()
+              if (!currentDoc) return null
+              
+              const currentAnalyses = getCurrentDocumentAnalyses()
+              
+              return (
+                <>
+                  <span className="text-muted-foreground">/</span>
+                  <button 
+                    onClick={() => {
+                      // Keep current document selected, just scroll to top
+                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                    }}
+                    className="text-muted-foreground hover:text-foreground transition-colors max-w-xs truncate"
+                    title={currentDoc.filename}
+                  >
+                    {currentDoc.filename}
+                  </button>
+                  {currentAnalyses.length > 0 && (
+                    <>
+                      <span className="text-muted-foreground">/</span>
+                      <span className="text-foreground font-medium">
+                        {new Date(currentAnalyses[0].created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </>
+                  )}
+                </>
+              )
+            })()}
           </nav>
         </div>
       </div>
@@ -2748,6 +2777,64 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                 </div>
                               </div>
                               
+                              {/* Floating Analysis Navigation */}
+                              {latestAnalysis.results?.analysis && (() => {
+                                try {
+                                  const cleanAnalysis = latestAnalysis.results.analysis.trim()
+                                    .replace(/^Starting AI analysis\.\.\.\s*/, '')
+                                    .replace(/^Analyzing document\.\.\.\s*/, '')
+                                    .replace(/^Processing\.\.\.\s*/, '')
+                                  
+                                  const parsed = JSON.parse(cleanAnalysis)
+                                  const sections = []
+                                  
+                                  if (parsed.summary) sections.push({ id: 'summary', title: '📋 Summary', emoji: '📋' })
+                                  if (parsed.risk_analysis) sections.push({ id: 'risk-analysis', title: '⚠️ Risk Analysis', emoji: '⚠️' })
+                                  if (parsed.identified_clauses) sections.push({ id: 'identified-clauses', title: '🕵️ Identified Clauses', emoji: '🕵️' })
+                                  if (parsed.missing_clauses) sections.push({ id: 'missing-clauses', title: '📝 Missing Clauses', emoji: '📝' })
+                                  if (parsed.compliance_considerations) sections.push({ id: 'compliance', title: '✅ Compliance', emoji: '✅' })
+                                  if (parsed.recommendations) sections.push({ id: 'recommendations', title: '💡 Recommendations', emoji: '💡' })
+                                  if (parsed.technical_details) sections.push({ id: 'technical-details', title: '⚙️ Technical Details', emoji: '⚙️' })
+                                  
+                                  if (sections.length > 1) {
+                                    return (
+                                      <div className="sticky top-4 z-10 mb-6 animate-in slide-in-from-top-2 duration-300">
+                                        <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow duration-300">
+                                          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center">
+                                            <span className="mr-2">🧭</span>
+                                            Quick Navigation
+                                          </h3>
+                                          <div className="flex flex-wrap gap-2">
+                                            {sections.map((section) => (
+                                              <button
+                                                key={section.id}
+                                                onClick={() => {
+                                                  const element = document.getElementById(section.id)
+                                                  if (element) {
+                                                    element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                                  }
+                                                }}
+                                                className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
+                                                  activeSection === section.id
+                                                    ? 'text-white bg-blue-600 border-blue-600 shadow-md'
+                                                    : 'text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 hover:shadow-sm'
+                                                }`}
+                                              >
+                                                <span className="mr-1">{section.emoji}</span>
+                                                {section.title.replace(/^[^\s]+\s/, '')}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )
+                                  }
+                                  return null
+                                } catch (error) {
+                                  return null
+                                }
+                              })()}
+
                               {/* Display analysis content with proper formatting */}
                               {latestAnalysis.results?.analysis ? (
                                 <div className="prose prose-sm max-w-none">
@@ -3036,6 +3123,13 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                             __html: formattedMarkdown
                                               .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                                               .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                                              .replace(/^# Document Analysis Summary$/gm, '<h1 class="text-xl font-bold mb-2" id="summary">Document Analysis Summary</h1>')
+                                              .replace(/^# Risk Analysis$/gm, '<h1 class="text-xl font-bold mb-2" id="risk-analysis">Risk Analysis</h1>')
+                                              .replace(/^# 🕵️ Identified Clauses$/gm, '<h1 class="text-xl font-bold mb-2" id="identified-clauses">🕵️ Identified Clauses</h1>')
+                                              .replace(/^# 📝 Missing Clauses & Recommendations$/gm, '<h1 class="text-xl font-bold mb-2" id="missing-clauses">📝 Missing Clauses & Recommendations</h1>')
+                                              .replace(/^# ✅ Compliance Considerations$/gm, '<h1 class="text-xl font-bold mb-2" id="compliance">✅ Compliance Considerations</h1>')
+                                              .replace(/^# 💡 Recommendations$/gm, '<h1 class="text-xl font-bold mb-2" id="recommendations">💡 Recommendations</h1>')
+                                              .replace(/^# ⚙️ Technical Details$/gm, '<h1 class="text-xl font-bold mb-2" id="technical-details">⚙️ Technical Details</h1>')
                                               .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mb-2">$1</h1>')
                                               .replace(/^## (.*$)/gm, '<h2 class="text-lg font-semibold mb-2 mt-4">$1</h2>')
                                               .replace(/^### (.*$)/gm, '<h3 class="text-base font-medium mb-2 mt-3">$1</h3>')
