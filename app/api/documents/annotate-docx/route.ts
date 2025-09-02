@@ -24,20 +24,35 @@ export async function POST(request: NextRequest) {
     // Create Supabase client
     const supabase = await createClient()
 
-    // Get the original document from storage
+    // Check authentication
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+    
+    console.log('📄 Auth check result:', { user: user?.email, error: authError })
+    
+    if (authError || !user) {
+      console.log('📄 Authentication failed:', authError)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Get the original document from storage (filtered by user)
     const { data: document, error: docError } = await supabase
       .from('documents')
       .select('*')
       .eq('id', documentId)
+      .eq('user_id', user.id)
       .single()
 
     if (docError || !document) {
       console.log('📄 Document lookup failed:', { documentId, docError })
       
-      // Let's also check what documents are available
+      // Let's also check what documents are available for this user
       const { data: allDocs } = await supabase
         .from('documents')
         .select('id, name, filename')
+        .eq('user_id', user.id)
         .limit(5)
       
       console.log('📄 Available documents:', allDocs)
