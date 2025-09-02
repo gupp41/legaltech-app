@@ -2715,6 +2715,61 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               Download Analysis Report
                             </Button>
                             <Button 
+                              onClick={async (event) => {
+                                try {
+                                  const button = event.target as HTMLButtonElement
+                                  const originalText = button.textContent
+                                  button.textContent = 'Generating...'
+                                  button.disabled = true
+
+                                  // Call the PDF annotation API
+                                  const response = await fetch('/api/documents/annotate-pdf', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                      documentId: currentDoc.id,
+                                      analysisData: analysisData
+                                    }),
+                                  })
+
+                                  if (!response.ok) {
+                                    throw new Error('Failed to generate annotated PDF')
+                                  }
+
+                                  // Download the annotated PDF
+                                  const blob = await response.blob()
+                                  const url = window.URL.createObjectURL(blob)
+                                  const link = document.createElement('a')
+                                  link.href = url
+                                  link.download = `${currentDoc.filename.replace('.pdf', '')}_annotated.pdf`
+                                  document.body.appendChild(link)
+                                  link.click()
+                                  document.body.removeChild(link)
+                                  window.URL.revokeObjectURL(url)
+
+                                  // Reset button state
+                                  button.textContent = originalText
+                                  button.disabled = false
+
+                                } catch (error) {
+                                  console.error('Error generating annotated PDF:', error)
+                                  alert('Failed to generate annotated PDF. Please try again.')
+                                  
+                                  // Reset button state
+                                  const button = event.target as HTMLButtonElement
+                                  button.textContent = 'Download Annotated PDF'
+                                  button.disabled = false
+                                }
+                              }}
+                              variant="outline"
+                              className="flex-1 sm:flex-none"
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              Download Annotated PDF
+                            </Button>
+                            <Button 
                               onClick={() => {
                                 // Share functionality
                                 if (navigator.share) {
