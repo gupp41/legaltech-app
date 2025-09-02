@@ -2667,8 +2667,8 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                   button.textContent = 'Generating...'
                                   button.disabled = true
 
-                                  // Call the annotation API
-                                  const response = await fetch('/api/test-annotate', {
+                                  // Call the DOCX annotation API
+                                  const response = await fetch('/api/documents/annotate-docx', {
                                     method: 'POST',
                                     headers: {
                                       'Content-Type': 'application/json',
@@ -2680,15 +2680,15 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                   })
 
                                   if (!response.ok) {
-                                    throw new Error('Failed to generate annotated PDF')
+                                    throw new Error('Failed to generate analysis report')
                                   }
 
-                                  // Download the annotated PDF
+                                  // Download the analysis report
                                   const blob = await response.blob()
                                   const url = window.URL.createObjectURL(blob)
                                   const link = document.createElement('a')
                                   link.href = url
-                                  link.download = `${currentDoc.filename.replace('.pdf', '')}_annotated.pdf`
+                                  link.download = `${currentDoc.filename.replace('.pdf', '')}_analysis_report.docx`
                                   document.body.appendChild(link)
                                   link.click()
                                   document.body.removeChild(link)
@@ -2699,12 +2699,12 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                   button.disabled = false
 
                                 } catch (error) {
-                                  console.error('Error generating annotated PDF:', error)
-                                  alert('Failed to generate annotated PDF. Please try again.')
+                                  console.error('Error generating analysis report:', error)
+                                  alert('Failed to generate analysis report. Please try again.')
                                   
                                   // Reset button state
                                   const button = event.target as HTMLButtonElement
-                                  button.textContent = 'Download Annotated PDF'
+                                  button.textContent = 'Download Analysis Report'
                                   button.disabled = false
                                 }
                               }}
@@ -2712,7 +2712,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               className="flex-1 sm:flex-none"
                             >
                               <FileText className="h-4 w-4 mr-2" />
-                              Download Annotated PDF
+                              Download Analysis Report
                             </Button>
                             <Button 
                               onClick={() => {
