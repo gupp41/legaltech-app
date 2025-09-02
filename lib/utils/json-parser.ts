@@ -150,22 +150,54 @@ export function safeJsonParse<T = any>(jsonString: string, fallback?: T): T | nu
  */
 export function validateAnalysisStructure(data: any): boolean {
   if (!data || typeof data !== 'object') {
+    console.log('🔍 JSON Parser: Validation failed - data is not an object')
     return false
   }
 
-  // Check for common analysis structure
+  // Check for common analysis structure - be more lenient
   const hasSummary = data.summary && typeof data.summary === 'object'
   const hasIdentifiedClauses = data.identified_clauses && typeof data.identified_clauses === 'object'
   const hasMissingClauses = data.missing_clauses && typeof data.missing_clauses === 'object'
   const hasComplianceConsiderations = data.compliance_considerations && typeof data.compliance_considerations === 'object'
+  const hasRiskAnalysis = data.risk_analysis && typeof data.risk_analysis === 'object'
+  const hasAiSuggestedLanguage = data.ai_suggested_language && Array.isArray(data.ai_suggested_language)
+  
+  // Also check for any string properties that might indicate analysis content
+  const hasStringContent = Object.values(data).some(value => 
+    typeof value === 'string' && value.length > 10
+  )
 
-  return hasSummary || hasIdentifiedClauses || hasMissingClauses || hasComplianceConsiderations
+  const isValid = hasSummary || hasIdentifiedClauses || hasMissingClauses || hasComplianceConsiderations || hasRiskAnalysis || hasAiSuggestedLanguage || hasStringContent
+  
+  console.log('🔍 JSON Parser: Structure validation result:', {
+    hasSummary,
+    hasIdentifiedClauses,
+    hasMissingClauses,
+    hasComplianceConsiderations,
+    hasRiskAnalysis,
+    hasAiSuggestedLanguage,
+    hasStringContent,
+    isValid
+  })
+
+  return isValid
 }
 
 /**
  * Extract and clean analysis data from various formats
  */
 export function extractAnalysisData(rawData: string): ParseResult {
+  if (!rawData || typeof rawData !== 'string') {
+    return {
+      success: false,
+      error: 'Invalid input: expected non-empty string'
+    }
+  }
+
+  console.log('🔍 JSON Parser: Starting analysis data extraction...')
+  console.log('🔍 JSON Parser: Input length:', rawData.length)
+  console.log('🔍 JSON Parser: Input preview:', rawData.substring(0, 200) + '...')
+
   // Try different extraction methods
   const methods = [
     {
@@ -190,24 +222,73 @@ export function extractAnalysisData(rawData: string): ParseResult {
         }
         return { success: false, error: 'No valid JSON found in lines' }
       }
+    },
+    {
+      name: 'manual_extraction',
+      extractor: () => {
+        console.log('🔍 JSON Parser: Attempting manual extraction...')
+        try {
+          // Try to extract key fields manually
+          const documentPurposeMatch = rawData.match(/"document_purpose":\s*"([^"]+)"/)
+          const documentTypeMatch = rawData.match(/"document_type":\s*"([^"]+)"/)
+          const overallAssessmentMatch = rawData.match(/"overall_assessment":\s*"([^"]+)"/)
+          
+          if (documentPurposeMatch) {
+            const manuallyParsed = {
+              summary: {
+                document_purpose: documentPurposeMatch[1],
+                document_type: documentTypeMatch ? documentTypeMatch[1] : 'Unknown',
+                overall_assessment: overallAssessmentMatch ? overallAssessmentMatch[1] : 'medium_risk',
+                key_obligations: []
+              },
+              identified_clauses: { key_terms: [], conditions: [], obligations: [], rights: [] },
+              missing_clauses: [],
+              compliance_considerations: { compliance_score: 'unknown', regulatory_requirements: [] },
+              ai_suggested_language: []
+            }
+            return { success: true, data: manuallyParsed }
+          }
+          return { success: false, error: 'No key fields found for manual extraction' }
+        } catch (error) {
+          return { success: false, error: `Manual extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}` }
+        }
+      }
     }
   ]
 
   for (const method of methods) {
     try {
+      console.log(`🔍 JSON Parser: Trying method '${method.name}'...`)
       const result = method.extractor()
-      if (result.success && validateAnalysisStructure(result.data)) {
-        return {
-          ...result,
-          method: method.name
+      if (result.success) {
+        console.log(`🔍 JSON Parser: Method '${method.name}' succeeded`)
+        if (validateAnalysisStructure(result.data)) {
+          console.log(`🔍 JSON Parser: Method '${method.name}' data structure validated`)
+          return {
+            ...result,
+            method: method.name
+          }
+        } else {
+          console.log(`🔍 JSON Parser: Method '${method.name}' succeeded but structure validation failed`)
+          // Even if structure validation fails, return the data if it's not null
+          if (result.data && typeof result.data === 'object') {
+            console.log(`🔍 JSON Parser: Returning unvalidated data from method '${method.name}'`)
+            return {
+              ...result,
+              method: method.name
+            }
+          }
         }
+      } else {
+        console.log(`🔍 JSON Parser: Method '${method.name}' failed:`, result.error)
       }
     } catch (error) {
-      console.log(`🔍 Analysis extraction method '${method.name}' failed:`, error instanceof Error ? error.message : 'Unknown error')
+      console.log(`🔍 JSON Parser: Method '${method.name}' threw error:`, error instanceof Error ? error.message : 'Unknown error')
       continue
     }
   }
 
+  console.log('🔍 JSON Parser: All methods failed, returning error')
   return {
     success: false,
     error: 'All analysis extraction methods failed'

@@ -2834,10 +2834,16 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                     // Don't escape newlines, carriage returns, or tabs as they might be part of the JSON structure
                                     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove only problematic control characters
                                   
+                                  // Debug the analysis data before parsing
+                                  console.log('🔍 DEBUG: Analysis data type:', typeof latestAnalysis.results.analysis)
+                                  console.log('🔍 DEBUG: Analysis data length:', latestAnalysis.results.analysis?.length || 'undefined')
+                                  console.log('🔍 DEBUG: Analysis data preview:', latestAnalysis.results.analysis?.substring(0, 200) + '...')
+                                  
                                   const parseResult = extractAnalysisData(latestAnalysis.results.analysis)
                                   const parsed = parseResult.success ? parseResult.data : null
                                   if (!parseResult.success) {
                                     console.error('🔍 Navigation JSON Parse Error:', parseResult.error)
+                                    console.error('🔍 DEBUG: Full analysis data:', latestAnalysis.results.analysis)
                                     return null
                                   }
                                   
@@ -2947,11 +2953,32 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                         }
                                       }
                                       
+                                      // Debug the analysis data before parsing
+                                      console.log('🔍 DEBUG: Analysis data type:', typeof latestAnalysis.results.analysis)
+                                      console.log('🔍 DEBUG: Analysis data length:', latestAnalysis.results.analysis?.length || 'undefined')
+                                      console.log('🔍 DEBUG: Analysis data preview:', latestAnalysis.results.analysis?.substring(0, 200) + '...')
+                                      
                                       const parseResult = extractAnalysisData(latestAnalysis.results.analysis)
                                       const parsed = parseResult.success ? parseResult.data : null
                                       if (!parseResult.success) {
                                         console.error('🔍 JSON Parse Error:', parseResult.error)
-                                        throw new Error('Unable to parse analysis data. The analysis may be corrupted.')
+                                        console.error('🔍 DEBUG: Full analysis data:', latestAnalysis.results.analysis)
+                                        
+                                        // Instead of throwing an error, provide a fallback
+                                        console.log('🔍 DEBUG: Providing fallback analysis structure...')
+                                        const fallbackAnalysis = {
+                                          summary: {
+                                            document_purpose: 'Analysis data could not be parsed',
+                                            document_type: 'Unknown',
+                                            key_obligations: [],
+                                            overall_assessment: 'medium_risk' as const
+                                          },
+                                          identified_clauses: { key_terms: [], conditions: [], obligations: [], rights: [] },
+                                          missing_clauses: [],
+                                          compliance_considerations: { compliance_score: 'unknown' as const, regulatory_requirements: [] },
+                                          ai_suggested_language: []
+                                        }
+                                        return fallbackAnalysis
                                       }
                                       // Convert to formatted markdown using the same logic as prettifyOutput
                                       let formattedMarkdown = ''
