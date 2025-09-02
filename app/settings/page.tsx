@@ -250,11 +250,12 @@ export default function SettingsPage() {
     try {
       const { data: { user: authUser } } = await supabase.auth.getUser()
       if (authUser) {
-        // Try to get subscription data from the new consolidated schema
+        // Try to get subscription data from the subscriptions table first
         const { data: subscriptionData, error: subscriptionError } = await supabase
-          .from('user_subscriptions')
+          .from('subscriptions')
           .select('*')
           .eq('user_id', authUser.id)
+          .eq('status', 'active')
           .single()
 
         if (subscriptionData && !subscriptionError) {
@@ -263,8 +264,8 @@ export default function SettingsPage() {
             id: authUser.id,
             email: authUser.email || '',
             current_plan: subscriptionData.plan_type,
-            plan_start_date: subscriptionData.current_period_start || new Date().toISOString(),
-            plan_end_date: subscriptionData.current_period_end || undefined
+            plan_start_date: subscriptionData.start_date || new Date().toISOString(),
+            plan_end_date: subscriptionData.end_date || undefined
           })
         } else {
           // Fallback to profiles table if no subscription found
@@ -300,28 +301,20 @@ export default function SettingsPage() {
     try {
       setLoading(true)
       
-      // Fetch user subscription data using the new consolidated view
+      // Fetch user subscription data from the subscriptions table
       const { data: subData, error: subError } = await supabase
-        .from('user_subscriptions')
+        .from('subscriptions')
         .select('*')
         .eq('user_id', user.id)
+        .eq('status', 'active')
         .single()
 
       if (!subError && subData) {
         setSubscription(subData)
-        // No need to override user state - it's already set correctly from checkUser
+        console.log('🔍 Found subscription data:', subData)
       } else {
-        // Try fallback to old subscriptions table for existing data
-        const { data: legacySubData, error: legacySubError } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .single()
-
-        if (!legacySubError && legacySubData) {
-          setSubscription(legacySubData)
-        }
+        console.log('🔍 No subscription data found:', subError?.message)
+        setSubscription(null)
       }
 
       // Fetch usage data
@@ -947,7 +940,7 @@ export default function SettingsPage() {
                   <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex items-center gap-2">
                       <Check className="h-5 w-5 text-green-600" />
-                      <span className="text-green-800 font-medium">Active Subscription</span>
+                      <span className="text-green-800 font-medium">Active Stripe Subscription</span>
                     </div>
                     <p className="text-green-700 text-sm mt-1">
                       Subscription ID: {subscription.stripe_subscription_id}
@@ -991,6 +984,55 @@ export default function SettingsPage() {
                     <Button variant="destructive" size="sm">
                       Cancel Subscription
                     </Button>
+                  </div>
+                </div>
+              ) : user?.current_plan && user.current_plan !== 'free' ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Star className="h-5 w-5 text-blue-600" />
+                      <span className="text-blue-800 font-medium">{user.current_plan.charAt(0).toUpperCase() + user.current_plan.slice(1)} Plan Active</span>
+                    </div>
+                    <p className="text-blue-700 text-sm mt-1">
+                      You're currently on the {user.current_plan} plan. This appears to be a manual upgrade or promotional access.
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Plan Type</label>
+                      <p className="text-gray-900 mt-1 capitalize">{user.current_plan}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Status</label>
+                      <p className="text-gray-900 mt-1">Active</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Start Date</label>
+                      <p className="text-gray-900 mt-1">
+                        {new Date(user.plan_start_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    {user.plan_end_date && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">End Date</label>
+                        <p className="text-gray-900 mt-1">
+                          {new Date(user.plan_end_date).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-yellow-700">
+                      <Info className="h-4 w-4" />
+                      <span className="text-sm">
+                        <strong>Note:</strong> This plan doesn't have an active Stripe subscription. 
+                        If you need to manage billing or payment methods, please contact support.
+                      </span>
+                    </div>
                   </div>
                 </div>
               ) : (
