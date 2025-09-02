@@ -52,6 +52,54 @@ export default function Dashboard() {
   })
   const [hamburgerMenuOpen, setHamburgerMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState<string>('')
+  const [clauseModal, setClauseModal] = useState<{ isOpen: boolean; clause: any; type: 'rationale' | 'alternative' }>({
+    isOpen: false,
+    clause: null,
+    type: 'rationale'
+  })
+
+  // Clause Card Component
+  const ClauseCard = ({ item, riskLevel, emoji }: { item: any; riskLevel: string; emoji: string }) => (
+    <div className={`border-l-4 ${riskLevel === 'high' ? 'border-red-500' : riskLevel === 'medium' ? 'border-yellow-500' : 'border-green-500'} bg-white dark:bg-slate-800 rounded-r-lg p-4 mb-4 shadow-sm hover:shadow-md transition-shadow duration-200`}>
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2 flex items-center">
+            <span className="mr-2 text-lg">{emoji}</span>
+            {item.clause}
+          </h4>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+            {item.description}
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            <div>
+              <span className="font-medium text-slate-700 dark:text-slate-300">Impact:</span>
+              <p className="text-slate-600 dark:text-slate-400 mt-1">{item.impact}</p>
+            </div>
+            <div>
+              <span className="font-medium text-slate-700 dark:text-slate-300">Recommendation:</span>
+              <p className="text-slate-600 dark:text-slate-400 mt-1">{item.recommendation}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="flex gap-2 mt-4">
+        <button
+          onClick={() => setClauseModal({ isOpen: true, clause: item, type: 'rationale' })}
+          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors duration-200"
+        >
+          <span className="mr-1">❓</span>
+          Why flagged?
+        </button>
+        <button
+          onClick={() => setClauseModal({ isOpen: true, clause: item, type: 'alternative' })}
+          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-md hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors duration-200"
+        >
+          <span className="mr-1">✏️</span>
+          Safe alternative
+        </button>
+      </div>
+    </div>
+  )
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -2837,6 +2885,8 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                 }
                               })()}
 
+
+
                               {/* Display analysis content with proper formatting */}
                               {latestAnalysis.results?.analysis ? (
                                 <div className="prose prose-sm max-w-none">
@@ -2905,47 +2955,13 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                         }
                                       }
                                       
-                                      // Risk Analysis Section
+                                      // Risk Analysis Section - Store for interactive rendering
+                                      let riskAnalysisData = null
                                       if (parsed.risk_analysis) {
+                                        riskAnalysisData = parsed.risk_analysis
                                         formattedMarkdown += `# Risk Analysis\n\n`
                                         if (parsed.risk_analysis.risk_summary) {
                                           formattedMarkdown += `${parsed.risk_analysis.risk_summary}\n\n`
-                                        }
-                                        
-                                        if (parsed.risk_analysis.high_risk_items && parsed.risk_analysis.high_risk_items.length > 0) {
-                                          formattedMarkdown += `## 🔴 High Risk Items\n\n`
-                                          parsed.risk_analysis.high_risk_items.forEach((item: any) => {
-                                            formattedMarkdown += `**${item.clause}**\n`
-                                            formattedMarkdown += `- Description: ${item.description}\n`
-                                            formattedMarkdown += `- Impact: ${item.impact}\n`
-                                            formattedMarkdown += `- Recommendation: ${item.recommendation}\n\n`
-                                            formattedMarkdown += '\n'
-                                          })
-                                          formattedMarkdown += '\n'
-                                          //formattedMarkdown += '\n'
-                                          
-                                        }
-                                        
-                                        if (parsed.risk_analysis.medium_risk_items && parsed.risk_analysis.medium_risk_items.length > 0) {
-                                          formattedMarkdown += `## 🟡 Medium Risk Items\n\n`
-                                          parsed.risk_analysis.medium_risk_items.forEach((item: any) => {
-                                            formattedMarkdown += `**${item.clause}**\n`
-                                            formattedMarkdown += `- Description: ${item.description}\n`
-                                            formattedMarkdown += `- Impact: ${item.impact}\n`
-                                            formattedMarkdown += `- Recommendation: ${item.recommendation}\n\n`
-                                            formattedMarkdown += '\n'
-                                          })
-                                        }
-                                        
-                                        if (parsed.risk_analysis.low_risk_items && parsed.risk_analysis.low_risk_items.length > 0) {
-                                          formattedMarkdown += `## 🟢 Low Risk Items\n\n`
-                                          parsed.risk_analysis.low_risk_items.forEach((item: any) => {
-                                            formattedMarkdown += `**${item.clause}**\n`
-                                            formattedMarkdown += `- Description: ${item.description}\n`
-                                            formattedMarkdown += `- Impact: ${item.impact}\n`
-                                            formattedMarkdown += `- Recommendation: ${item.recommendation}\n\n`
-                                            formattedMarkdown += '\n'
-                                          })
                                         }
                                       }
                                       
@@ -3117,31 +3133,74 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                         }
                                       }
                                       
-                                      // Render the formatted markdown
+                                      // Render the formatted markdown and interactive components
                                       return (
-                                        <div 
-                                          className="whitespace-pre-wrap text-sm leading-relaxed"
-                                          dangerouslySetInnerHTML={{ 
-                                            __html: formattedMarkdown
-                                              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                                              .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                                              .replace(/^# Document Analysis Summary$/gm, '<h1 class="text-xl font-bold mb-2" id="summary">Document Analysis Summary</h1>')
-                                              .replace(/^# Risk Analysis$/gm, '<h1 class="text-xl font-bold mb-2" id="risk-analysis">Risk Analysis</h1>')
-                                              .replace(/^# 🕵️ Identified Clauses$/gm, '<h1 class="text-xl font-bold mb-2" id="identified-clauses">🕵️ Identified Clauses</h1>')
-                                              .replace(/^# 📝 Missing Clauses & Recommendations$/gm, '<h1 class="text-xl font-bold mb-2" id="missing-clauses">📝 Missing Clauses & Recommendations</h1>')
-                                              .replace(/^# ✅ Compliance Considerations$/gm, '<h1 class="text-xl font-bold mb-2" id="compliance">✅ Compliance Considerations</h1>')
-                                              .replace(/^# 💡 Recommendations$/gm, '<h1 class="text-xl font-bold mb-2" id="recommendations">💡 Recommendations</h1>')
-                                              .replace(/^# ⚙️ Technical Details$/gm, '<h1 class="text-xl font-bold mb-2" id="technical-details">⚙️ Technical Details</h1>')
-                                              .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mb-2">$1</h1>')
-                                              .replace(/^## (.*$)/gm, '<h2 class="text-lg font-semibold mb-2 mt-4">$1</h2>')
-                                              .replace(/^### (.*$)/gm, '<h3 class="text-base font-medium mb-2 mt-3">$1</h3>')
-                                              .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
-                                              .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
-                                              .replace(/\n\n/g, '</p><p class="mb-2">')
-                                              .replace(/^/g, '<p class="mb-2">')
-                                              .replace(/$/g, '</p>')
-                                          }}
-                                        />
+                                        <div>
+                                          <div 
+                                            className="whitespace-pre-wrap text-sm leading-relaxed"
+                                            dangerouslySetInnerHTML={{ 
+                                              __html: formattedMarkdown
+                                                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                                                .replace(/^# Document Analysis Summary$/gm, '<h1 class="text-xl font-bold mb-2" id="summary">Document Analysis Summary</h1>')
+                                                .replace(/^# Risk Analysis$/gm, '<h1 class="text-xl font-bold mb-2" id="risk-analysis">Risk Analysis</h1>')
+                                                .replace(/^# 🕵️ Identified Clauses$/gm, '<h1 class="text-xl font-bold mb-2" id="identified-clauses">🕵️ Identified Clauses</h1>')
+                                                .replace(/^# 📝 Missing Clauses & Recommendations$/gm, '<h1 class="text-xl font-bold mb-2" id="missing-clauses">📝 Missing Clauses & Recommendations</h1>')
+                                                .replace(/^# ✅ Compliance Considerations$/gm, '<h1 class="text-xl font-bold mb-2" id="compliance">✅ Compliance Considerations</h1>')
+                                                .replace(/^# 💡 Recommendations$/gm, '<h1 class="text-xl font-bold mb-2" id="recommendations">💡 Recommendations</h1>')
+                                                .replace(/^# ⚙️ Technical Details$/gm, '<h1 class="text-xl font-bold mb-2" id="technical-details">⚙️ Technical Details</h1>')
+                                                .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mb-2">$1</h1>')
+                                                .replace(/^## (.*$)/gm, '<h2 class="text-lg font-semibold mb-2 mt-4">$1</h2>')
+                                                .replace(/^### (.*$)/gm, '<h3 class="text-base font-medium mb-2 mt-3">$1</h3>')
+                                                .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
+                                                .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
+                                                .replace(/\n\n/g, '</p><p class="mb-2">')
+                                                .replace(/^/g, '<p class="mb-2">')
+                                                .replace(/$/g, '</p>')
+                                            }}
+                                          />
+                                          
+                                          {/* Interactive Risk Analysis Cards */}
+                                          {riskAnalysisData && (
+                                            <div className="mt-6">
+                                              {riskAnalysisData.high_risk_items && riskAnalysisData.high_risk_items.length > 0 && (
+                                                <div className="mb-6">
+                                                  <h2 className="text-lg font-semibold mb-4 text-red-600 dark:text-red-400 flex items-center">
+                                                    <span className="mr-2">🔴</span>
+                                                    High Risk Items
+                                                  </h2>
+                                                  {riskAnalysisData.high_risk_items.map((item: any, index: number) => (
+                                                    <ClauseCard key={index} item={item} riskLevel="high" emoji="🔴" />
+                                                  ))}
+                                                </div>
+                                              )}
+                                              
+                                              {riskAnalysisData.medium_risk_items && riskAnalysisData.medium_risk_items.length > 0 && (
+                                                <div className="mb-6">
+                                                  <h2 className="text-lg font-semibold mb-4 text-yellow-600 dark:text-yellow-400 flex items-center">
+                                                    <span className="mr-2">🟡</span>
+                                                    Medium Risk Items
+                                                  </h2>
+                                                  {riskAnalysisData.medium_risk_items.map((item: any, index: number) => (
+                                                    <ClauseCard key={index} item={item} riskLevel="medium" emoji="🟡" />
+                                                  ))}
+                                                </div>
+                                              )}
+                                              
+                                              {riskAnalysisData.low_risk_items && riskAnalysisData.low_risk_items.length > 0 && (
+                                                <div className="mb-6">
+                                                  <h2 className="text-lg font-semibold mb-4 text-green-600 dark:text-green-400 flex items-center">
+                                                    <span className="mr-2">🟢</span>
+                                                    Low Risk Items
+                                                  </h2>
+                                                  {riskAnalysisData.low_risk_items.map((item: any, index: number) => (
+                                                    <ClauseCard key={index} item={item} riskLevel="low" emoji="🟢" />
+                                                  ))}
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
                                       )
                                     } catch (e) {
                                       // If parsing fails, show the raw content with a prettify button
@@ -4042,6 +4101,115 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
         </div>
 
       </div>
+
+      {/* Clause Modal */}
+      {clauseModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                {clauseModal.type === 'rationale' ? 'Why was this flagged?' : 'Safe Alternative Language'}
+              </h3>
+              <button
+                onClick={() => setClauseModal({ isOpen: false, clause: null, type: 'rationale' })}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
+              {clauseModal.type === 'rationale' ? (
+                <div>
+                  <div className="mb-4">
+                    <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Clause:</h4>
+                    <p className="text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-700 p-3 rounded border">
+                      {clauseModal.clause?.clause}
+                    </p>
+                  </div>
+                  <div className="mb-4">
+                    <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Why it's flagged:</h4>
+                    <p className="text-slate-700 dark:text-slate-300">
+                      {clauseModal.clause?.description}
+                    </p>
+                  </div>
+                  <div className="mb-4">
+                    <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Potential Impact:</h4>
+                    <p className="text-slate-700 dark:text-slate-300">
+                      {clauseModal.clause?.impact}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Legal Rationale:</h4>
+                    <p className="text-slate-700 dark:text-slate-300">
+                      This clause presents potential legal risks due to ambiguous language, unfavorable terms, or missing protections. 
+                      The specific concerns include: unclear liability allocation, potential for disputes, lack of standard legal protections, 
+                      or terms that may not be enforceable in your jurisdiction.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="mb-4">
+                    <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Original Clause:</h4>
+                    <p className="text-slate-700 dark:text-slate-300 bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-800">
+                      {clauseModal.clause?.clause}
+                    </p>
+                  </div>
+                  <div className="mb-4">
+                    <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Suggested Alternative:</h4>
+                    <p className="text-slate-700 dark:text-slate-300 bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800">
+                      {clauseModal.clause?.recommendation}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Why this alternative is better:</h4>
+                    <ul className="text-slate-700 dark:text-slate-300 space-y-2">
+                      <li className="flex items-start">
+                        <span className="text-green-500 mr-2">✓</span>
+                        Provides clearer language and reduces ambiguity
+                      </li>
+                      <li className="flex items-start">
+                        <span className="text-green-500 mr-2">✓</span>
+                        Includes standard legal protections and safeguards
+                      </li>
+                      <li className="flex items-start">
+                        <span className="text-green-500 mr-2">✓</span>
+                        Balances interests of all parties more fairly
+                      </li>
+                      <li className="flex items-start">
+                        <span className="text-green-500 mr-2">✓</span>
+                        Reduces potential for disputes and litigation
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-3 p-6 border-t border-slate-200 dark:border-slate-700">
+              <button
+                onClick={() => setClauseModal({ isOpen: false, clause: null, type: 'rationale' })}
+                className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+              >
+                Close
+              </button>
+              {clauseModal.type === 'alternative' && (
+                <button
+                  onClick={() => {
+                    // Copy to clipboard functionality
+                    navigator.clipboard.writeText(clauseModal.clause?.recommendation || '')
+                    // You could add a toast notification here
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Copy Alternative
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
