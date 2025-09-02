@@ -12,7 +12,7 @@ export async function withAuth(
 ) {
   try {
     // Create Supabase client for server-side authentication
-    const supabase = createServerClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+    const supabase = createServerClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
       cookies: {
         getAll() {
           return request.cookies.getAll()
@@ -56,7 +56,7 @@ export async function withServiceRole(
 ) {
   try {
     // Create Supabase client with service role key
-    const supabase = createServerClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+    const supabase = createServerClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
       cookies: {
         getAll() {
           return []
@@ -87,7 +87,7 @@ export async function withOptionalAuth(
 ) {
   try {
     // Create Supabase client for server-side authentication
-    const supabase = createServerClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+    const supabase = createServerClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
       cookies: {
         getAll() {
           return request.cookies.getAll()

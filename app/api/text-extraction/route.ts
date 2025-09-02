@@ -17,8 +17,8 @@ export async function POST(request: NextRequest) {
       const token = authHeader.substring(7)
       const { createClient: createClientWithToken } = await import('@supabase/supabase-js')
       const supabaseWithToken = createClientWithToken(
-        env.SUPABASE_URL,
-        env.SUPABASE_ANON_KEY,
+        env.NEXT_PUBLIC_SUPABASE_URL,
+        env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
         {
           global: {
             headers: {

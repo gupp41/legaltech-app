@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
 
     // Validate environment variables
     try {
-      env.SUPABASE_URL
+      env.NEXT_PUBLIC_SUPABASE_URL
       env.SUPABASE_SERVICE_ROLE_KEY
     } catch (error) {
       console.error('🔍 Portal API - Missing required environment variables')
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     // Create a simple Supabase client for database queries (no auth needed)
     const supabase = createServerClient(
-      env.SUPABASE_URL,
+      env.NEXT_PUBLIC_SUPABASE_URL,
       env.SUPABASE_SERVICE_ROLE_KEY, // Use service role key for server-side queries
       {
         cookies: {
