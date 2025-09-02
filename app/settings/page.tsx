@@ -975,12 +975,12 @@ export default function SettingsPage() {
 
               {subscription?.stripe_subscription_id || (subscription?.current_period_start && subscription?.current_period_end) ? (
                 <div className="space-y-4">
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                     <div className="flex items-center gap-2">
-                      <Check className="h-5 w-5 text-green-600" />
-                      <span className="text-green-800 font-medium">Active Stripe Subscription</span>
+                      <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      <span className="text-green-800 dark:text-green-300 font-medium">Active Stripe Subscription</span>
                     </div>
-                    <p className="text-green-700 text-sm mt-1">
+                    <p className="text-green-700 dark:text-green-300 text-sm mt-1">
                       Subscription ID: {subscription.stripe_subscription_id || 'Not available (webhook issue)'}
                     </p>
                   </div>
