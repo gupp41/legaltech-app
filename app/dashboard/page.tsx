@@ -2652,7 +2652,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                   // Parse the analysis data
                                   let analysisData
                                   try {
-                                    const cleanAnalysis = latestAnalysis.results.analysis.trim()
+                                    let cleanAnalysis = latestAnalysis.results.analysis.trim()
                                       .replace(/^Starting AI analysis\.\.\.\s*/, '')
                                       .replace(/^Analyzing document\.\.\.\s*/, '')
                                       .replace(/^Processing\.\.\.\s*/, '')
@@ -2748,7 +2748,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
 
                                   let analysisData
                                   try {
-                                    const cleanAnalysis = latestAnalysis.results
+                                    let cleanAnalysis = latestAnalysis.results
                                       .replace(/^Starting AI analysis\.\.\.\s*/, '')
                                       .replace(/^Analyzing document\.\.\.\s*/, '')
                                       .replace(/^Processing\.\.\.\s*/, '')
@@ -3037,7 +3037,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               {/* Floating Analysis Navigation */}
                               {latestAnalysis.results?.analysis && (() => {
                                 try {
-                                  const cleanAnalysis = latestAnalysis.results.analysis.trim()
+                                  let cleanAnalysis = latestAnalysis.results.analysis.trim()
                                     .replace(/^Starting AI analysis\.\.\.\s*/, '')
                                     .replace(/^Analyzing document\.\.\.\s*/, '')
                                     .replace(/^Processing\.\.\.\s*/, '')
@@ -3162,7 +3162,11 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                         parsed = JSON.parse(cleanAnalysis)
                                       } catch (parseError) {
                                         console.error('🔍 JSON Parse Error:', parseError)
-                                        console.error('🔍 Problematic JSON section:', cleanAnalysis.substring(parseError.message.match(/position (\d+)/)?.[1] - 100 || 0, parseError.message.match(/position (\d+)/)?.[1] + 100 || 200))
+                                        const position = (parseError as Error).message.match(/position (\d+)/)?.[1]
+                                        if (position) {
+                                          const pos = parseInt(position)
+                                          console.error('🔍 Problematic JSON section:', cleanAnalysis.substring(pos - 100 || 0, pos + 100 || 200))
+                                        }
                                         
                                         // Try to parse the original analysis without cleaning
                                         console.log('🔍 Attempting to parse original analysis without cleaning')
@@ -3672,7 +3676,11 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                                     parsed = JSON.parse(cleanAnalysis)
                                                   } catch (parseError) {
                                                     console.error('🔍 JSON Parse Error:', parseError)
-                                                    console.error('🔍 Problematic JSON section:', cleanAnalysis.substring(parseError.message.match(/position (\d+)/)?.[1] - 100 || 0, parseError.message.match(/position (\d+)/)?.[1] + 100 || 200))
+                                                    const position = (parseError as Error).message.match(/position (\d+)/)?.[1]
+                                        if (position) {
+                                          const pos = parseInt(position)
+                                          console.error('🔍 Problematic JSON section:', cleanAnalysis.substring(pos - 100 || 0, pos + 100 || 200))
+                                        }
                                                     throw new Error('Unable to parse analysis data. The analysis may be corrupted.')
                                                   }
                                                   // Convert to formatted markdown using the same logic as prettifyOutput
