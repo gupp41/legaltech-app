@@ -6,7 +6,7 @@ import { FileUpload } from "@/components/file-upload"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Download, Trash2, BarChart3, Brain, ChevronLeft, ChevronRight, RefreshCw, Settings, Menu, X, LogOut } from "lucide-react"
+import { FileText, Download, Trash2, BarChart3, Brain, ChevronLeft, ChevronRight, RefreshCw, Settings, Menu, X, LogOut, Share, MoreHorizontal } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { extractTextFromDocument, truncateText } from "@/lib/document-extractor"
 // Usage tracking is handled server-side in API routes
@@ -212,6 +212,25 @@ export default function Dashboard() {
     }
     }
   }, [user?.id, refreshingAnalyses, isCleaningUpAnalyses])
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (!target.closest('[id^="more-dropdown-"]') && !target.closest('button[aria-label="More"]')) {
+        // Close all dropdowns
+        const dropdowns = document.querySelectorAll('[id^="more-dropdown-"]')
+        dropdowns.forEach(dropdown => {
+          dropdown.classList.add('hidden')
+        })
+      }
+    }
+
+    document.addEventListener('click', handleClickOutside)
+    return () => {
+      document.removeEventListener('click', handleClickOutside)
+    }
+  }, [])
 
   const checkUser = async () => {
     console.log('Checking user authentication...')
@@ -2303,6 +2322,52 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
         </div>
       )}
 
+      {/* Breadcrumb Navigation */}
+      <div className="bg-card border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <nav className="flex items-center space-x-2 text-sm">
+            <button 
+              onClick={() => {
+                setSelectedDocument(null)
+                setCurrentDocumentId(null)
+              }}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Document Analysis
+            </button>
+            {selectedDocument && (
+              <>
+                <span className="text-muted-foreground">/</span>
+                <button 
+                  onClick={() => {
+                    // Keep current document selected, just scroll to top
+                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                  }}
+                  className="text-muted-foreground hover:text-foreground transition-colors max-w-xs truncate"
+                  title={selectedDocument.filename}
+                >
+                  {selectedDocument.filename}
+                </button>
+                {currentAnalyses.length > 0 && (
+                  <>
+                    <span className="text-muted-foreground">/</span>
+                    <span className="text-foreground font-medium">
+                      {new Date(currentAnalyses[0].created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </>
+                )}
+              </>
+            )}
+          </nav>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
         {/* Remove the old UsageDisplay from here since it's now above */}
         
@@ -2418,70 +2483,170 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                       ))}
                     </div>
 
-                    {/* Current Document Details */}
+                    {/* Document Summary Panel */}
                     {(() => {
                       const currentDoc = getCurrentDocument()
                       if (!currentDoc) return null
                       
                       return (
-                        <div className="border border-slate-200 rounded-lg p-4">
-                          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
-                            <div className="flex items-start space-x-4">
-                              <div className="flex-shrink-0">
-                                <FileText className="h-10 w-10 text-blue-600" />
+                        <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
+                          {/* Document Header */}
+                          <div className="flex items-start space-x-4 mb-6">
+                            <div className="flex-shrink-0">
+                              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+                                <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <h3 className="text-lg font-medium text-foreground break-words">{currentDoc.filename}</h3>
-                                <div className="flex flex-wrap items-center gap-2 mt-2">
-                                  <Badge className={getStatusColor(currentDoc.status)}>{currentDoc.status}</Badge>
-                                  <Badge variant="outline">{currentDoc.document_type}</Badge>
-                                  <span className="text-sm text-muted-foreground">{formatFileSize(currentDoc.file_size)}</span>
-                                  <span className="text-sm text-muted-foreground">
-                                    {formatDistanceToNow(new Date(currentDoc.created_at), { addSuffix: true })}
-                                  </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-xl font-semibold text-foreground break-words mb-2">{currentDoc.filename}</h3>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Badge className={getStatusColor(currentDoc.status)}>{currentDoc.status}</Badge>
+                                <Badge variant="outline">{currentDoc.document_type}</Badge>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Document Information Grid */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                            <div className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Upload Date</label>
+                                <p className="text-sm text-foreground">
+                                  {new Date(currentDoc.created_at).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">File Size</label>
+                                <p className="text-sm text-foreground">{formatFileSize(currentDoc.file_size)}</p>
+                              </div>
+                            </div>
+                            <div className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Jurisdiction</label>
+                                <p className="text-sm text-foreground">
+                                  {currentDoc.jurisdiction || 'Not specified'}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Client Name</label>
+                                <p className="text-sm text-foreground">
+                                  {currentDoc.client_name || 'Not specified'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <Button 
+                              onClick={() => {
+                                // Download PDF functionality
+                                const link = document.createElement('a')
+                                link.href = currentDoc.file_url
+                                link.download = currentDoc.filename
+                                link.click()
+                              }}
+                              variant="outline"
+                              className="flex-1 sm:flex-none"
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download PDF
+                            </Button>
+                            <Button 
+                              onClick={() => {
+                                // Share functionality
+                                if (navigator.share) {
+                                  navigator.share({
+                                    title: currentDoc.filename,
+                                    text: `Check out this legal document: ${currentDoc.filename}`,
+                                    url: window.location.href
+                                  })
+                                } else {
+                                  // Fallback: copy to clipboard
+                                  navigator.clipboard.writeText(window.location.href)
+                                  alert('Link copied to clipboard!')
+                                }
+                              }}
+                              variant="outline"
+                              className="flex-1 sm:flex-none"
+                            >
+                              <Share className="h-4 w-4 mr-2" />
+                              Share
+                            </Button>
+                            <div className="relative">
+                              <Button 
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  // Toggle dropdown
+                                  const dropdown = document.getElementById(`more-dropdown-${currentDoc.id}`)
+                                  if (dropdown) {
+                                    dropdown.classList.toggle('hidden')
+                                  }
+                                }}
+                                variant="outline"
+                                className="flex-1 sm:flex-none"
+                              >
+                                <MoreHorizontal className="h-4 w-4 mr-2" />
+                                More
+                              </Button>
+                              <div 
+                                id={`more-dropdown-${currentDoc.id}`}
+                                className="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-10"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <div className="py-1">
+                                  <button
+                                    onClick={() => {
+                                      handleDelete(currentDoc.id)
+                                      // Hide dropdown
+                                      const dropdown = document.getElementById(`more-dropdown-${currentDoc.id}`)
+                                      if (dropdown) {
+                                        dropdown.classList.add('hidden')
+                                      }
+                                    }}
+                                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete Document
+                                  </button>
                                 </div>
                               </div>
                             </div>
-                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-4 sm:mt-0">
-                              <div className="flex flex-col sm:flex-row gap-2">
-                                <Button 
-                                  onClick={() => handleConvertToText(currentDoc.id)}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                                >
-                                  <FileText className="h-4 w-4 mr-2" />
-                                  Convert to Text
-                                </Button>
-                                <Button 
-                                  onClick={() => handleAnalyze(currentDoc.id)}
-                                  disabled={analyzingDocuments.has(currentDoc.id)}
-                                  className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
-                                >
-                                  {analyzingDocuments.has(currentDoc.id) ? (
-                                    <>
-                                      <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-white"></div>
-                                      Analyzing...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Brain className="h-4 w-4 mr-2" />
-                                      Analyze with AI
-                                    </>
-                                  )}
-                                </Button>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button variant="outline" size="sm" onClick={() => window.open(currentDoc.file_url, "_blank")}>
-                                  <Download className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleDelete(currentDoc.id)}
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
+                          </div>
+
+                          {/* Analysis Actions */}
+                          <div className="mt-6 pt-6 border-t border-border">
+                            <div className="flex flex-col sm:flex-row gap-3">
+                              <Button 
+                                onClick={() => handleConvertToText(currentDoc.id)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white flex-1 sm:flex-none"
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                Convert to Text
+                              </Button>
+                              <Button 
+                                onClick={() => handleAnalyze(currentDoc.id)}
+                                disabled={analyzingDocuments.has(currentDoc.id)}
+                                className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 flex-1 sm:flex-none"
+                              >
+                                {analyzingDocuments.has(currentDoc.id) ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-white"></div>
+                                    Analyzing...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Brain className="h-4 w-4 mr-2" />
+                                    Analyze with AI
+                                  </>
+                                )}
+                              </Button>
                             </div>
                           </div>
                         </div>
