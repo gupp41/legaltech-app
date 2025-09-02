@@ -287,7 +287,11 @@ export default function Dashboard() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element
-      if (!target.closest('[id^="more-dropdown-"]') && !target.closest('button[aria-label="More"]')) {
+      // Check if click is on More button (by looking for MoreHorizontal icon) or dropdown
+      const isMoreButton = target.closest('button')?.querySelector('.lucide-more-horizontal')
+      const isDropdown = target.closest('[id^="more-dropdown-"]')
+      
+      if (!isMoreButton && !isDropdown) {
         // Close all dropdowns
         const dropdowns = document.querySelectorAll('[id^="more-dropdown-"]')
         dropdowns.forEach(dropdown => {
@@ -2844,7 +2848,17 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               <Button 
                                 onClick={(e) => {
                                   e.stopPropagation()
+                                  e.preventDefault()
                                   console.log('🔍 More button clicked for document:', currentDoc.id)
+                                  
+                                  // Close all other dropdowns first
+                                  const allDropdowns = document.querySelectorAll('[id^="more-dropdown-"]')
+                                  allDropdowns.forEach(dropdown => {
+                                    if (dropdown.id !== `more-dropdown-${currentDoc.id}`) {
+                                      dropdown.classList.add('hidden')
+                                    }
+                                  })
+                                  
                                   // Toggle dropdown
                                   const dropdown = document.getElementById(`more-dropdown-${currentDoc.id}`)
                                   console.log('🔍 Dropdown element found:', dropdown)
