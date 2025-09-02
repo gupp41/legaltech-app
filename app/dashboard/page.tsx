@@ -59,6 +59,11 @@ export default function Dashboard() {
   })
   const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set())
 
+  // Debug openDropdowns state changes
+  useEffect(() => {
+    console.log('🔍 openDropdowns state changed:', Array.from(openDropdowns))
+  }, [openDropdowns])
+
   // Clause Card Component
   const ClauseCard = ({ item, riskLevel, emoji }: { item: any; riskLevel: string; emoji: string }) => (
     <div className={`border-l-4 ${riskLevel === 'high' ? 'border-red-500' : riskLevel === 'medium' ? 'border-yellow-500' : 'border-green-500'} bg-white dark:bg-slate-800 rounded-r-lg p-4 mb-4 shadow-sm hover:shadow-md transition-shadow duration-200`}>
@@ -2847,17 +2852,22 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   console.log('🔍 More button clicked for document:', currentDoc.id)
+                                  console.log('🔍 Current openDropdowns:', Array.from(openDropdowns))
                                   
                                   // Toggle dropdown using React state
                                   setOpenDropdowns(prev => {
                                     const newSet = new Set(prev)
+                                    console.log('🔍 Previous state:', Array.from(newSet))
                                     if (newSet.has(currentDoc.id)) {
                                       newSet.delete(currentDoc.id)
+                                      console.log('🔍 Closing dropdown for:', currentDoc.id)
                                     } else {
                                       // Close all other dropdowns first
                                       newSet.clear()
                                       newSet.add(currentDoc.id)
+                                      console.log('🔍 Opening dropdown for:', currentDoc.id)
                                     }
+                                    console.log('🔍 New state:', Array.from(newSet))
                                     return newSet
                                   })
                                 }}
@@ -2872,6 +2882,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                 className={`absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-[9999] ${openDropdowns.has(currentDoc.id) ? 'block' : 'hidden'}`}
                                 onClick={(e) => e.stopPropagation()}
                                 style={{ zIndex: 9999, position: 'absolute', top: '100%', right: '0' }}
+                                data-debug={`isOpen: ${openDropdowns.has(currentDoc.id)}, docId: ${currentDoc.id}`}
                               >
                                 <div className="py-1">
                                   <button
