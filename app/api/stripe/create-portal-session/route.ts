@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
 import { stripe } from '@/lib/stripe'
 
 export async function POST(request: NextRequest) {
@@ -10,8 +10,23 @@ export async function POST(request: NextRequest) {
     const cookies = request.cookies.getAll()
     console.log('🔍 Portal API - Cookies received:', cookies.map(c => ({ name: c.name, value: c.value.substring(0, 20) + '...' })))
 
+    // Create Supabase client with proper cookie handling
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            // Don't set cookies in API routes
+          },
+        },
+      }
+    )
+
     // Get authenticated user
-    const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     console.log('🔍 Portal API - Auth check:', {
