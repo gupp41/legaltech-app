@@ -289,25 +289,31 @@ export default function Dashboard() {
     }
   }, [user?.id, refreshingAnalyses, isCleaningUpAnalyses])
 
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element
-      // Check if click is on More button (by looking for MoreHorizontal icon) or dropdown
-      const isMoreButton = target.closest('button')?.querySelector('.lucide-more-horizontal')
-      const isDropdown = target.closest('[id^="more-dropdown-"]')
-      
-      if (!isMoreButton && !isDropdown) {
-        // Close all dropdowns using React state
-        setOpenDropdowns(new Set())
-      }
-    }
+  // Close dropdowns when clicking outside - TEMPORARILY DISABLED FOR DEBUGGING
+  // useEffect(() => {
+  //   const handleClickOutside = (event: MouseEvent) => {
+  //     // Add a small delay to prevent immediate closing after opening
+  //     setTimeout(() => {
+  //       const target = event.target as Element
+  //       // Check if click is on More button (by looking for MoreHorizontal icon) or dropdown
+  //       const isMoreButton = target.closest('button')?.querySelector('.lucide-more-horizontal')
+  //       const isDropdown = target.closest('[id^="more-dropdown-"]')
+        
+  //       console.log('🔍 Click outside handler:', { isMoreButton: !!isMoreButton, isDropdown: !!isDropdown })
+        
+  //       if (!isMoreButton && !isDropdown) {
+  //         // Close all dropdowns using React state
+  //         console.log('🔍 Closing all dropdowns due to click outside')
+  //         setOpenDropdowns(new Set())
+  //       }
+  //     }, 10) // Small delay to prevent race condition
+  //   }
 
-    document.addEventListener('click', handleClickOutside)
-    return () => {
-      document.removeEventListener('click', handleClickOutside)
-    }
-  }, [])
+  //   document.addEventListener('click', handleClickOutside)
+  //   return () => {
+  //     document.removeEventListener('click', handleClickOutside)
+  //   }
+  // }, [])
 
   const checkUser = async () => {
     console.log('Checking user authentication...')
