@@ -470,6 +470,7 @@ export default function SettingsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Ensure cookies are sent
         body: JSON.stringify({
           returnUrl: `${window.location.origin}/settings`,
         }),
