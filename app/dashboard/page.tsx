@@ -2307,7 +2307,7 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
       }
 
       // Display results in a detailed alert (for now)
-      const message = `
+      let message = `
 Text Extraction Results:
 =======================
 Document: ${document.filename}
@@ -2317,6 +2317,10 @@ Storage Path: ${document.storage_path || 'N/A'}
 
 Extraction Status: ${extractionResult.success ? 'SUCCESS' : 'FAILED'}
 ${extractionResult.error ? `Error: ${extractionResult.error}` : ''}
+      `.trim()
+
+      if (extractionResult.success) {
+        message += `
 
 Extracted Text (${extractionResult.wordCount} words):
 ${extractionResult.text ? extractionResult.text.substring(0, 500) + (extractionResult.text.length > 500 ? '...' : '') : 'No text extracted'}
@@ -2324,8 +2328,23 @@ ${extractionResult.text ? extractionResult.text.substring(0, 500) + (extractionR
 Full text length: ${extractionResult.text?.length || 0} characters
 
 API Call Status: ${apiResponse?.ok ? 'SUCCESS' : 'FAILED'}
-${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to database'}
-      `.trim()
+${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to database'}`
+      } else {
+        message += `
+
+The document could not be processed. This could be due to:
+- File corruption or invalid structure
+- Unsupported PDF format or version
+- Browser compatibility issues
+- Network connectivity problems
+
+Please try:
+1. Converting to text format (.txt) from the original source
+2. Using a different browser or device
+3. Checking if the PDF file opens correctly in other applications
+4. Re-downloading the file if it was transferred over the internet
+5. Using OCR software if the PDF contains scanned images`
+      }
 
       alert(message)
 
@@ -2334,7 +2353,11 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
 
     } catch (error) {
       console.error('Error in handleConvertToText:', error)
-      console.error(`Text extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      console.error(`Text extraction failed: ${errorMessage}`)
+      
+      // Show user-friendly error message
+      alert(`Text extraction failed: ${errorMessage}\n\nPlease try:\n1. Converting to a different format (e.g., .txt)\n2. Using a different browser\n3. Checking if the file is corrupted\n4. Re-downloading the file if it was transferred over the internet`)
     }
   }
 
