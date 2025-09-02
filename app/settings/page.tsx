@@ -478,21 +478,14 @@ export default function SettingsPage() {
         }),
       })
 
-      const data = await response.json()
+      const { url, error } = await response.json()
 
-      if (data.error) {
-        throw new Error(data.error)
+      if (error) {
+        throw new Error(error)
       }
 
-      // Handle test response
-      if (data.success && data.message) {
-        console.log('🔍 Test response received:', data)
-        alert(`Test successful! API is working. Subscription found: ${data.subscription.plan_type}`)
-        return
-      }
-
-      if (data.url) {
-        window.location.href = data.url
+      if (url) {
+        window.location.href = url
       }
     } catch (error) {
       console.error('Error creating portal session:', error)
