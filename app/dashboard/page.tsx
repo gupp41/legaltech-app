@@ -2853,6 +2853,8 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                     console.log('🔍 Dropdown is currently hidden:', isHidden)
                                     dropdown.classList.toggle('hidden')
                                     console.log('🔍 Dropdown visibility toggled')
+                                    console.log('🔍 Dropdown classes after toggle:', dropdown.className)
+                                    console.log('🔍 Dropdown computed style display:', window.getComputedStyle(dropdown).display)
                                   } else {
                                     console.error('🔍 Dropdown element not found!')
                                   }
@@ -2865,9 +2867,9 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               </Button>
                               <div 
                                 id={`more-dropdown-${currentDoc.id}`}
-                                className="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-[9999]"
+                                className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-[9999]"
                                 onClick={(e) => e.stopPropagation()}
-                                style={{ zIndex: 9999 }}
+                                style={{ zIndex: 9999, position: 'absolute', top: '100%', right: '0' }}
                               >
                                 <div className="py-1">
                                   <button
