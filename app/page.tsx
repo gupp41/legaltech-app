@@ -306,7 +306,7 @@ export default function HomePage() {
           <p className="text-lg sm:text-xl mb-8 text-blue-100">
             Join leading law firms and HR departments already saving time and reducing costs
           </p>
-          <Button asChild size="lg" variant="secondary" className="h-12 px-6 sm:px-8 text-blue-600 hover:text-blue-700">
+          <Button asChild size="lg" variant="secondary" className="h-12 px-6 sm:px-8 text-white hover:text-white bg-white/10 hover:bg-white/20 border-white/20">
             <Link href="/auth/signup">Start your free trial</Link>
           </Button>
         </div>
@@ -322,7 +322,7 @@ export default function HomePage() {
               </div>
               <span className="font-semibold">LegalTech AI</span>
             </div>
-            <p className="text-muted-foreground text-sm sm:text-base">© 2024 LegalTech AI. All rights reserved.</p>
+            <p className="text-muted-foreground text-sm sm:text-base">© 2025 LegalTech AI. All rights reserved.</p>
           </div>
         </div>
       </footer>
