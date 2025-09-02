@@ -2510,28 +2510,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                         </CardTitle>
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                           <div className="flex flex-wrap gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                fetchDocuments()
-                                fetchAnalyses()
-                              }}
-                              className="text-xs"
-                            >
-                              <RefreshCw className="h-3 w-3 mr-1" />
-                              Refresh
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={handleFixAnalyses}
-                              className="text-xs"
-                              title="Fix any stuck or orphaned analyses"
-                            >
-                              <Brain className="h-3 w-3 mr-1" />
-                              Fix Analyses
-                            </Button>
+                            {/* Fix Analyses and Refresh buttons removed */}
                           </div>
                           <div className="flex flex-wrap gap-2">
                             <Button
@@ -2655,188 +2634,8 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               <span className="hidden md:inline">Download PDF</span>
                               <span className="md:hidden">PDF</span>
                             </Button>
-                            <Button 
-                              onClick={async (event) => {
-                                // Download Annotated PDF functionality
-                                try {
-                                  const latestAnalysis = analyses
-                                    .filter(a => a.document_id === currentDoc.id)
-                                    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
-                                  
-                                  if (!latestAnalysis?.results?.analysis) {
-                                    alert('No analysis available for this document. Please analyze the document first.')
-                                    return
-                                  }
-
-                                  // Parse the analysis data
-                                  let analysisData
-                                  try {
-                                    let cleanAnalysis = latestAnalysis.results.analysis.trim()
-                                      .replace(/^Starting AI analysis\.\.\.\s*/, '')
-                                      .replace(/^Analyzing document\.\.\.\s*/, '')
-                                      .replace(/^Processing\.\.\.\s*/, '')
-                                    // Additional JSON cleaning to fix common issues
-                                    cleanAnalysis = cleanAnalysis
-                                      .replace(/"description "([^"]*)"([^,}]*)/g, '"description": "$1"$2') // Fix missing colon after description
-                                      .replace(/,\s*}/g, '}') // Remove trailing commas before closing braces
-                                      .replace(/,\s*]/g, ']') // Remove trailing commas before closing brackets
-                                      .replace(/\n/g, '\\n') // Escape newlines
-                                      .replace(/\r/g, '\\r') // Escape carriage returns
-                                      .replace(/\t/g, '\\t') // Escape tabs
-                                      .replace(/[\x00-\x1F\x7F]/g, '') // Remove other control characters
-                                    
-                                    analysisData = JSON.parse(cleanAnalysis)
-                                  } catch (parseError) {
-                                    alert('Unable to parse analysis data. Please try analyzing the document again.')
-                                    return
-                                  }
-
-                                  // Show loading state
-                                  const button = event.target as HTMLButtonElement
-                                  const originalText = button.textContent
-                                  button.textContent = 'Generating...'
-                                  button.disabled = true
-
-                                  // Call the DOCX annotation API
-                                  const response = await fetch('/api/documents/annotate-docx', {
-                                    method: 'POST',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({
-                                      documentId: currentDoc.id,
-                                      analysisData: analysisData
-                                    }),
-                                  })
-
-                                  if (!response.ok) {
-                                    throw new Error('Failed to generate analysis report')
-                                  }
-
-                                  // Download the analysis report
-                                  const blob = await response.blob()
-                                  const url = window.URL.createObjectURL(blob)
-                                  const link = document.createElement('a')
-                                  link.href = url
-                                  link.download = `${currentDoc.filename.replace('.pdf', '')}_analysis_report.docx`
-                                  document.body.appendChild(link)
-                                  link.click()
-                                  document.body.removeChild(link)
-                                  window.URL.revokeObjectURL(url)
-
-                                  // Reset button state
-                                  button.textContent = originalText
-                                  button.disabled = false
-
-                                } catch (error) {
-                                  console.error('Error generating analysis report:', error)
-                                  alert('Failed to generate analysis report. Please try again.')
-                                  
-                                  // Reset button state
-                                  const button = event.target as HTMLButtonElement
-                                  button.textContent = 'Download Analysis Report'
-                                  button.disabled = false
-                                }
-                              }}
-                              variant="outline"
-                              className="flex-shrink-0 min-w-0 max-w-full"
-                            >
-                              <FileText className="h-4 w-4 mr-2" />
-                              <span className="hidden md:inline">Analysis Report</span>
-                              <span className="md:hidden">Report</span>
-                            </Button>
-                            <Button 
-                              onClick={async (event) => {
-                                try {
-                                  const button = event.target as HTMLButtonElement
-                                  const originalText = button.textContent
-                                  button.textContent = 'Generating...'
-                                  button.disabled = true
-
-                                  // Get the latest analysis data
-                                  const latestAnalysis = analyses
-                                    .filter(a => a.document_id === currentDoc.id)
-                                    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
-                                  
-                                  if (!latestAnalysis || !latestAnalysis.results) {
-                                    alert('No analysis data found. Please analyze the document first.')
-                                    button.textContent = originalText
-                                    button.disabled = false
-                                    return
-                                  }
-
-                                  let analysisData
-                                  try {
-                                    let cleanAnalysis = latestAnalysis.results
-                                      .replace(/^Starting AI analysis\.\.\.\s*/, '')
-                                      .replace(/^Analyzing document\.\.\.\s*/, '')
-                                      .replace(/^Processing\.\.\.\s*/, '')
-                                    // Additional JSON cleaning to fix common issues
-                                    cleanAnalysis = cleanAnalysis
-                                      .replace(/"description "([^"]*)"([^,}]*)/g, '"description": "$1"$2') // Fix missing colon after description
-                                      .replace(/,\s*}/g, '}') // Remove trailing commas before closing braces
-                                      .replace(/,\s*]/g, ']') // Remove trailing commas before closing brackets
-                                      .replace(/\n/g, '\\n') // Escape newlines
-                                      .replace(/\r/g, '\\r') // Escape carriage returns
-                                      .replace(/\t/g, '\\t') // Escape tabs
-                                      .replace(/[\x00-\x1F\x7F]/g, '') // Remove other control characters
-                                    
-                                    analysisData = JSON.parse(cleanAnalysis)
-                                  } catch (parseError) {
-                                    alert('Unable to parse analysis data. Please try analyzing the document again.')
-                                    button.textContent = originalText
-                                    button.disabled = false
-                                    return
-                                  }
-
-                                  // Call the DOCX annotation API (reusing the same endpoint)
-                                  const response = await fetch('/api/documents/annotate-docx', {
-                                    method: 'POST',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({
-                                      documentId: currentDoc.id,
-                                      analysisData: analysisData
-                                    }),
-                                  })
-
-                                  if (!response.ok) {
-                                    throw new Error('Failed to generate annotated document')
-                                  }
-
-                                  // Download the annotated document
-                                  const blob = await response.blob()
-                                  const url = window.URL.createObjectURL(blob)
-                                  const link = document.createElement('a')
-                                  link.href = url
-                                  link.download = `${currentDoc.filename.replace('.pdf', '')}_annotated.docx`
-                                  document.body.appendChild(link)
-                                  link.click()
-                                  document.body.removeChild(link)
-                                  window.URL.revokeObjectURL(url)
-
-                                  // Reset button state
-                                  button.textContent = originalText
-                                  button.disabled = false
-
-                                } catch (error) {
-                                  console.error('Error generating annotated document:', error)
-                                  alert('Failed to generate annotated document. Please try again.')
-                                  
-                                  // Reset button state
-                                  const button = event.target as HTMLButtonElement
-                                  button.textContent = 'Download Annotated Document'
-                                  button.disabled = false
-                                }
-                              }}
-                              variant="outline"
-                              className="flex-shrink-0 min-w-0 max-w-full"
-                            >
-                              <FileText className="h-4 w-4 mr-2" />
-                              <span className="hidden lg:inline">Annotated Document</span>
-                              <span className="lg:hidden">Annotated</span>
-                            </Button>
+                            {/* Analysis Report button hidden for now */}
+                            {/* Annotated Document button hidden for now */}
                             <Button 
                               onClick={() => {
                                 // Share functionality
@@ -2859,82 +2658,24 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               <span className="hidden sm:inline">Share</span>
                               <span className="sm:hidden">Share</span>
                             </Button>
-                            <div className="relative">
-                              <Button 
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  console.log('🔍 More button clicked for document:', currentDoc.id)
-                                  
-                                  // Toggle dropdown using React state
-                                  setOpenDropdowns(prev => {
-                                    const newSet = new Set(prev)
-                                    if (newSet.has(currentDoc.id)) {
-                                      newSet.delete(currentDoc.id)
-                                      console.log('🔍 Closing dropdown for:', currentDoc.id)
-                                    } else {
-                                      // Close all other dropdowns first
-                                      newSet.clear()
-                                      newSet.add(currentDoc.id)
-                                      console.log('🔍 Opening dropdown for:', currentDoc.id)
-                                    }
-                                    return newSet
-                                  })
-                                }}
-                                variant="outline"
-                                className="flex-shrink-0 min-w-0 max-w-full"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="hidden md:inline ml-2">More</span>
-                              </Button>
-                              <div 
-                                id={`more-dropdown-${currentDoc.id}`}
-                                className={`absolute mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-[9999] ${openDropdowns.has(currentDoc.id) ? 'block' : 'hidden'} right-0 sm:right-0 sm:w-48 w-40`}
-                                onClick={(e) => e.stopPropagation()}
-                                style={{ 
-                                  zIndex: 9999, 
-                                  position: 'absolute', 
-                                  top: '100%'
-                                }}
-                                data-debug={`isOpen: ${openDropdowns.has(currentDoc.id)}, docId: ${currentDoc.id}`}
-                              >
-                                <div className="py-1">
-                                  <button
-                                    onClick={() => {
-                                      console.log('🔍 Delete button clicked for document:', currentDoc.id)
-                                      
-                                      // Show confirmation dialog
-                                      const confirmed = window.confirm(
-                                        `Are you sure you want to delete "${currentDoc.filename}"?\n\nThis action cannot be undone.`
-                                      )
-                                      
-                                      if (confirmed) {
-                                        handleDelete(currentDoc.id)
-                                        // Hide dropdown using React state
-                                        setOpenDropdowns(prev => {
-                                          const newSet = new Set(prev)
-                                          newSet.delete(currentDoc.id)
-                                          return newSet
-                                        })
-                                        console.log('🔍 Dropdown hidden after delete')
-                                      } else {
-                                        console.log('🔍 Delete cancelled by user')
-                                        // Hide dropdown even if cancelled
-                                        setOpenDropdowns(prev => {
-                                          const newSet = new Set(prev)
-                                          newSet.delete(currentDoc.id)
-                                          return newSet
-                                        })
-                                      }
-                                    }}
-                                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2 flex-shrink-0" />
-                                    <span className="hidden md:inline">Delete Document</span>
-                                    <span className="md:hidden">Delete</span>
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
+                            <Button 
+                              onClick={() => {
+                                // Show confirmation dialog
+                                const confirmed = window.confirm(
+                                  `Are you sure you want to delete "${currentDoc.filename}"?\n\nThis action cannot be undone.`
+                                )
+                                
+                                if (confirmed) {
+                                  handleDelete(currentDoc.id)
+                                }
+                              }}
+                              variant="outline"
+                              className="flex-shrink-0 min-w-0 max-w-full text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              <span className="hidden md:inline">Delete</span>
+                              <span className="md:hidden">Delete</span>
+                            </Button>
                           </div>
 
                           {/* Analysis Actions */}
