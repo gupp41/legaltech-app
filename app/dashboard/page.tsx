@@ -2858,7 +2858,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               </Button>
                               <div 
                                 id={`more-dropdown-${currentDoc.id}`}
-                                className="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-10"
+                                className="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-50"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <div className="py-1">
@@ -3117,6 +3117,14 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                         .replace(/[\x00-\x1F\x7F]/g, '') // Remove other control characters
                                       
                                       console.log('🔍 DEBUG: After JSON cleaning preview:', cleanAnalysis.substring(0, 200))
+                                      console.log('🔍 DEBUG: JSON end preview:', cleanAnalysis.substring(Math.max(0, cleanAnalysis.length - 200)))
+                                      
+                                      // Check if JSON is complete
+                                      if (!cleanAnalysis.trim().endsWith('}')) {
+                                        console.error('🔍 JSON appears incomplete - does not end with }')
+                                        console.error('🔍 Last 100 characters:', cleanAnalysis.substring(Math.max(0, cleanAnalysis.length - 100)))
+                                        throw new Error('Analysis data appears incomplete. Please try analyzing the document again.')
+                                      }
                                       
                                       let parsed
                                       try {
@@ -3598,16 +3606,33 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                                   console.log('🔍 DEBUG: Cleaned analysis history preview:', cleanAnalysis.substring(0, 200))
                                                   
                                                   // Additional JSON cleaning to fix common issues
-                                  cleanAnalysis = cleanAnalysis
-                                    .replace(/"description "([^"]*)"([^,}]*)/g, '"description": "$1"$2') // Fix missing colon after description
-                                    .replace(/,\s*}/g, '}') // Remove trailing commas before closing braces
-                                    .replace(/,\s*]/g, ']') // Remove trailing commas before closing brackets
-                                    .replace(/\n/g, '\\n') // Escape newlines
-                                    .replace(/\r/g, '\\r') // Escape carriage returns
-                                    .replace(/\t/g, '\\t') // Escape tabs
-                                    .replace(/[\x00-\x1F\x7F]/g, '') // Remove other control characters
-                                  
-                                  const parsed = JSON.parse(cleanAnalysis)
+                                                  cleanAnalysis = cleanAnalysis
+                                                    .replace(/"description "([^"]*)"([^,}]*)/g, '"description": "$1"$2') // Fix missing colon after description
+                                                    .replace(/,\s*}/g, '}') // Remove trailing commas before closing braces
+                                                    .replace(/,\s*]/g, ']') // Remove trailing commas before closing brackets
+                                                    .replace(/\n/g, '\\n') // Escape newlines
+                                                    .replace(/\r/g, '\\r') // Escape carriage returns
+                                                    .replace(/\t/g, '\\t') // Escape tabs
+                                                    .replace(/[\x00-\x1F\x7F]/g, '') // Remove other control characters
+                                                  
+                                                  console.log('🔍 DEBUG: After JSON cleaning preview:', cleanAnalysis.substring(0, 200))
+                                                  console.log('🔍 DEBUG: JSON end preview:', cleanAnalysis.substring(Math.max(0, cleanAnalysis.length - 200)))
+                                                  
+                                                  // Check if JSON is complete
+                                                  if (!cleanAnalysis.trim().endsWith('}')) {
+                                                    console.error('🔍 JSON appears incomplete - does not end with }')
+                                                    console.error('🔍 Last 100 characters:', cleanAnalysis.substring(Math.max(0, cleanAnalysis.length - 100)))
+                                                    throw new Error('Analysis data appears incomplete. Please try analyzing the document again.')
+                                                  }
+                                                  
+                                                  let parsed
+                                                  try {
+                                                    parsed = JSON.parse(cleanAnalysis)
+                                                  } catch (parseError) {
+                                                    console.error('🔍 JSON Parse Error:', parseError)
+                                                    console.error('🔍 Problematic JSON section:', cleanAnalysis.substring(parseError.message.match(/position (\d+)/)?.[1] - 100 || 0, parseError.message.match(/position (\d+)/)?.[1] + 100 || 200))
+                                                    throw new Error('Unable to parse analysis data. The analysis may be corrupted.')
+                                                  }
                                                   // Convert to formatted markdown using the same logic as prettifyOutput
                                                   let formattedMarkdown = ''
                                                   
