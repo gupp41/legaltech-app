@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 
+export async function GET() {
+  return NextResponse.json({ message: 'Annotate API is working' })
+}
+
 export async function POST(request: NextRequest) {
+  console.log('📄 Annotate API called')
   try {
     const { documentId, analysisData } = await request.json()
+    console.log('📄 Document ID:', documentId)
 
     if (!documentId || !analysisData) {
       return NextResponse.json(
