@@ -75,6 +75,15 @@ export async function POST(request: NextRequest) {
 
     console.log('🔍 Portal API - Found subscription:', subscription[0])
 
+    // For now, just return the subscription data to test if the API is working
+    return NextResponse.json({ 
+      success: true,
+      subscription: subscription[0],
+      message: 'API is working - subscription found'
+    })
+
+    // TODO: Add back Stripe functionality once basic API is confirmed working
+    /*
     // Use the user's email as the customer identifier
     const customerEmail = userEmail
     
@@ -110,6 +119,7 @@ export async function POST(request: NextRequest) {
 
     console.log('🔍 Portal API - Portal session created successfully:', session.url)
     return NextResponse.json({ url: session.url })
+    */
   } catch (error) {
     console.error('Error creating portal session:', error)
     console.error('Error details:', {
