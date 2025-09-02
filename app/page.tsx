@@ -306,7 +306,7 @@ export default function HomePage() {
           <p className="text-lg sm:text-xl mb-8 text-blue-100">
             Join leading law firms and HR departments already saving time and reducing costs
           </p>
-          <Button asChild size="lg" variant="secondary" className="h-12 px-6 sm:px-8 text-white hover:text-white bg-white/10 hover:bg-white/20 border-white/20">
+          <Button asChild size="lg" className="h-12 px-6 sm:px-8 bg-white text-blue-600 hover:bg-gray-100 hover:text-blue-700 border-0 shadow-lg">
             <Link href="/auth/signup">Start your free trial</Link>
           </Button>
         </div>
