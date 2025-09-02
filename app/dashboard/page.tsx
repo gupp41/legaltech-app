@@ -3067,6 +3067,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               
                               {/* Floating Analysis Navigation */}
                               {latestAnalysis.results?.analysis && (() => {
+                                console.log('🔍 Attempting to render floating navigation')
                                 try {
                                   let cleanAnalysis = latestAnalysis.results.analysis.trim()
                                     .replace(/^Starting AI analysis\.\.\.\s*/, '')
@@ -3093,6 +3094,8 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                   if (parsed.compliance_considerations) sections.push({ id: 'compliance', title: '✅ Compliance', emoji: '✅' })
                                   if (parsed.recommendations) sections.push({ id: 'recommendations', title: '💡 Recommendations', emoji: '💡' })
                                   if (parsed.technical_details) sections.push({ id: 'technical-details', title: '⚙️ Technical Details', emoji: '⚙️' })
+                                  
+                                  console.log('🔍 Navigation sections found:', sections.length, sections.map(s => s.id))
                                   
                                   if (sections.length > 1) {
                                     return (
