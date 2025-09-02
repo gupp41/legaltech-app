@@ -2620,7 +2620,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                           </div>
 
                           {/* Action Buttons */}
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-2 items-start">
                             <Button 
                               onClick={() => {
                                 // Download PDF functionality
@@ -2630,11 +2630,11 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                 link.click()
                               }}
                               variant="outline"
-                              className="flex-1 min-w-0"
+                              className="flex-shrink-0 min-w-0 max-w-full"
                             >
                               <Download className="h-4 w-4 mr-2" />
-                              <span className="hidden sm:inline">Download PDF</span>
-                              <span className="sm:hidden">PDF</span>
+                              <span className="hidden md:inline">Download PDF</span>
+                              <span className="md:hidden">PDF</span>
                             </Button>
                             <Button 
                               onClick={async (event) => {
@@ -2720,11 +2720,11 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                 }
                               }}
                               variant="outline"
-                              className="flex-1 min-w-0"
+                              className="flex-shrink-0 min-w-0 max-w-full"
                             >
                               <FileText className="h-4 w-4 mr-2" />
-                              <span className="hidden sm:inline">Analysis Report</span>
-                              <span className="sm:hidden">Report</span>
+                              <span className="hidden md:inline">Analysis Report</span>
+                              <span className="md:hidden">Report</span>
                             </Button>
                             <Button 
                               onClick={async (event) => {
@@ -2812,11 +2812,11 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                 }
                               }}
                               variant="outline"
-                              className="flex-1 min-w-0"
+                              className="flex-shrink-0 min-w-0 max-w-full"
                             >
                               <FileText className="h-4 w-4 mr-2" />
-                              <span className="hidden sm:inline">Annotated Document</span>
-                              <span className="sm:hidden">Annotated</span>
+                              <span className="hidden lg:inline">Annotated Document</span>
+                              <span className="lg:hidden">Annotated</span>
                             </Button>
                             <Button 
                               onClick={() => {
@@ -2834,7 +2834,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                 }
                               }}
                               variant="outline"
-                              className="flex-1 min-w-0"
+                              className="flex-shrink-0 min-w-0 max-w-full"
                             >
                               <Share className="h-4 w-4 mr-2" />
                               <span className="hidden sm:inline">Share</span>
@@ -2851,10 +2851,10 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                   }
                                 }}
                                 variant="outline"
-                                className="flex-1 min-w-0"
+                                className="flex-shrink-0 min-w-0 max-w-full"
                               >
                                 <MoreHorizontal className="h-4 w-4" />
-                                <span className="hidden sm:inline ml-2">More</span>
+                                <span className="hidden md:inline ml-2">More</span>
                               </Button>
                               <div 
                                 id={`more-dropdown-${currentDoc.id}`}
