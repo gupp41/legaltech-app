@@ -289,31 +289,37 @@ export default function Dashboard() {
     }
   }, [user?.id, refreshingAnalyses, isCleaningUpAnalyses])
 
-  // Close dropdowns when clicking outside - TEMPORARILY DISABLED FOR DEBUGGING
-  // useEffect(() => {
-  //   const handleClickOutside = (event: MouseEvent) => {
-  //     // Add a small delay to prevent immediate closing after opening
-  //     setTimeout(() => {
-  //       const target = event.target as Element
-  //       // Check if click is on More button (by looking for MoreHorizontal icon) or dropdown
-  //       const isMoreButton = target.closest('button')?.querySelector('.lucide-more-horizontal')
-  //       const isDropdown = target.closest('[id^="more-dropdown-"]')
-        
-  //       console.log('🔍 Click outside handler:', { isMoreButton: !!isMoreButton, isDropdown: !!isDropdown })
-        
-  //       if (!isMoreButton && !isDropdown) {
-  //         // Close all dropdowns using React state
-  //         console.log('🔍 Closing all dropdowns due to click outside')
-  //         setOpenDropdowns(new Set())
-  //       }
-  //     }, 10) // Small delay to prevent race condition
-  //   }
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      
+      // Check if click is on More button (by looking for MoreHorizontal icon) or dropdown
+      const isMoreButton = target.closest('button')?.querySelector('.lucide-more-horizontal')
+      const isDropdown = target.closest('[id^="more-dropdown-"]')
+      const isTestButton = target.closest('button')?.textContent?.includes('TEST')
+      
+      console.log('🔍 Click outside handler:', { 
+        isMoreButton: !!isMoreButton, 
+        isDropdown: !!isDropdown, 
+        isTestButton: !!isTestButton,
+        target: target.tagName,
+        className: target.className
+      })
+      
+      if (!isMoreButton && !isDropdown && !isTestButton) {
+        // Close all dropdowns using React state
+        console.log('🔍 Closing all dropdowns due to click outside')
+        setOpenDropdowns(new Set())
+      }
+    }
 
-  //   document.addEventListener('click', handleClickOutside)
-  //   return () => {
-  //     document.removeEventListener('click', handleClickOutside)
-  //   }
-  // }, [])
+    // Use mousedown instead of click to avoid race conditions
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   const checkUser = async () => {
     console.log('Checking user authentication...')
@@ -2854,23 +2860,14 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               <span className="sm:hidden">Share</span>
                             </Button>
                             <div className="relative">
-                              <button 
-                                onClick={() => console.log('🔍 TEST BUTTON CLICKED')}
-                                style={{ backgroundColor: 'blue', color: 'white', padding: '4px 8px', marginRight: '8px' }}
-                              >
-                                TEST
-                              </button>
                               <Button 
                                 onClick={(e) => {
-                                  console.log('🔍 BUTTON CLICKED - BEFORE stopPropagation')
                                   e.stopPropagation()
                                   console.log('🔍 More button clicked for document:', currentDoc.id)
-                                  console.log('🔍 Current openDropdowns:', Array.from(openDropdowns))
                                   
                                   // Toggle dropdown using React state
                                   setOpenDropdowns(prev => {
                                     const newSet = new Set(prev)
-                                    console.log('🔍 Previous state:', Array.from(newSet))
                                     if (newSet.has(currentDoc.id)) {
                                       newSet.delete(currentDoc.id)
                                       console.log('🔍 Closing dropdown for:', currentDoc.id)
@@ -2880,13 +2877,11 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                       newSet.add(currentDoc.id)
                                       console.log('🔍 Opening dropdown for:', currentDoc.id)
                                     }
-                                    console.log('🔍 New state:', Array.from(newSet))
                                     return newSet
                                   })
                                 }}
                                 variant="outline"
                                 className="flex-shrink-0 min-w-0 max-w-full"
-                                style={{ backgroundColor: 'red', color: 'white' }}
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                                 <span className="hidden md:inline ml-2">More</span>
