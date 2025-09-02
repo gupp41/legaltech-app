@@ -7,6 +7,11 @@ export async function POST(request: NextRequest) {
   try {
     console.log('🚀 === UPLOAD API CALLED ===')
     console.log('🚀 API: Route handler started')
+    console.log('🚀 API: Environment variables check:')
+    console.log('🚀 API: NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Present' : 'Missing')
+    console.log('🚀 API: NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Present' : 'Missing')
+    console.log('🚀 API: env.NEXT_PUBLIC_SUPABASE_URL:', env.NEXT_PUBLIC_SUPABASE_URL ? 'Present' : 'Missing')
+    console.log('🚀 API: env.NEXT_PUBLIC_SUPABASE_ANON_KEY:', env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Present' : 'Missing')
     
     // Check for Authorization header first
     const authHeader = request.headers.get('authorization')
@@ -23,8 +28,8 @@ export async function POST(request: NextRequest) {
       // Create a new client with the token
       const { createClient: createClientWithToken } = await import('@supabase/supabase-js')
       const supabaseWithToken = createClientWithToken(
-        env.SUPABASE_URL,
-        env.SUPABASE_ANON_KEY,
+        env.NEXT_PUBLIC_SUPABASE_URL,
+        env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
         {
           global: {
             headers: {

@@ -64,8 +64,22 @@ export function FileUpload({ onUploadComplete, className }: FileUploadProps) {
           })
 
           if (!response.ok) {
-            const errorData = await response.json()
-            throw new Error(errorData.error || 'Upload failed')
+            let errorMessage = 'Upload failed'
+            try {
+              const errorData = await response.json()
+              errorMessage = errorData.error || errorMessage
+            } catch (parseError) {
+              // If JSON parsing fails, try to get text response
+              try {
+                const errorText = await response.text()
+                console.error('Non-JSON error response:', errorText)
+                errorMessage = `Upload failed: ${response.status} ${response.statusText}`
+              } catch (textError) {
+                console.error('Failed to parse error response:', textError)
+                errorMessage = `Upload failed: ${response.status} ${response.statusText}`
+              }
+            }
+            throw new Error(errorMessage)
           }
 
           const result = await response.json()
