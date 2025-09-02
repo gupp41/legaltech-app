@@ -1333,7 +1333,7 @@ This should show the actual NDA text being sent to the AI.
           formattedMarkdown += `**Document Type:** ${parsed.summary.document_type}\n\n`
         }
         if (parsed.summary.overall_assessment) {
-          const assessment = parsed.summary.overall_assessment.replace('_', ' ').toUpperCase()
+          const assessment = (parsed.summary.overall_assessment || '').replace('_', ' ').toUpperCase()
           // Add color coding and emoji based on risk level
           let riskEmoji = '⚠️'
           let riskColor = 'text-yellow-600'
@@ -1409,40 +1409,60 @@ This should show the actual NDA text being sent to the AI.
         if (parsed.identified_clauses.key_terms && parsed.identified_clauses.key_terms.length > 0) {
           formattedMarkdown += `## 🗝️ Key Terms\n\n`
           parsed.identified_clauses.key_terms.forEach((term: any) => {
-            const termEmoji = term.importance === 'critical' ? '🔴' : term.importance === 'important' ? '🟡' : '🟢'
-            formattedMarkdown += `**${termEmoji} ${term.name}** (${term.importance.toUpperCase()})\n`
-            formattedMarkdown += `- Description: ${term.description}\n`
-            formattedMarkdown += `- Implications: ${term.implications}\n\n`
+            const importance = term.importance || 'unknown'
+            const name = term.name || 'Unnamed Term'
+            const description = term.description || 'No description available'
+            const implications = term.implications || 'No implications specified'
+            
+            const termEmoji = importance === 'critical' ? '🔴' : importance === 'important' ? '🟡' : '🟢'
+            formattedMarkdown += `**${termEmoji} ${name}** (${importance.toUpperCase()})\n`
+            formattedMarkdown += `- Description: ${description}\n`
+            formattedMarkdown += `- Implications: ${implications}\n\n`
           })
         }
         
         if (parsed.identified_clauses.conditions && parsed.identified_clauses.conditions.length > 0) {
           formattedMarkdown += `## 📜 Conditions\n\n`
           parsed.identified_clauses.conditions.forEach((condition: any) => {
-            const conditionEmoji = condition.importance === 'critical' ? '🔴' : condition.importance === 'important' ? '🟡' : '🟢'
-            formattedMarkdown += `**${conditionEmoji} ${condition.name}** (${condition.importance.toUpperCase()})\n`
-            formattedMarkdown += `- Description: ${condition.description}\n`
-            formattedMarkdown += `- Implications: ${condition.implications}\n\n`
+            const importance = condition.importance || 'unknown'
+            const name = condition.name || 'Unnamed Condition'
+            const description = condition.description || 'No description available'
+            const implications = condition.implications || 'No implications specified'
+            
+            const conditionEmoji = importance === 'critical' ? '🔴' : importance === 'important' ? '🟡' : '🟢'
+            formattedMarkdown += `**${conditionEmoji} ${name}** (${importance.toUpperCase()})\n`
+            formattedMarkdown += `- Description: ${description}\n`
+            formattedMarkdown += `- Implications: ${implications}\n\n`
           })
         }
         
         if (parsed.identified_clauses.obligations && parsed.identified_clauses.obligations.length > 0) {
           formattedMarkdown += `## 🤝 Obligations\n\n`
           parsed.identified_clauses.obligations.forEach((obligation: any) => {
-            const obligationEmoji = obligation.importance === 'critical' ? '🔴' : obligation.importance === 'important' ? '🟡' : '🟢'
-            formattedMarkdown += `**${obligationEmoji} ${obligation.name}** (${obligation.importance.toUpperCase()})\n`
-            formattedMarkdown += `- Description: ${obligation.description}\n`
-            formattedMarkdown += `- Implications: ${obligation.implications}\n\n`
+            const importance = obligation.importance || 'unknown'
+            const name = obligation.name || 'Unnamed Obligation'
+            const description = obligation.description || 'No description available'
+            const implications = obligation.implications || 'No implications specified'
+            
+            const obligationEmoji = importance === 'critical' ? '🔴' : importance === 'important' ? '🟡' : '🟢'
+            formattedMarkdown += `**${obligationEmoji} ${name}** (${importance.toUpperCase()})\n`
+            formattedMarkdown += `- Description: ${description}\n`
+            formattedMarkdown += `- Implications: ${implications}\n\n`
           })
         }
         
         if (parsed.identified_clauses.rights && parsed.identified_clauses.rights.length > 0) {
           formattedMarkdown += `## ⚖️ Rights\n\n`
           parsed.identified_clauses.rights.forEach((right: any) => {
-            const rightEmoji = right.importance === 'critical' ? '🔴' : right.importance === 'important' ? '🟡' : '🟢'
-            formattedMarkdown += `**${rightEmoji} ${right.name}** (${right.importance.toUpperCase()})\n`
-            formattedMarkdown += `- Description: ${right.description}\n`
-            formattedMarkdown += `- Implications: ${right.implications}\n\n`
+            const importance = right.importance || 'unknown'
+            const name = right.name || 'Unnamed Right'
+            const description = right.description || 'No description available'
+            const implications = right.implications || 'No implications specified'
+            
+            const rightEmoji = importance === 'critical' ? '🔴' : importance === 'important' ? '🟡' : '🟢'
+            formattedMarkdown += `**${rightEmoji} ${name}** (${importance.toUpperCase()})\n`
+            formattedMarkdown += `- Description: ${description}\n`
+            formattedMarkdown += `- Implications: ${implications}\n\n`
           })
         }
       }
@@ -1480,7 +1500,7 @@ This should show the actual NDA text being sent to the AI.
       if (parsed.compliance_considerations) {
         formattedMarkdown += `# ✅ Compliance Considerations\n\n`
         if (parsed.compliance_considerations.compliance_score) {
-          const score = parsed.compliance_considerations.compliance_score.replace('_', ' ').toUpperCase()
+          const score = (parsed.compliance_considerations.compliance_score || '').replace('_', ' ').toUpperCase()
           formattedMarkdown += `**Compliance Score:** ${score}\n\n`
         }
         
@@ -2983,7 +3003,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                           formattedMarkdown += `**Document Type:** ${parsed.summary.document_type}\n\n`
                                         }
                                         if (parsed.summary.overall_assessment) {
-                                          const assessment = parsed.summary.overall_assessment.replace('_', ' ').toUpperCase()
+                                          const assessment = (parsed.summary.overall_assessment || '').replace('_', ' ').toUpperCase()
                                           // Add color coding and emoji based on risk level
                                           let riskEmoji = '⚠️'
                                           let riskColor = 'text-yellow-600'
@@ -3029,10 +3049,15 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                         if (parsed.identified_clauses.key_terms && parsed.identified_clauses.key_terms.length > 0) {
                                           formattedMarkdown += `## 🗝️ Key Terms\n\n`
                                           parsed.identified_clauses.key_terms.forEach((term: any) => {
-                                            const termEmoji = term.importance === 'critical' ? '🔴' : term.importance === 'important' ? '🟡' : '🟢'
-                                            formattedMarkdown += `**${termEmoji} ${term.name}** (${term.importance.toUpperCase()})\n`
-                                            formattedMarkdown += `- Description: ${term.description}\n`
-                                            formattedMarkdown += `- Implications: ${term.implications}\n\n`
+                                            const importance = term.importance || 'unknown'
+                                            const name = term.name || 'Unnamed Term'
+                                            const description = term.description || 'No description available'
+                                            const implications = term.implications || 'No implications specified'
+                                            
+                                            const termEmoji = importance === 'critical' ? '🔴' : importance === 'important' ? '🟡' : '🟢'
+                                            formattedMarkdown += `**${termEmoji} ${name}** (${importance.toUpperCase()})\n`
+                                            formattedMarkdown += `- Description: ${description}\n`
+                                            formattedMarkdown += `- Implications: ${implications}\n\n`
                                             formattedMarkdown += '\n'
                                           })
                                         }
@@ -3040,10 +3065,15 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                         if (parsed.identified_clauses.conditions && parsed.identified_clauses.conditions.length > 0) {
                                           formattedMarkdown += `## 📜 Conditions\n\n`
                                           parsed.identified_clauses.conditions.forEach((condition: any) => {
-                                            const conditionEmoji = condition.importance === 'critical' ? '🔴' : condition.importance === 'important' ? '🟡' : '🟢'
-                                            formattedMarkdown += `**${conditionEmoji} ${condition.name}** (${condition.importance.toUpperCase()})\n`
-                                            formattedMarkdown += `- Description: ${condition.description}\n`
-                                            formattedMarkdown += `- Implications: ${condition.implications}\n\n`
+                                            const importance = condition.importance || 'unknown'
+                                            const name = condition.name || 'Unnamed Condition'
+                                            const description = condition.description || 'No description available'
+                                            const implications = condition.implications || 'No implications specified'
+                                            
+                                            const conditionEmoji = importance === 'critical' ? '🔴' : importance === 'important' ? '🟡' : '🟢'
+                                            formattedMarkdown += `**${conditionEmoji} ${name}** (${importance.toUpperCase()})\n`
+                                            formattedMarkdown += `- Description: ${description}\n`
+                                            formattedMarkdown += `- Implications: ${implications}\n\n`
                                             formattedMarkdown += '\n'
                                           })
                                         }
@@ -3051,20 +3081,30 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                                                                  if (parsed.identified_clauses.obligations && parsed.identified_clauses.obligations.length > 0) {
                                            formattedMarkdown += `## 🤝 Obligations\n\n`
                                            parsed.identified_clauses.obligations.forEach((obligation: any) => {
-                                             const obligationEmoji = obligation.importance === 'critical' ? '🔴' : obligation.importance === 'important' ? '🟡' : '🟢'
-                                             formattedMarkdown += `**${obligationEmoji} ${obligation.name}** (${obligation.importance.toUpperCase()})\n`
-                                             formattedMarkdown += `- Description: ${obligation.description}\n`
-                                             formattedMarkdown += `- Implications: ${obligation.implications}\n\n`
+                                             const importance = obligation.importance || 'unknown'
+                                             const name = obligation.name || 'Unnamed Obligation'
+                                             const description = obligation.description || 'No description available'
+                                             const implications = obligation.implications || 'No implications specified'
+                                             
+                                             const obligationEmoji = importance === 'critical' ? '🔴' : importance === 'important' ? '🟡' : '🟢'
+                                             formattedMarkdown += `**${obligationEmoji} ${name}** (${importance.toUpperCase()})\n`
+                                             formattedMarkdown += `- Description: ${description}\n`
+                                             formattedMarkdown += `- Implications: ${implications}\n\n`
                                            })
                                          }
                                         
                                         if (parsed.identified_clauses.rights && parsed.identified_clauses.rights.length > 0) {
                                           formattedMarkdown += `## ⚖️ Rights\n\n`
                                           parsed.identified_clauses.rights.forEach((right: any) => {
-                                            const rightEmoji = right.importance === 'critical' ? '🔴' : right.importance === 'important' ? '🟡' : '🟢'
-                                            formattedMarkdown += `**${rightEmoji} ${right.name}** (${right.importance.toUpperCase()})\n`
-                                            formattedMarkdown += `- Description: ${right.description}\n`
-                                            formattedMarkdown += `- Implications: ${right.implications}\n\n`
+                                            const importance = right.importance || 'unknown'
+                                            const name = right.name || 'Unnamed Right'
+                                            const description = right.description || 'No description available'
+                                            const implications = right.implications || 'No implications specified'
+                                            
+                                            const rightEmoji = importance === 'critical' ? '🔴' : importance === 'important' ? '🟡' : '🟢'
+                                            formattedMarkdown += `**${rightEmoji} ${name}** (${importance.toUpperCase()})\n`
+                                            formattedMarkdown += `- Description: ${description}\n`
+                                            formattedMarkdown += `- Implications: ${implications}\n\n`
                                           })
                                         }
                                       }
@@ -3102,7 +3142,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                       if (parsed.compliance_considerations) {
                                         formattedMarkdown += `# ✅ Compliance Considerations\n\n`
                                         if (parsed.compliance_considerations.compliance_score) {
-                                          const score = parsed.compliance_considerations.compliance_score.replace('_', ' ').toUpperCase()
+                                          const score = (parsed.compliance_considerations.compliance_score || '').replace('_', ' ').toUpperCase()
                                           formattedMarkdown += `**Compliance Score:** ${score}\n\n`
                                         }
                                         
@@ -3484,7 +3524,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                                       formattedMarkdown += `**Document Type:** ${parsed.summary.document_type}\n\n`
                                                     }
                                                     if (parsed.summary.overall_assessment) {
-                                                      const assessment = parsed.summary.overall_assessment.replace('_', ' ').toUpperCase()
+                                                      const assessment = (parsed.summary.overall_assessment || '').replace('_', ' ').toUpperCase()
                                                       // Add color coding and emoji based on risk level
                                                       let riskEmoji = '⚠️'
                                                       let riskColor = 'text-yellow-600'
@@ -3558,41 +3598,61 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                                     
                                                     if (parsed.identified_clauses.key_terms && parsed.identified_clauses.key_terms.length > 0) {
                                                       formattedMarkdown += `## 🗝️ Key Terms\n\n`
-                                                      parsed.identified_clauses.key_terms.forEach((term: any) => {
-                                                        const termEmoji = term.importance === 'critical' ? '🔴' : term.importance === 'important' ? '🟡' : '🟢'
-                                                        formattedMarkdown += `**${termEmoji} ${term.name}** (${term.importance.toUpperCase()})\n`
-                                                        formattedMarkdown += `- Description: ${term.description}\n`
-                                                        formattedMarkdown += `- Implications: ${term.implications}\n\n`
-                                                      })
+                                                                                                parsed.identified_clauses.key_terms.forEach((term: any) => {
+                                            const importance = term.importance || 'unknown'
+                                            const name = term.name || 'Unnamed Term'
+                                            const description = term.description || 'No description available'
+                                            const implications = term.implications || 'No implications specified'
+                                            
+                                            const termEmoji = importance === 'critical' ? '🔴' : importance === 'important' ? '🟡' : '🟢'
+                                            formattedMarkdown += `**${termEmoji} ${name}** (${importance.toUpperCase()})\n`
+                                            formattedMarkdown += `- Description: ${description}\n`
+                                            formattedMarkdown += `- Implications: ${implications}\n\n`
+                                          })
                                                     }
                                                     
                                                     if (parsed.identified_clauses.conditions && parsed.identified_clauses.conditions.length > 0) {
                                                       formattedMarkdown += `## 📜 Conditions\n\n`
-                                                      parsed.identified_clauses.conditions.forEach((condition: any) => {
-                                                        const conditionEmoji = condition.importance === 'critical' ? '🔴' : condition.importance === 'important' ? '🟡' : '🟢'
-                                                        formattedMarkdown += `**${conditionEmoji} ${condition.name}** (${condition.importance.toUpperCase()})\n`
-                                                        formattedMarkdown += `- Description: ${condition.description}\n`
-                                                        formattedMarkdown += `- Implications: ${condition.implications}\n\n`
-                                                      })
+                                                                                                parsed.identified_clauses.conditions.forEach((condition: any) => {
+                                            const importance = condition.importance || 'unknown'
+                                            const name = condition.name || 'Unnamed Condition'
+                                            const description = condition.description || 'No description available'
+                                            const implications = condition.implications || 'No implications specified'
+                                            
+                                            const conditionEmoji = importance === 'critical' ? '🔴' : importance === 'important' ? '🟡' : '🟢'
+                                            formattedMarkdown += `**${conditionEmoji} ${name}** (${importance.toUpperCase()})\n`
+                                            formattedMarkdown += `- Description: ${description}\n`
+                                            formattedMarkdown += `- Implications: ${implications}\n\n`
+                                          })
                                                     }
                                                     
                                                     if (parsed.identified_clauses.obligations && parsed.identified_clauses.obligations.length > 0) {
                                                       formattedMarkdown += `## 🤝 Obligations\n\n`
                                                       parsed.identified_clauses.obligations.forEach((obligation: any) => {
-                                                        const obligationEmoji = obligation.importance === 'critical' ? '🔴' : obligation.importance === 'important' ? '🟡' : '🟢'
-                                                        formattedMarkdown += `**${obligationEmoji} ${obligation.name}** (${obligation.importance.toUpperCase()})\n`
-                                                        formattedMarkdown += `- Description: ${obligation.description}\n`
-                                                        formattedMarkdown += `- Implications: ${obligation.implications}\n\n`
+                                                        const importance = obligation.importance || 'unknown'
+                                                        const name = obligation.name || 'Unnamed Obligation'
+                                                        const description = obligation.description || 'No description available'
+                                                        const implications = obligation.implications || 'No implications specified'
+                                                        
+                                                        const obligationEmoji = importance === 'critical' ? '🔴' : importance === 'important' ? '🟡' : '🟢'
+                                                        formattedMarkdown += `**${obligationEmoji} ${name}** (${importance.toUpperCase()})\n`
+                                                        formattedMarkdown += `- Description: ${description}\n`
+                                                        formattedMarkdown += `- Implications: ${implications}\n\n`
                                                       })
                                                     }
                                                     
                                                     if (parsed.identified_clauses.rights && parsed.identified_clauses.rights.length > 0) {
                                                       formattedMarkdown += `## ⚖️ Rights\n\n`
                                                       parsed.identified_clauses.rights.forEach((right: any) => {
-                                                        const rightEmoji = right.importance === 'critical' ? '🔴' : right.importance === 'important' ? '🟡' : '🟢'
-                                                        formattedMarkdown += `**${rightEmoji} ${right.name}** (${right.importance.toUpperCase()})\n`
-                                                        formattedMarkdown += `- Description: ${right.description}\n`
-                                                        formattedMarkdown += `- Implications: ${right.implications}\n\n`
+                                                        const importance = right.importance || 'unknown'
+                                                        const name = right.name || 'Unnamed Right'
+                                                        const description = right.description || 'No description available'
+                                                        const implications = right.implications || 'No implications specified'
+                                                        
+                                                        const rightEmoji = importance === 'critical' ? '🔴' : importance === 'important' ? '🟡' : '🟢'
+                                                        formattedMarkdown += `**${rightEmoji} ${name}** (${importance.toUpperCase()})\n`
+                                                        formattedMarkdown += `- Description: ${description}\n`
+                                                        formattedMarkdown += `- Implications: ${implications}\n\n`
                                                       })
                                                     }
                                                   }
@@ -3630,7 +3690,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                                   if (parsed.compliance_considerations) {
                                                     formattedMarkdown += `# ✅ Compliance Considerations\n\n`
                                                     if (parsed.compliance_considerations.compliance_score) {
-                                                      const score = parsed.compliance_considerations.compliance_score.replace('_', ' ').toUpperCase()
+                                                      const score = (parsed.compliance_considerations.compliance_score || '').replace('_', ' ').toUpperCase()
                                                       formattedMarkdown += `**Compliance Score:** ${score}\n\n`
                                                     }
                                                     
