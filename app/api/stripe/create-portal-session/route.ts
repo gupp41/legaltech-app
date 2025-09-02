@@ -6,11 +6,22 @@ export async function POST(request: NextRequest) {
   try {
     const { returnUrl } = await request.json()
 
+    // Debug: Check what cookies we're receiving
+    const cookies = request.cookies.getAll()
+    console.log('🔍 Portal API - Cookies received:', cookies.map(c => ({ name: c.name, value: c.value.substring(0, 20) + '...' })))
+
     // Get authenticated user
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
+    console.log('🔍 Portal API - Auth check:', {
+      user: user?.email,
+      userId: user?.id,
+      error: authError?.message
+    })
+
     if (authError || !user) {
+      console.log('🔍 Portal API - Unauthorized:', authError?.message)
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
