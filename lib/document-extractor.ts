@@ -22,11 +22,34 @@ export async function extractTextFromDocument(
     }
   } catch (error) {
     console.error('Error extracting text from document:', error)
+    
+    // Provide more specific error messages based on file type and error
+    let errorMessage = 'Failed to extract text'
+    let suggestions = 'Please try using a different file format or browser.'
+    
+    if (error instanceof Error) {
+      if (error.message.includes('corrupted') || error.message.includes('Invalid PDF structure')) {
+        errorMessage = 'The document appears to be corrupted or has an invalid structure'
+        suggestions = 'Please try:\n1. Re-downloading the file if it was transferred over the internet\n2. Converting to a different format (e.g., .txt)\n3. Using a different browser\n4. Checking if the file opens correctly in other applications'
+      } else if (error.message.includes('PDF processing library failed to load')) {
+        errorMessage = 'PDF processing library failed to load'
+        suggestions = 'Please try:\n1. Refreshing the page\n2. Using a different browser\n3. Checking your internet connection'
+      } else if (error.message.includes('timeout')) {
+        errorMessage = 'Document processing timed out'
+        suggestions = 'Please try:\n1. Using a smaller file\n2. Converting to a different format\n3. Using a different browser'
+      } else if (error.message.includes('empty') || error.message.includes('too small')) {
+        errorMessage = 'The document file is empty or too small'
+        suggestions = 'Please check that the file contains content and try again.'
+      } else {
+        errorMessage = error.message
+      }
+    }
+    
     return {
-      text: '',
+      text: `Document processing failed: ${file.name}\n\n${errorMessage}\n\n${suggestions}`,
       wordCount: 0,
       success: false,
-      error: `Failed to extract text: ${error instanceof Error ? error.message : 'Unknown error'}`
+      error: errorMessage
     }
   }
 }
@@ -55,10 +78,30 @@ async function extractTextFromPDF(file: File): Promise<ExtractedText> {
       throw new Error('PDF extraction only works in browser environment')
     }
     
+    // Basic file validation before attempting to import PDF.js
+    if (file.size === 0) {
+      throw new Error('PDF file is empty (0 bytes)')
+    }
+    
+    if (file.size < 100) {
+      throw new Error('PDF file is too small to be a valid PDF document')
+    }
+    
+    // Check file type
+    if (file.type && file.type !== 'application/pdf') {
+      console.warn('File type mismatch:', file.type, 'expected application/pdf')
+    }
+    
     // Dynamically import pdfjs-dist only when needed (client-side only)
     console.log('Importing pdfjs-dist...')
-    const pdfjsLib = await import('pdfjs-dist')
-    console.log('pdfjs-dist imported successfully, version:', (pdfjsLib as any).version)
+    let pdfjsLib
+    try {
+      pdfjsLib = await import('pdfjs-dist')
+      console.log('pdfjs-dist imported successfully, version:', (pdfjsLib as any).version)
+    } catch (importError) {
+      console.error('Failed to import pdfjs-dist:', importError)
+      throw new Error('PDF processing library failed to load. Please try refreshing the page or using a different browser.')
+    }
     
     // Configure worker - use a local worker approach to avoid CORS issues
     console.log('Configuring PDF.js with worker...')
@@ -123,8 +166,38 @@ async function extractTextFromPDF(file: File): Promise<ExtractedText> {
     if (header !== '%PDF') {
       console.warn('Warning: File does not start with PDF header. Header found:', header)
       console.warn('First 20 bytes:', Array.from(uint8Array.slice(0, 20)).map(b => String.fromCharCode(b)).join(''))
+      
+      // Check if this might be a corrupted PDF by looking for PDF-like content
+      const first100Bytes = Array.from(uint8Array.slice(0, 100)).map(b => String.fromCharCode(b)).join('')
+      if (first100Bytes.includes('PDF') || first100Bytes.includes('pdf')) {
+        console.warn('File contains PDF-like content but has invalid header - may be corrupted')
+        throw new Error('The PDF file appears to be corrupted or has an invalid structure')
+      } else {
+        throw new Error('The file does not appear to be a valid PDF (missing PDF header)')
+      }
     } else {
       console.log('PDF header validation passed:', header)
+    }
+    
+    // Additional corruption checks
+    try {
+      // Check for common PDF corruption patterns
+      const fileContent = Array.from(uint8Array.slice(0, 1000)).map(b => String.fromCharCode(b)).join('')
+      
+      // Look for PDF version indicator
+      if (!fileContent.includes('PDF-') && !fileContent.includes('pdf-')) {
+        console.warn('Warning: No PDF version indicator found in first 1000 bytes')
+      }
+      
+      // Check for end-of-file marker (should be present in valid PDFs)
+      const last1000Bytes = Array.from(uint8Array.slice(-1000)).map(b => String.fromCharCode(b)).join('')
+      if (!last1000Bytes.includes('%%EOF')) {
+        console.warn('Warning: No %%EOF marker found - PDF may be truncated or corrupted')
+      }
+      
+    } catch (validationError) {
+      console.warn('PDF validation check failed:', validationError)
+      // Continue with loading attempt
     }
     
     // Load the PDF document with timeout and progress tracking
@@ -284,9 +357,26 @@ To analyze this document, you may need to:
     
     // Provide detailed error information
     let errorDetails = 'Unknown error'
+    let userFriendlyMessage = 'PDF processing failed'
+    
     if (error instanceof Error) {
       errorDetails = `${error.name}: ${error.message}`
       console.error('Error stack:', error.stack)
+      
+      // Provide more specific error messages based on the error type
+      if (error.message.includes('Invalid PDF structure')) {
+        userFriendlyMessage = 'The PDF file appears to be corrupted or has an invalid structure'
+      } else if (error.message.includes('PDF file is empty')) {
+        userFriendlyMessage = 'The PDF file is empty (0 bytes)'
+      } else if (error.message.includes('too small')) {
+        userFriendlyMessage = 'The PDF file is too small to be a valid document'
+      } else if (error.message.includes('PDF processing library failed to load')) {
+        userFriendlyMessage = 'PDF processing library failed to load'
+      } else if (error.message.includes('timeout')) {
+        userFriendlyMessage = 'PDF processing timed out - the file may be too large or corrupted'
+      } else if (error.message.includes('missing PDF header')) {
+        userFriendlyMessage = 'The file does not appear to be a valid PDF (missing PDF header)'
+      }
     } else if (typeof error === 'string') {
       errorDetails = error
     } else {
@@ -295,25 +385,29 @@ To analyze this document, you may need to:
     
     const message = `PDF processing failed: ${file.name}
 
-Error: ${errorDetails}
+${userFriendlyMessage}
+
+Error details: ${errorDetails}
 
 This could be due to:
-- Network connectivity issues
-- Unsupported PDF format
-- Browser compatibility problems
-- File corruption
+- File corruption or invalid PDF structure
+- Unsupported PDF format or version
+- Browser compatibility issues
+- Network connectivity problems
+- File size limitations
 
 To analyze this document, please try:
-1. Converting to text format (.txt)
-2. Using a different browser
-3. Checking your internet connection
-4. Ensuring the PDF is not corrupted`
+1. Converting to text format (.txt) from the original source
+2. Using a different browser or device
+3. Checking if the PDF file opens correctly in other applications
+4. Re-downloading the file if it was transferred over the internet
+5. Using OCR software if the PDF contains scanned images`
 
     return {
       text: message,
       wordCount: message.split(/\s+/).filter(word => word.length > 0).length,
       success: false,
-      error: `PDF extraction failed: ${errorDetails}`
+      error: `PDF extraction failed: ${userFriendlyMessage}`
     }
   }
 }
