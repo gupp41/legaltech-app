@@ -189,7 +189,7 @@ export default function HomePage() {
             <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
               <Link href="/auth/login">Sign in</Link>
             </Button>
-            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-sm sm:text-base px-3 sm:px-4">
+            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base px-3 sm:px-4">
               <Link href="/auth/signup">Get started</Link>
             </Button>
           </div>
@@ -207,7 +207,7 @@ export default function HomePage() {
             processing speed by 10x with our intelligent automation platform.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 h-12 px-6 sm:px-8 w-full sm:w-auto">
+            <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-6 sm:px-8 w-full sm:w-auto">
               <Link href="/auth/signup">Start free trial</Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="h-12 px-6 sm:px-8 bg-transparent w-full sm:w-auto">
@@ -306,7 +306,7 @@ export default function HomePage() {
           <p className="text-lg sm:text-xl mb-8 text-blue-100">
             Join leading law firms and HR departments already saving time and reducing costs
           </p>
-          <Button asChild size="lg" variant="secondary" className="h-12 px-6 sm:px-8">
+          <Button asChild size="lg" variant="secondary" className="h-12 px-6 sm:px-8 text-blue-600 hover:text-blue-700">
             <Link href="/auth/signup">Start your free trial</Link>
           </Button>
         </div>
