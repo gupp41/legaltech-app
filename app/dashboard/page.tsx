@@ -2722,8 +2722,34 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                   button.textContent = 'Generating...'
                                   button.disabled = true
 
-                                  // Call the PDF annotation API
-                                  const response = await fetch('/api/documents/annotate-pdf', {
+                                  // Get the latest analysis data
+                                  const latestAnalysis = analyses
+                                    .filter(a => a.document_id === currentDoc.id)
+                                    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+                                  
+                                  if (!latestAnalysis || !latestAnalysis.results) {
+                                    alert('No analysis data found. Please analyze the document first.')
+                                    button.textContent = originalText
+                                    button.disabled = false
+                                    return
+                                  }
+
+                                  let analysisData
+                                  try {
+                                    const cleanAnalysis = latestAnalysis.results
+                                      .replace(/^Starting AI analysis\.\.\.\s*/, '')
+                                      .replace(/^Analyzing document\.\.\.\s*/, '')
+                                      .replace(/^Processing\.\.\.\s*/, '')
+                                    analysisData = JSON.parse(cleanAnalysis)
+                                  } catch (parseError) {
+                                    alert('Unable to parse analysis data. Please try analyzing the document again.')
+                                    button.textContent = originalText
+                                    button.disabled = false
+                                    return
+                                  }
+
+                                  // Call the DOCX annotation API (reusing the same endpoint)
+                                  const response = await fetch('/api/documents/annotate-docx', {
                                     method: 'POST',
                                     headers: {
                                       'Content-Type': 'application/json',
@@ -2735,15 +2761,15 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                   })
 
                                   if (!response.ok) {
-                                    throw new Error('Failed to generate annotated PDF')
+                                    throw new Error('Failed to generate annotated document')
                                   }
 
-                                  // Download the annotated PDF
+                                  // Download the annotated document
                                   const blob = await response.blob()
                                   const url = window.URL.createObjectURL(blob)
                                   const link = document.createElement('a')
                                   link.href = url
-                                  link.download = `${currentDoc.filename.replace('.pdf', '')}_annotated.pdf`
+                                  link.download = `${currentDoc.filename.replace('.pdf', '')}_annotated.docx`
                                   document.body.appendChild(link)
                                   link.click()
                                   document.body.removeChild(link)
@@ -2754,12 +2780,12 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                   button.disabled = false
 
                                 } catch (error) {
-                                  console.error('Error generating annotated PDF:', error)
-                                  alert('Failed to generate annotated PDF. Please try again.')
+                                  console.error('Error generating annotated document:', error)
+                                  alert('Failed to generate annotated document. Please try again.')
                                   
                                   // Reset button state
                                   const button = event.target as HTMLButtonElement
-                                  button.textContent = 'Download Annotated PDF'
+                                  button.textContent = 'Download Annotated Document'
                                   button.disabled = false
                                 }
                               }}
@@ -2767,7 +2793,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               className="flex-1 sm:flex-none"
                             >
                               <FileText className="h-4 w-4 mr-2" />
-                              Download Annotated PDF
+                              Download Annotated Document
                             </Button>
                             <Button 
                               onClick={() => {

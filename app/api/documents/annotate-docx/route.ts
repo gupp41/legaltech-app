@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
           new Paragraph({
             children: [
               new TextRun({
-                text: "LEGAL DOCUMENT ANALYSIS REPORT",
+                text: "ANNOTATED LEGAL DOCUMENT",
                 bold: true,
                 size: 32,
                 color: "2E86AB"
@@ -98,6 +98,19 @@ export async function POST(request: NextRequest) {
             heading: HeadingLevel.TITLE,
             alignment: AlignmentType.CENTER,
             spacing: { after: 400 }
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "AI Analysis with Document Annotations",
+                bold: true,
+                size: 18,
+                color: "6B7280"
+              })
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 }
           }),
 
           // Document Information
@@ -336,6 +349,173 @@ export async function POST(request: NextRequest) {
                 children: [
                   new TextRun({ text: "Recommendation: ", bold: true }),
                   new TextRun({ text: item.recommendation })
+                ],
+                spacing: { after: 200 }
+              })
+            ]).flat()
+          ] : []),
+
+          // Document Content with Annotations
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "DOCUMENT CONTENT WITH AI ANNOTATIONS",
+                bold: true,
+                size: 24,
+                color: "2E86AB"
+              })
+            ],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 200, after: 200 }
+          }),
+
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "The following sections represent key clauses from your document with AI analysis annotations:",
+                size: 12,
+                color: "6B7280"
+              })
+            ],
+            spacing: { after: 200 }
+          }),
+
+          // Add flagged clauses as document sections with annotations
+          ...(analysisData.risk_analysis?.high_risk_items?.length > 0 ? [
+            ...analysisData.risk_analysis.high_risk_items.slice(0, 3).map((item: any, index: number) => [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `SECTION ${index + 1}: `,
+                    bold: true,
+                    size: 14,
+                    color: "DC2626"
+                  }),
+                  new TextRun({
+                    text: item.clause,
+                    bold: true,
+                    size: 12,
+                    color: "000000"
+                  })
+                ],
+                spacing: { after: 100 }
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "🔴 AI ANNOTATION: ",
+                    bold: true,
+                    size: 11,
+                    color: "DC2626"
+                  }),
+                  new TextRun({
+                    text: item.description,
+                    size: 11,
+                    color: "DC2626"
+                  })
+                ],
+                spacing: { after: 100 }
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Impact: ",
+                    bold: true,
+                    size: 11,
+                    color: "374151"
+                  }),
+                  new TextRun({
+                    text: item.impact,
+                    size: 11,
+                    color: "374151"
+                  })
+                ],
+                spacing: { after: 100 }
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Recommendation: ",
+                    bold: true,
+                    size: 11,
+                    color: "374151"
+                  }),
+                  new TextRun({
+                    text: item.recommendation,
+                    size: 11,
+                    color: "374151"
+                  })
+                ],
+                spacing: { after: 200 }
+              })
+            ]).flat()
+          ] : []),
+
+          // Add medium risk items as document sections
+          ...(analysisData.risk_analysis?.medium_risk_items?.length > 0 ? [
+            ...analysisData.risk_analysis.medium_risk_items.slice(0, 2).map((item: any, index: number) => [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `SECTION ${(analysisData.risk_analysis?.high_risk_items?.length || 0) + index + 1}: `,
+                    bold: true,
+                    size: 14,
+                    color: "D97706"
+                  }),
+                  new TextRun({
+                    text: item.clause,
+                    bold: true,
+                    size: 12,
+                    color: "000000"
+                  })
+                ],
+                spacing: { after: 100 }
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "🟡 AI ANNOTATION: ",
+                    bold: true,
+                    size: 11,
+                    color: "D97706"
+                  }),
+                  new TextRun({
+                    text: item.description,
+                    size: 11,
+                    color: "D97706"
+                  })
+                ],
+                spacing: { after: 100 }
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Impact: ",
+                    bold: true,
+                    size: 11,
+                    color: "374151"
+                  }),
+                  new TextRun({
+                    text: item.impact,
+                    size: 11,
+                    color: "374151"
+                  })
+                ],
+                spacing: { after: 100 }
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Recommendation: ",
+                    bold: true,
+                    size: 11,
+                    color: "374151"
+                  }),
+                  new TextRun({
+                    text: item.recommendation,
+                    size: 11,
+                    color: "374151"
+                  })
                 ],
                 spacing: { after: 200 }
               })
