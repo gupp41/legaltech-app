@@ -2655,6 +2655,16 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                       .replace(/^Starting AI analysis\.\.\.\s*/, '')
                                       .replace(/^Analyzing document\.\.\.\s*/, '')
                                       .replace(/^Processing\.\.\.\s*/, '')
+                                    // Additional JSON cleaning to fix common issues
+                                    cleanAnalysis = cleanAnalysis
+                                      .replace(/"description "([^"]*)"([^,}]*)/g, '"description": "$1"$2') // Fix missing colon after description
+                                      .replace(/,\s*}/g, '}') // Remove trailing commas before closing braces
+                                      .replace(/,\s*]/g, ']') // Remove trailing commas before closing brackets
+                                      .replace(/\n/g, '\\n') // Escape newlines
+                                      .replace(/\r/g, '\\r') // Escape carriage returns
+                                      .replace(/\t/g, '\\t') // Escape tabs
+                                      .replace(/[\x00-\x1F\x7F]/g, '') // Remove other control characters
+                                    
                                     analysisData = JSON.parse(cleanAnalysis)
                                   } catch (parseError) {
                                     alert('Unable to parse analysis data. Please try analyzing the document again.')
@@ -2740,6 +2750,16 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                       .replace(/^Starting AI analysis\.\.\.\s*/, '')
                                       .replace(/^Analyzing document\.\.\.\s*/, '')
                                       .replace(/^Processing\.\.\.\s*/, '')
+                                    // Additional JSON cleaning to fix common issues
+                                    cleanAnalysis = cleanAnalysis
+                                      .replace(/"description "([^"]*)"([^,}]*)/g, '"description": "$1"$2') // Fix missing colon after description
+                                      .replace(/,\s*}/g, '}') // Remove trailing commas before closing braces
+                                      .replace(/,\s*]/g, ']') // Remove trailing commas before closing brackets
+                                      .replace(/\n/g, '\\n') // Escape newlines
+                                      .replace(/\r/g, '\\r') // Escape carriage returns
+                                      .replace(/\t/g, '\\t') // Escape tabs
+                                      .replace(/[\x00-\x1F\x7F]/g, '') // Remove other control characters
+                                    
                                     analysisData = JSON.parse(cleanAnalysis)
                                   } catch (parseError) {
                                     alert('Unable to parse analysis data. Please try analyzing the document again.')
@@ -2993,6 +3013,16 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                     .replace(/^Analyzing document\.\.\.\s*/, '')
                                     .replace(/^Processing\.\.\.\s*/, '')
                                   
+                                  // Additional JSON cleaning to fix common issues
+                                  cleanAnalysis = cleanAnalysis
+                                    .replace(/"description "([^"]*)"([^,}]*)/g, '"description": "$1"$2') // Fix missing colon after description
+                                    .replace(/,\s*}/g, '}') // Remove trailing commas before closing braces
+                                    .replace(/,\s*]/g, ']') // Remove trailing commas before closing brackets
+                                    .replace(/\n/g, '\\n') // Escape newlines
+                                    .replace(/\r/g, '\\r') // Escape carriage returns
+                                    .replace(/\t/g, '\\t') // Escape tabs
+                                    .replace(/[\x00-\x1F\x7F]/g, '') // Remove other control characters
+                                  
                                   const parsed = JSON.parse(cleanAnalysis)
                                   const sections = []
                                   
@@ -3072,7 +3102,26 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                       console.log('🔍 DEBUG: Cleaned analysis length:', cleanAnalysis.length)
                                       console.log('🔍 DEBUG: Cleaned analysis preview:', cleanAnalysis.substring(0, 200))
                                       
-                                      const parsed = JSON.parse(cleanAnalysis)
+                                      // Additional JSON cleaning to fix common issues
+                                      cleanAnalysis = cleanAnalysis
+                                        .replace(/"description "([^"]*)"([^,}]*)/g, '"description": "$1"$2') // Fix missing colon after description
+                                        .replace(/,\s*}/g, '}') // Remove trailing commas before closing braces
+                                        .replace(/,\s*]/g, ']') // Remove trailing commas before closing brackets
+                                        .replace(/\n/g, '\\n') // Escape newlines
+                                        .replace(/\r/g, '\\r') // Escape carriage returns
+                                        .replace(/\t/g, '\\t') // Escape tabs
+                                        .replace(/[\x00-\x1F\x7F]/g, '') // Remove other control characters
+                                      
+                                      console.log('🔍 DEBUG: After JSON cleaning preview:', cleanAnalysis.substring(0, 200))
+                                      
+                                      let parsed
+                                      try {
+                                        parsed = JSON.parse(cleanAnalysis)
+                                      } catch (parseError) {
+                                        console.error('🔍 JSON Parse Error:', parseError)
+                                        console.error('🔍 Problematic JSON section:', cleanAnalysis.substring(parseError.message.match(/position (\d+)/)?.[1] - 100 || 0, parseError.message.match(/position (\d+)/)?.[1] + 100 || 200))
+                                        throw new Error('Unable to parse analysis data. The analysis may be corrupted.')
+                                      }
                                       // Convert to formatted markdown using the same logic as prettifyOutput
                                       let formattedMarkdown = ''
                                       
@@ -3544,7 +3593,17 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                                   console.log('🔍 DEBUG: Cleaned analysis history length:', cleanAnalysis.length)
                                                   console.log('🔍 DEBUG: Cleaned analysis history preview:', cleanAnalysis.substring(0, 200))
                                                   
-                                                  const parsed = JSON.parse(cleanAnalysis)
+                                                  // Additional JSON cleaning to fix common issues
+                                  cleanAnalysis = cleanAnalysis
+                                    .replace(/"description "([^"]*)"([^,}]*)/g, '"description": "$1"$2') // Fix missing colon after description
+                                    .replace(/,\s*}/g, '}') // Remove trailing commas before closing braces
+                                    .replace(/,\s*]/g, ']') // Remove trailing commas before closing brackets
+                                    .replace(/\n/g, '\\n') // Escape newlines
+                                    .replace(/\r/g, '\\r') // Escape carriage returns
+                                    .replace(/\t/g, '\\t') // Escape tabs
+                                    .replace(/[\x00-\x1F\x7F]/g, '') // Remove other control characters
+                                  
+                                  const parsed = JSON.parse(cleanAnalysis)
                                                   // Convert to formatted markdown using the same logic as prettifyOutput
                                                   let formattedMarkdown = ''
                                                   
