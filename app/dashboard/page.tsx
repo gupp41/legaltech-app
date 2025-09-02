@@ -2865,7 +2865,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               </Button>
                               <div 
                                 id={`more-dropdown-${currentDoc.id}`}
-                                className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-[9999]"
+                                className="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-[9999]"
                                 onClick={(e) => e.stopPropagation()}
                                 style={{ zIndex: 9999 }}
                               >
@@ -2873,12 +2873,27 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                   <button
                                     onClick={() => {
                                       console.log('🔍 Delete button clicked for document:', currentDoc.id)
-                                      handleDelete(currentDoc.id)
-                                      // Hide dropdown
-                                      const dropdown = document.getElementById(`more-dropdown-${currentDoc.id}`)
-                                      if (dropdown) {
-                                        dropdown.classList.add('hidden')
-                                        console.log('🔍 Dropdown hidden after delete')
+                                      
+                                      // Show confirmation dialog
+                                      const confirmed = window.confirm(
+                                        `Are you sure you want to delete "${currentDoc.filename}"?\n\nThis action cannot be undone.`
+                                      )
+                                      
+                                      if (confirmed) {
+                                        handleDelete(currentDoc.id)
+                                        // Hide dropdown
+                                        const dropdown = document.getElementById(`more-dropdown-${currentDoc.id}`)
+                                        if (dropdown) {
+                                          dropdown.classList.add('hidden')
+                                          console.log('🔍 Dropdown hidden after delete')
+                                        }
+                                      } else {
+                                        console.log('🔍 Delete cancelled by user')
+                                        // Hide dropdown even if cancelled
+                                        const dropdown = document.getElementById(`more-dropdown-${currentDoc.id}`)
+                                        if (dropdown) {
+                                          dropdown.classList.add('hidden')
+                                        }
                                       }
                                     }}
                                     className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -3090,7 +3105,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               })()}
 
 
-
+                              
                               {/* Display analysis content with proper formatting */}
                               {latestAnalysis.results?.analysis ? (
                                 <div className="prose prose-sm max-w-none">
@@ -3386,12 +3401,12 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                       // Render the formatted markdown and interactive components
                                       return (
                                         <div>
-                                          <div 
-                                            className="whitespace-pre-wrap text-sm leading-relaxed"
-                                            dangerouslySetInnerHTML={{ 
-                                              __html: formattedMarkdown
-                                                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                                                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                                        <div 
+                                          className="whitespace-pre-wrap text-sm leading-relaxed"
+                                          dangerouslySetInnerHTML={{ 
+                                            __html: formattedMarkdown
+                                              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                              .replace(/\*(.*?)\*/g, '<em>$1</em>')
                                                 .replace(/^# Document Analysis Summary$/gm, '<h1 class="text-xl font-bold mb-2" id="summary">Document Analysis Summary</h1>')
                                                 .replace(/^# Risk Analysis$/gm, '<h1 class="text-xl font-bold mb-2" id="risk-analysis">Risk Analysis</h1>')
                                                 .replace(/^# 🕵️ Identified Clauses$/gm, '<h1 class="text-xl font-bold mb-2" id="identified-clauses">🕵️ Identified Clauses</h1>')
@@ -3399,16 +3414,16 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                                 .replace(/^# ✅ Compliance Considerations$/gm, '<h1 class="text-xl font-bold mb-2" id="compliance">✅ Compliance Considerations</h1>')
                                                 .replace(/^# 💡 Recommendations$/gm, '<h1 class="text-xl font-bold mb-2" id="recommendations">💡 Recommendations</h1>')
                                                 .replace(/^# ⚙️ Technical Details$/gm, '<h1 class="text-xl font-bold mb-2" id="technical-details">⚙️ Technical Details</h1>')
-                                                .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mb-2">$1</h1>')
-                                                .replace(/^## (.*$)/gm, '<h2 class="text-lg font-semibold mb-2 mt-4">$1</h2>')
-                                                .replace(/^### (.*$)/gm, '<h3 class="text-base font-medium mb-2 mt-3">$1</h3>')
-                                                .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
-                                                .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
-                                                .replace(/\n\n/g, '</p><p class="mb-2">')
-                                                .replace(/^/g, '<p class="mb-2">')
-                                                .replace(/$/g, '</p>')
-                                            }}
-                                          />
+                                              .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mb-2">$1</h1>')
+                                              .replace(/^## (.*$)/gm, '<h2 class="text-lg font-semibold mb-2 mt-4">$1</h2>')
+                                              .replace(/^### (.*$)/gm, '<h3 class="text-base font-medium mb-2 mt-3">$1</h3>')
+                                              .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
+                                              .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
+                                              .replace(/\n\n/g, '</p><p class="mb-2">')
+                                              .replace(/^/g, '<p class="mb-2">')
+                                              .replace(/$/g, '</p>')
+                                          }}
+                                        />
                                           
                                           {/* Interactive Risk Analysis Cards */}
                                           {riskAnalysisData && (
