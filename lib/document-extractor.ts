@@ -64,31 +64,27 @@ async function extractTextFromPDF(file: File): Promise<ExtractedText> {
     console.log('Configuring PDF.js with worker...')
     
     try {
-      // For v4.x, try to use CDN worker first, then fallback to local
-      let workerSrc = '';
+      // Get the actual version from the imported library
+      const version = (pdfjsLib as any).version || '4.10.38';
+      console.log('PDF.js library version:', version);
       
-      try {
-        // Try to use CDN worker for better compatibility
-        workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs';
-        console.log('Using CDN worker:', workerSrc);
-      } catch (cdnError) {
-        // Fallback to local worker
-        workerSrc = '/pdf.worker.js';
-        console.log('Using local worker:', workerSrc);
-      }
-      
-      // For v4.x, set the worker source
+      // For version 4.10.38, use the correct worker configuration
       if (pdfjsLib.GlobalWorkerOptions) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
-        console.log('PDF worker configured with:', workerSrc);
+        // Use local worker file that matches the library version
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
+        console.log('PDF worker configured with local worker file');
       } else {
         console.log('GlobalWorkerOptions not available, trying alternative configuration');
-        // Try alternative worker configuration for v4.x
+        // Try alternative worker configuration
         if ('setWorkerSrc' in pdfjsLib && typeof pdfjsLib.setWorkerSrc === 'function') {
-          (pdfjsLib as any).setWorkerSrc(workerSrc);
+          (pdfjsLib as any).setWorkerSrc('/pdf.worker.js');
           console.log('PDF worker configured using setWorkerSrc');
         } else {
-          throw new Error('No worker configuration method available');
+          console.log('No worker configuration method available, will disable worker');
+          // Disable worker if no configuration method is available
+          if (pdfjsLib.GlobalWorkerOptions) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+          }
         }
       }
       
@@ -123,8 +119,8 @@ async function extractTextFromPDF(file: File): Promise<ExtractedText> {
     // Create PDF loading task with all options
     const loadingTask = (pdfjsLib as any).getDocument({ 
       data: uint8Array,
-      // Try to use worker but with better configuration
-      disableWorker: false, // Allow worker usage
+      // Allow worker usage now that version is fixed
+      disableWorker: false, // Allow worker usage for better performance
       disableRange: false,  // Enable range requests
       disableStream: false, // Enable streaming
       // Add more options for better compatibility

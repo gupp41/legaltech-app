@@ -5,7 +5,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Scale, FileText, Shield, Zap, Users, TrendingUp, CheckCircle, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient } from '@/lib/supabase/client'
 import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function HomePage() {
@@ -36,10 +36,7 @@ export default function HomePage() {
         setEmailConfirmation({ status: 'loading', message: 'Processing magic link...' })
 
         try {
-          const supabase = createBrowserClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-          )
+          const supabase = createClient()
 
           console.log('Attempting to authenticate with code:', code)
           console.log('Code verifier present:', !!codeVerifier)
@@ -104,10 +101,7 @@ export default function HomePage() {
         // No code present, but let's check if user is already authenticated
         const checkAuth = async () => {
           try {
-            const supabase = createBrowserClient(
-              process.env.NEXT_PUBLIC_SUPABASE_URL!,
-              process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-            )
+            const supabase = createClient()
             
             const { data: { session } } = await supabase.auth.getSession()
             if (session) {

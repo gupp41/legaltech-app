@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { usageTracker } from '@/lib/usage-tracker'
+import { env } from '@/lib/config/env'
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,8 +17,8 @@ export async function POST(request: NextRequest) {
       const token = authHeader.substring(7)
       const { createClient: createClientWithToken } = await import('@supabase/supabase-js')
       const supabaseWithToken = createClientWithToken(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        env.SUPABASE_URL,
+        env.SUPABASE_ANON_KEY,
         {
           global: {
             headers: {

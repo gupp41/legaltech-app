@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createBrowserClient } from "@supabase/ssr"
+import { createClient } from '@/lib/supabase/client'
 import { FileUpload } from "@/components/file-upload"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,6 +24,8 @@ interface Document {
   status: string
   created_at: string
   storage_path?: string
+  jurisdiction?: string
+  client_name?: string
 }
 
 export default function Dashboard() {
@@ -107,10 +109,7 @@ export default function Dashboard() {
     </div>
   )
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  )
+  const supabase = createClient()
 
   useEffect(() => {
     checkUser()

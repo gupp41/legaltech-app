@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { stripe } from '@/lib/stripe'
+import { env } from '@/lib/config/env'
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,17 +9,12 @@ export async function POST(request: NextRequest) {
 
     console.log('🔍 Portal API - Request data:', { returnUrl, userId, userEmail })
 
-    // Check environment variables
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      console.error('🔍 Portal API - Missing NEXT_PUBLIC_SUPABASE_URL')
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      )
-    }
-
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error('🔍 Portal API - Missing SUPABASE_SERVICE_ROLE_KEY')
+    // Validate environment variables
+    try {
+      env.SUPABASE_URL
+      env.SUPABASE_SERVICE_ROLE_KEY
+    } catch (error) {
+      console.error('🔍 Portal API - Missing required environment variables')
       return NextResponse.json(
         { error: 'Server configuration error' },
         { status: 500 }
@@ -36,8 +32,8 @@ export async function POST(request: NextRequest) {
 
     // Create a simple Supabase client for database queries (no auth needed)
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!, // Use service role key for server-side queries
+      env.SUPABASE_URL,
+      env.SUPABASE_SERVICE_ROLE_KEY, // Use service role key for server-side queries
       {
         cookies: {
           getAll() {
@@ -105,7 +101,7 @@ export async function POST(request: NextRequest) {
     console.log('🔍 Portal API - Creating portal session for customer:', customerId)
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: returnUrl || `${process.env.NEXT_PUBLIC_APP_URL}/settings`,
+                      return_url: returnUrl || `${env.APP_URL}/settings`,
     })
 
     console.log('🔍 Portal API - Portal session created successfully:', session.url)

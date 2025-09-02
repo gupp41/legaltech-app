@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { env } from '@/lib/config/env'
 
 export interface UsageLimits {
   maxDocuments: number
@@ -27,8 +28,8 @@ export class UsageTracker {
 
   constructor() {
     this.supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      env.SUPABASE_URL,
+      env.SUPABASE_ANON_KEY
     )
   }
 
