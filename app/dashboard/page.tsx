@@ -2844,10 +2844,17 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               <Button 
                                 onClick={(e) => {
                                   e.stopPropagation()
+                                  console.log('🔍 More button clicked for document:', currentDoc.id)
                                   // Toggle dropdown
                                   const dropdown = document.getElementById(`more-dropdown-${currentDoc.id}`)
+                                  console.log('🔍 Dropdown element found:', dropdown)
                                   if (dropdown) {
+                                    const isHidden = dropdown.classList.contains('hidden')
+                                    console.log('🔍 Dropdown is currently hidden:', isHidden)
                                     dropdown.classList.toggle('hidden')
+                                    console.log('🔍 Dropdown visibility toggled')
+                                  } else {
+                                    console.error('🔍 Dropdown element not found!')
                                   }
                                 }}
                                 variant="outline"
@@ -2858,17 +2865,20 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               </Button>
                               <div 
                                 id={`more-dropdown-${currentDoc.id}`}
-                                className="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-50"
+                                className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-[9999]"
                                 onClick={(e) => e.stopPropagation()}
+                                style={{ zIndex: 9999 }}
                               >
                                 <div className="py-1">
                                   <button
                                     onClick={() => {
+                                      console.log('🔍 Delete button clicked for document:', currentDoc.id)
                                       handleDelete(currentDoc.id)
                                       // Hide dropdown
                                       const dropdown = document.getElementById(`more-dropdown-${currentDoc.id}`)
                                       if (dropdown) {
                                         dropdown.classList.add('hidden')
+                                        console.log('🔍 Dropdown hidden after delete')
                                       }
                                     }}
                                     className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -3111,10 +3121,8 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                         .replace(/"description "([^"]*)"([^,}]*)/g, '"description": "$1"$2') // Fix missing colon after description
                                         .replace(/,\s*}/g, '}') // Remove trailing commas before closing braces
                                         .replace(/,\s*]/g, ']') // Remove trailing commas before closing brackets
-                                        .replace(/\n/g, '\\n') // Escape newlines
-                                        .replace(/\r/g, '\\r') // Escape carriage returns
-                                        .replace(/\t/g, '\\t') // Escape tabs
-                                        .replace(/[\x00-\x1F\x7F]/g, '') // Remove other control characters
+                                        // Don't escape newlines, carriage returns, or tabs as they might be part of the JSON structure
+                                        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove only problematic control characters
                                       
                                       console.log('🔍 DEBUG: After JSON cleaning preview:', cleanAnalysis.substring(0, 200))
                                       console.log('🔍 DEBUG: JSON end preview:', cleanAnalysis.substring(Math.max(0, cleanAnalysis.length - 200)))
@@ -3123,7 +3131,15 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                       if (!cleanAnalysis.trim().endsWith('}')) {
                                         console.error('🔍 JSON appears incomplete - does not end with }')
                                         console.error('🔍 Last 100 characters:', cleanAnalysis.substring(Math.max(0, cleanAnalysis.length - 100)))
-                                        throw new Error('Analysis data appears incomplete. Please try analyzing the document again.')
+                                        
+                                        // Try to find the last complete JSON object
+                                        const lastBraceIndex = cleanAnalysis.lastIndexOf('}')
+                                        if (lastBraceIndex > 0) {
+                                          console.log('🔍 Attempting to truncate to last complete JSON object')
+                                          cleanAnalysis = cleanAnalysis.substring(0, lastBraceIndex + 1)
+                                        } else {
+                                          throw new Error('Analysis data appears incomplete. Please try analyzing the document again.')
+                                        }
                                       }
                                       
                                       let parsed
@@ -3132,7 +3148,20 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                       } catch (parseError) {
                                         console.error('🔍 JSON Parse Error:', parseError)
                                         console.error('🔍 Problematic JSON section:', cleanAnalysis.substring(parseError.message.match(/position (\d+)/)?.[1] - 100 || 0, parseError.message.match(/position (\d+)/)?.[1] + 100 || 200))
-                                        throw new Error('Unable to parse analysis data. The analysis may be corrupted.')
+                                        
+                                        // Try to parse the original analysis without cleaning
+                                        console.log('🔍 Attempting to parse original analysis without cleaning')
+                                        try {
+                                          const originalAnalysis = latestAnalysis.results.analysis.trim()
+                                            .replace(/^Starting AI analysis\.\.\.\s*/, '')
+                                            .replace(/^Analyzing document\.\.\.\s*/, '')
+                                            .replace(/^Processing\.\.\.\s*/, '')
+                                          parsed = JSON.parse(originalAnalysis)
+                                          console.log('🔍 Successfully parsed original analysis')
+                                        } catch (originalParseError) {
+                                          console.error('🔍 Original analysis also failed to parse:', originalParseError)
+                                          throw new Error('Unable to parse analysis data. The analysis may be corrupted.')
+                                        }
                                       }
                                       // Convert to formatted markdown using the same logic as prettifyOutput
                                       let formattedMarkdown = ''
@@ -3610,10 +3639,8 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                                     .replace(/"description "([^"]*)"([^,}]*)/g, '"description": "$1"$2') // Fix missing colon after description
                                                     .replace(/,\s*}/g, '}') // Remove trailing commas before closing braces
                                                     .replace(/,\s*]/g, ']') // Remove trailing commas before closing brackets
-                                                    .replace(/\n/g, '\\n') // Escape newlines
-                                                    .replace(/\r/g, '\\r') // Escape carriage returns
-                                                    .replace(/\t/g, '\\t') // Escape tabs
-                                                    .replace(/[\x00-\x1F\x7F]/g, '') // Remove other control characters
+                                                    // Don't escape newlines, carriage returns, or tabs as they might be part of the JSON structure
+                                                    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove only problematic control characters
                                                   
                                                   console.log('🔍 DEBUG: After JSON cleaning preview:', cleanAnalysis.substring(0, 200))
                                                   console.log('🔍 DEBUG: JSON end preview:', cleanAnalysis.substring(Math.max(0, cleanAnalysis.length - 200)))
