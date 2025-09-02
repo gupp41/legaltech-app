@@ -246,6 +246,42 @@ export default function SettingsPage() {
     }
   }
 
+  const handleDebugSubscription = async () => {
+    if (!user?.id) return
+    
+    try {
+      console.log('🔍 Debug: Checking subscription data for user:', user.id)
+      
+      // Check subscriptions table
+      const { data: subData, error: subError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+      
+      console.log('🔍 Subscriptions table data:', subData, 'Error:', subError)
+      
+      // Check profiles table
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('current_plan, plan_start_date, plan_end_date')
+        .eq('id', user.id)
+        .single()
+      
+      console.log('🔍 Profiles table data:', profileData, 'Error:', profileError)
+      
+      // Check if user_subscriptions view exists
+      const { data: viewData, error: viewError } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+      
+      console.log('🔍 User subscriptions view data:', viewData, 'Error:', viewError)
+      
+    } catch (error) {
+      console.error('🔍 Debug error:', error)
+    }
+  }
+
   const checkUser = async () => {
     try {
       const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -314,6 +350,7 @@ export default function SettingsPage() {
         console.log('🔍 Found subscription data:', subData)
       } else {
         console.log('🔍 No subscription data found:', subError?.message)
+        console.log('🔍 User ID being searched:', user.id)
         setSubscription(null)
       }
 
@@ -949,23 +986,23 @@ export default function SettingsPage() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Plan Type</label>
-                      <p className="text-gray-900 mt-1 capitalize">{subscription.plan_type}</p>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Plan Type</label>
+                      <p className="text-gray-900 dark:text-gray-100 mt-1 capitalize">{subscription.plan_type}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Status</label>
-                      <p className="text-gray-900 mt-1 capitalize">{subscription.status}</p>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                      <p className="text-gray-900 dark:text-gray-100 mt-1 capitalize">{subscription.status}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Start Date</label>
-                      <p className="text-gray-900 mt-1">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Start Date</label>
+                      <p className="text-gray-900 dark:text-gray-100 mt-1">
                         {new Date(subscription.start_date).toLocaleDateString()}
                       </p>
                     </div>
                     {subscription.end_date && (
                       <div>
-                        <label className="text-sm font-medium text-gray-700">End Date</label>
-                        <p className="text-gray-900 mt-1">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">End Date</label>
+                        <p className="text-gray-900 dark:text-gray-100 mt-1">
                           {new Date(subscription.end_date).toLocaleDateString()}
                         </p>
                       </div>
@@ -985,6 +1022,20 @@ export default function SettingsPage() {
                       Cancel Subscription
                     </Button>
                   </div>
+                  
+                  <Separator />
+                  
+                  <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-gray-700 dark:text-gray-300">Debug Information</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Check console for detailed subscription data</div>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={handleDebugSubscription}>
+                        Debug Subscription
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               ) : user?.current_plan && user.current_plan !== 'free' ? (
                 <div className="space-y-4">
@@ -1000,23 +1051,23 @@ export default function SettingsPage() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Plan Type</label>
-                      <p className="text-gray-900 mt-1 capitalize">{user.current_plan}</p>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Plan Type</label>
+                      <p className="text-gray-900 dark:text-gray-100 mt-1 capitalize">{user.current_plan}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Status</label>
-                      <p className="text-gray-900 mt-1">Active</p>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                      <p className="text-gray-900 dark:text-gray-100 mt-1">Active</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Start Date</label>
-                      <p className="text-gray-900 mt-1">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Start Date</label>
+                      <p className="text-gray-900 dark:text-gray-100 mt-1">
                         {new Date(user.plan_start_date).toLocaleDateString()}
                       </p>
                     </div>
                     {user.plan_end_date && (
                       <div>
-                        <label className="text-sm font-medium text-gray-700">End Date</label>
-                        <p className="text-gray-900 mt-1">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">End Date</label>
+                        <p className="text-gray-900 dark:text-gray-100 mt-1">
                           {new Date(user.plan_end_date).toLocaleDateString()}
                         </p>
                       </div>
@@ -1025,13 +1076,25 @@ export default function SettingsPage() {
                   
                   <Separator />
                   
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-yellow-700">
+                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-300">
                       <Info className="h-4 w-4" />
                       <span className="text-sm">
                         <strong>Note:</strong> This plan doesn't have an active Stripe subscription. 
                         If you need to manage billing or payment methods, please contact support.
                       </span>
+                    </div>
+                  </div>
+                  
+                  <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-gray-700 dark:text-gray-300">Debug Information</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Check console for detailed subscription data</div>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={handleDebugSubscription}>
+                        Debug Subscription
+                      </Button>
                     </div>
                   </div>
                 </div>

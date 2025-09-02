@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { stripe } from '@/lib/stripe'
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient } from '@/lib/supabase/server'
 
 const relevantEvents = new Set([
   'checkout.session.completed',
@@ -61,10 +61,7 @@ async function handleWebhookEvent(event: any) {
   console.log(`Processing webhook event: ${event.type}`)
 
   // Initialize Supabase client with service role key (bypasses RLS)
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const supabase = await createClient()
 
   switch (event.type) {
     case 'checkout.session.completed':
