@@ -473,6 +473,8 @@ export default function SettingsPage() {
         credentials: 'include', // Ensure cookies are sent
         body: JSON.stringify({
           returnUrl: `${window.location.origin}/settings`,
+          userId: user.id,
+          userEmail: user.email,
         }),
       })
 

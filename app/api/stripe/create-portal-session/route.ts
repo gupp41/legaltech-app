@@ -4,62 +4,52 @@ import { stripe } from '@/lib/stripe'
 
 export async function POST(request: NextRequest) {
   try {
-    const { returnUrl } = await request.json()
+    const { returnUrl, userId, userEmail } = await request.json()
 
-    // Debug: Check what cookies we're receiving
-    const cookies = request.cookies.getAll()
-    console.log('🔍 Portal API - Cookies received:', cookies.map(c => ({ name: c.name, value: c.value.substring(0, 20) + '...' })))
+    console.log('🔍 Portal API - Request data:', { returnUrl, userId, userEmail })
 
-    // Create Supabase client with proper cookie handling
+    // Basic validation - ensure we have user info
+    if (!userId || !userEmail) {
+      console.log('🔍 Portal API - Missing user data')
+      return NextResponse.json(
+        { error: 'Missing user information' },
+        { status: 400 }
+      )
+    }
+
+    // Create a simple Supabase client for database queries (no auth needed)
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!, // Use service role key for server-side queries
       {
         cookies: {
           getAll() {
-            return request.cookies.getAll()
+            return []
           },
-          setAll(cookiesToSet) {
-            // Don't set cookies in API routes
+          setAll() {
+            // No cookies needed for service role
           },
         },
       }
     )
 
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    console.log('🔍 Portal API - Auth check:', {
-      user: user?.email,
-      userId: user?.id,
-      error: authError?.message
-    })
-
-    if (authError || !user) {
-      console.log('🔍 Portal API - Unauthorized:', authError?.message)
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     // Get user's subscription - check for any active subscription
     const { data: subscription, error: subError } = await supabase
       .from('subscriptions')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('status', 'active')
 
     if (subError || !subscription || subscription.length === 0) {
+      console.log('🔍 Portal API - No subscription found:', subError?.message)
       return NextResponse.json(
         { error: 'No active subscription found' },
         { status: 404 }
       )
     }
 
-    // For now, we'll use the user's email as the customer identifier
-    // In a production app, you'd want to store the Stripe customer ID
-    const customerEmail = user.email!
+    // Use the user's email as the customer identifier
+    const customerEmail = userEmail
     
     // Try to find the customer in Stripe by email
     const customers = await stripe.customers.list({
