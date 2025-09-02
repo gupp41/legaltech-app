@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } from 'docx'
 
+export async function GET() {
+  return NextResponse.json({ message: 'DOCX Annotate API is working' })
+}
+
 export async function POST(request: NextRequest) {
   console.log('📄 DOCX Annotate API called')
   try {
     const { documentId, analysisData } = await request.json()
     console.log('📄 Document ID:', documentId)
+    console.log('📄 Analysis Data Keys:', Object.keys(analysisData || {}))
+    console.log('📄 Analysis Data Sample:', JSON.stringify(analysisData, null, 2).substring(0, 500))
 
     if (!documentId || !analysisData) {
       return NextResponse.json(
@@ -361,8 +367,13 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error generating DOCX report:', error)
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
     return NextResponse.json(
-      { error: 'Failed to generate DOCX report' },
+      { error: 'Failed to generate DOCX report', details: error.message },
       { status: 500 }
     )
   }
