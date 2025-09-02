@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
 import { stripe } from '@/lib/stripe'
 
 export async function POST(request: NextRequest) {
@@ -8,7 +7,7 @@ export async function POST(request: NextRequest) {
     const { returnUrl } = await request.json()
 
     // Get authenticated user
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
@@ -18,24 +17,46 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get user's subscription
+    // Get user's subscription - check for any active subscription
     const { data: subscription, error: subError } = await supabase
       .from('subscriptions')
-      .select('stripe_subscription_id')
+      .select('*')
       .eq('user_id', user.id)
       .eq('status', 'active')
-      .single()
 
-    if (subError || !subscription?.stripe_subscription_id) {
+    if (subError || !subscription || subscription.length === 0) {
       return NextResponse.json(
         { error: 'No active subscription found' },
         { status: 404 }
       )
     }
 
+    // For now, we'll use the user's email as the customer identifier
+    // In a production app, you'd want to store the Stripe customer ID
+    const customerEmail = user.email!
+    
+    // Try to find the customer in Stripe by email
+    const customers = await stripe.customers.list({
+      email: customerEmail,
+      limit: 1
+    })
+
+    let customerId = customers.data[0]?.id
+
+    // If no customer found, create one
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: customerEmail,
+        metadata: {
+          user_id: user.id
+        }
+      })
+      customerId = customer.id
+    }
+
     // Create portal session
     const session = await stripe.billingPortal.sessions.create({
-      customer: user.email!, // You might want to store Stripe customer ID in your database
+      customer: customerId,
       return_url: returnUrl || `${process.env.NEXT_PUBLIC_APP_URL}/settings`,
     })
 

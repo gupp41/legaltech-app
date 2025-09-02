@@ -458,6 +458,38 @@ export default function SettingsPage() {
     }
   }
 
+  const handleManageBilling = async () => {
+    try {
+      if (!user?.id) {
+        alert('Please log in to manage billing')
+        return
+      }
+      
+      const response = await fetch('/api/stripe/create-portal-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          returnUrl: `${window.location.origin}/settings`,
+        }),
+      })
+
+      const { url, error } = await response.json()
+
+      if (error) {
+        throw new Error(error)
+      }
+
+      if (url) {
+        window.location.href = url
+      }
+    } catch (error) {
+      console.error('Error creating portal session:', error)
+      alert(`Error opening billing portal: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
   const handleDowngrade = async (plan: string) => {
     // TODO: Implement plan downgrade
     console.log(`Downgrading to ${plan} plan`)
@@ -1029,10 +1061,18 @@ export default function SettingsPage() {
                   <Separator />
                   
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleManageBilling}
+                    >
                       Update Payment Method
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleManageBilling}
+                    >
                       View Invoices
                     </Button>
                     <Button variant="destructive" size="sm">
