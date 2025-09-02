@@ -2924,8 +2924,9 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                     }}
                                     className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                                   >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Delete Document
+                                    <Trash2 className="h-4 w-4 mr-2 flex-shrink-0" />
+                                    <span className="hidden sm:inline">Delete Document</span>
+                                    <span className="sm:hidden">Delete</span>
                                   </button>
                                 </div>
                               </div>
