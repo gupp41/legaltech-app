@@ -113,8 +113,25 @@ async function extractTextFromPDF(file: File): Promise<ExtractedText> {
     const uint8Array = new Uint8Array(arrayBuffer)
     console.log('Uint8Array created, length:', uint8Array.length)
     
+    // Basic PDF validation before attempting to load
+    if (uint8Array.length < 4) {
+      throw new Error('File is too small to be a valid PDF document')
+    }
+    
+    // Check for PDF header
+    const header = String.fromCharCode(uint8Array[0], uint8Array[1], uint8Array[2], uint8Array[3])
+    if (header !== '%PDF') {
+      console.warn('Warning: File does not start with PDF header. Header found:', header)
+      console.warn('First 20 bytes:', Array.from(uint8Array.slice(0, 20)).map(b => String.fromCharCode(b)).join(''))
+    } else {
+      console.log('PDF header validation passed:', header)
+    }
+    
     // Load the PDF document with timeout and progress tracking
     console.log('Loading PDF document...')
+    console.log('PDF file size:', file.size, 'bytes')
+    console.log('PDF file type:', file.type)
+    console.log('PDF file name:', file.name)
     
     // Create PDF loading task with all options
     const loadingTask = (pdfjsLib as any).getDocument({ 
@@ -153,9 +170,52 @@ async function extractTextFromPDF(file: File): Promise<ExtractedText> {
     try {
       pdf = await Promise.race([loadingTask.promise, timeoutPromise])
       console.log('PDF loaded successfully, pages:', pdf.numPages)
-    } catch (error) {
+    } catch (error: any) {
       console.error('PDF loading failed:', error)
-      throw error
+      
+      // Provide more specific error information
+      if (error.message?.includes('Invalid PDF structure')) {
+        console.error('PDF structure analysis:')
+        console.error('- File size:', file.size, 'bytes')
+        console.error('- File type:', file.type)
+        console.error('- First 100 bytes:', Array.from(uint8Array.slice(0, 100)).map(b => b.toString(16).padStart(2, '0')).join(' '))
+        console.error('- PDF header check:', uint8Array.slice(0, 4).toString() === '%PDF' ? 'Valid PDF header' : 'Invalid PDF header')
+        
+        // Try to provide more helpful error message
+        if (file.size === 0) {
+          throw new Error('PDF file is empty (0 bytes)')
+        } else if (file.size < 100) {
+          throw new Error('PDF file is too small to be a valid PDF document')
+        } else if (!uint8Array.slice(0, 4).toString().includes('%PDF')) {
+          throw new Error('File does not appear to be a valid PDF (missing PDF header)')
+        } else {
+          // Try one more time with worker disabled as a fallback
+          console.log('Attempting fallback: disabling worker and retrying...')
+          try {
+            const fallbackLoadingTask = (pdfjsLib as any).getDocument({ 
+              data: uint8Array,
+              disableWorker: true, // Disable worker as fallback
+              disableRange: true,  // Disable range requests
+              disableStream: true, // Disable streaming
+              maxImageSize: -1,
+              cMapUrl: null,
+              cMapPacked: false,
+              verbosity: 0 // Reduce verbosity for fallback
+            })
+            
+            const fallbackPdf = await Promise.race([fallbackLoadingTask.promise, timeoutPromise])
+            console.log('PDF loaded successfully with fallback (worker disabled), pages:', fallbackPdf.numPages)
+            pdf = fallbackPdf
+          } catch (fallbackError: any) {
+            console.error('Fallback PDF loading also failed:', fallbackError)
+            throw new Error(`PDF structure is invalid or corrupted. File size: ${file.size} bytes, Type: ${file.type}. Fallback attempt also failed: ${fallbackError.message}`)
+          }
+        }
+      } else if (error.message?.includes('timeout')) {
+        throw new Error('PDF loading timed out. The file may be too large or corrupted.')
+      } else {
+        throw new Error(`PDF loading failed: ${error.message || 'Unknown error'}`)
+      }
     }
     
     let fullText = ''
