@@ -2668,7 +2668,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                   button.disabled = true
 
                                   // Call the annotation API
-                                  const response = await fetch('/api/documents/annotate', {
+                                  const response = await fetch('/api/test-annotate', {
                                     method: 'POST',
                                     headers: {
                                       'Content-Type': 'application/json',
