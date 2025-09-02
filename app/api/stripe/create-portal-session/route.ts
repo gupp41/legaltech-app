@@ -40,42 +40,58 @@ export async function POST(request: NextRequest) {
       .eq('user_id', userId)
       .eq('status', 'active')
 
-    if (subError || !subscription || subscription.length === 0) {
-      console.log('🔍 Portal API - No subscription found:', subError?.message)
+    if (subError) {
+      console.log('🔍 Portal API - Database error:', subError.message)
+      return NextResponse.json(
+        { error: 'Database error' },
+        { status: 500 }
+      )
+    }
+
+    if (!subscription || subscription.length === 0) {
+      console.log('🔍 Portal API - No subscription found for user:', userId)
       return NextResponse.json(
         { error: 'No active subscription found' },
         { status: 404 }
       )
     }
 
+    console.log('🔍 Portal API - Found subscription:', subscription[0])
+
     // Use the user's email as the customer identifier
     const customerEmail = userEmail
     
     // Try to find the customer in Stripe by email
+    console.log('🔍 Portal API - Looking for Stripe customer with email:', customerEmail)
     const customers = await stripe.customers.list({
       email: customerEmail,
       limit: 1
     })
 
     let customerId = customers.data[0]?.id
+    console.log('🔍 Portal API - Found existing customer:', customerId)
 
     // If no customer found, create one
     if (!customerId) {
+      console.log('🔍 Portal API - Creating new Stripe customer')
       const customer = await stripe.customers.create({
         email: customerEmail,
         metadata: {
-          user_id: user.id
+          user_id: userId
         }
       })
       customerId = customer.id
+      console.log('🔍 Portal API - Created new customer:', customerId)
     }
 
     // Create portal session
+    console.log('🔍 Portal API - Creating portal session for customer:', customerId)
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: returnUrl || `${process.env.NEXT_PUBLIC_APP_URL}/settings`,
     })
 
+    console.log('🔍 Portal API - Portal session created successfully:', session.url)
     return NextResponse.json({ url: session.url })
   } catch (error) {
     console.error('Error creating portal session:', error)
