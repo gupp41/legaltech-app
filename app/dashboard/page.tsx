@@ -2798,13 +2798,14 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                   
                                   if (sections.length > 1) {
                                     return (
-                                      <div className="sticky top-4 z-10 mb-6 animate-in slide-in-from-top-2 duration-300">
-                                        <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow duration-300">
-                                          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center">
-                                            <span className="mr-2">🧭</span>
-                                            Quick Navigation
+                                      <div className="sticky top-2 sm:top-4 z-10 mb-4 sm:mb-6 animate-in slide-in-from-top-2 duration-300">
+                                        <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-2 sm:p-4 hover:shadow-xl transition-shadow duration-300">
+                                          <h3 className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 sm:mb-3 flex items-center">
+                                            <span className="mr-1 sm:mr-2">🧭</span>
+                                            <span className="hidden sm:inline">Quick Navigation</span>
+                                            <span className="sm:hidden">Nav</span>
                                           </h3>
-                                          <div className="flex flex-wrap gap-2">
+                                          <div className="flex flex-wrap gap-1 sm:gap-2">
                                             {sections.map((section) => (
                                               <button
                                                 key={section.id}
@@ -2814,14 +2815,15 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                                     element.scrollIntoView({ behavior: 'smooth', block: 'start' })
                                                   }
                                                 }}
-                                                className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
+                                                title={section.title.replace(/^[^\s]+\s/, '')}
+                                                className={`inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
                                                   activeSection === section.id
                                                     ? 'text-white bg-blue-600 border-blue-600 shadow-md'
                                                     : 'text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 hover:shadow-sm'
                                                 }`}
                                               >
-                                                <span className="mr-1">{section.emoji}</span>
-                                                {section.title.replace(/^[^\s]+\s/, '')}
+                                                <span className="text-sm sm:text-base">{section.emoji}</span>
+                                                <span className="ml-1 sm:ml-2 hidden sm:inline">{section.title.replace(/^[^\s]+\s/, '')}</span>
                                               </button>
                                             ))}
                                           </div>
