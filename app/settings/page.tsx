@@ -75,27 +75,6 @@ const PLAN_LIMITS = {
   }
 }
 
-// Helper function to get plan features from database
-const getPlanFeatures = async (planType: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('plan_details')
-      .select('features')
-      .eq('plan_type', planType)
-      .single()
-    
-    if (error || !data) {
-      console.error('Error fetching plan features:', error)
-      return getDefaultPlanFeatures(planType)
-    }
-    
-    return data.features || []
-  } catch (error) {
-    console.error('Error in getPlanFeatures:', error)
-    return getDefaultPlanFeatures(planType)
-  }
-}
-
 // Fallback plan features if database query fails
 const getDefaultPlanFeatures = (planType: string) => {
   const defaultFeatures = {
@@ -164,6 +143,27 @@ export default function SettingsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
+
+  // Helper function to get plan features from database
+  const getPlanFeatures = async (planType: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('plan_details')
+        .select('features')
+        .eq('plan_type', planType)
+        .single()
+      
+      if (error || !data) {
+        console.error('Error fetching plan features:', error)
+        return getDefaultPlanFeatures(planType)
+      }
+      
+      return data.features || []
+    } catch (error) {
+      console.error('Error in getPlanFeatures:', error)
+      return getDefaultPlanFeatures(planType)
+    }
+  }
 
   useEffect(() => {
     console.log('🔍 Settings Debug - useEffect triggered, calling checkUser')
