@@ -57,6 +57,7 @@ export default function Dashboard() {
     clause: null,
     type: 'rationale'
   })
+  const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set())
 
   // Clause Card Component
   const ClauseCard = ({ item, riskLevel, emoji }: { item: any; riskLevel: string; emoji: string }) => (
@@ -292,11 +293,8 @@ export default function Dashboard() {
       const isDropdown = target.closest('[id^="more-dropdown-"]')
       
       if (!isMoreButton && !isDropdown) {
-        // Close all dropdowns
-        const dropdowns = document.querySelectorAll('[id^="more-dropdown-"]')
-        dropdowns.forEach(dropdown => {
-          dropdown.classList.add('hidden')
-        })
+        // Close all dropdowns using React state
+        setOpenDropdowns(new Set())
       }
     }
 
@@ -2848,30 +2846,20 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               <Button 
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  e.preventDefault()
                                   console.log('🔍 More button clicked for document:', currentDoc.id)
                                   
-                                  // Close all other dropdowns first
-                                  const allDropdowns = document.querySelectorAll('[id^="more-dropdown-"]')
-                                  allDropdowns.forEach(dropdown => {
-                                    if (dropdown.id !== `more-dropdown-${currentDoc.id}`) {
-                                      dropdown.classList.add('hidden')
+                                  // Toggle dropdown using React state
+                                  setOpenDropdowns(prev => {
+                                    const newSet = new Set(prev)
+                                    if (newSet.has(currentDoc.id)) {
+                                      newSet.delete(currentDoc.id)
+                                    } else {
+                                      // Close all other dropdowns first
+                                      newSet.clear()
+                                      newSet.add(currentDoc.id)
                                     }
+                                    return newSet
                                   })
-                                  
-                                  // Toggle dropdown
-                                  const dropdown = document.getElementById(`more-dropdown-${currentDoc.id}`)
-                                  console.log('🔍 Dropdown element found:', dropdown)
-                                  if (dropdown) {
-                                    const isHidden = dropdown.classList.contains('hidden')
-                                    console.log('🔍 Dropdown is currently hidden:', isHidden)
-                                    dropdown.classList.toggle('hidden')
-                                    console.log('🔍 Dropdown visibility toggled')
-                                    console.log('🔍 Dropdown classes after toggle:', dropdown.className)
-                                    console.log('🔍 Dropdown computed style display:', window.getComputedStyle(dropdown).display)
-                                  } else {
-                                    console.error('🔍 Dropdown element not found!')
-                                  }
                                 }}
                                 variant="outline"
                                 className="flex-shrink-0 min-w-0 max-w-full"
@@ -2881,7 +2869,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                               </Button>
                               <div 
                                 id={`more-dropdown-${currentDoc.id}`}
-                                className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-[9999]"
+                                className={`absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg z-[9999] ${openDropdowns.has(currentDoc.id) ? 'block' : 'hidden'}`}
                                 onClick={(e) => e.stopPropagation()}
                                 style={{ zIndex: 9999, position: 'absolute', top: '100%', right: '0' }}
                               >
@@ -2897,19 +2885,21 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                       
                                       if (confirmed) {
                                         handleDelete(currentDoc.id)
-                                        // Hide dropdown
-                                        const dropdown = document.getElementById(`more-dropdown-${currentDoc.id}`)
-                                        if (dropdown) {
-                                          dropdown.classList.add('hidden')
-                                          console.log('🔍 Dropdown hidden after delete')
-                                        }
+                                        // Hide dropdown using React state
+                                        setOpenDropdowns(prev => {
+                                          const newSet = new Set(prev)
+                                          newSet.delete(currentDoc.id)
+                                          return newSet
+                                        })
+                                        console.log('🔍 Dropdown hidden after delete')
                                       } else {
                                         console.log('🔍 Delete cancelled by user')
                                         // Hide dropdown even if cancelled
-                                        const dropdown = document.getElementById(`more-dropdown-${currentDoc.id}`)
-                                        if (dropdown) {
-                                          dropdown.classList.add('hidden')
-                                        }
+                                        setOpenDropdowns(prev => {
+                                          const newSet = new Set(prev)
+                                          newSet.delete(currentDoc.id)
+                                          return newSet
+                                        })
                                       }
                                     }}
                                     className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
