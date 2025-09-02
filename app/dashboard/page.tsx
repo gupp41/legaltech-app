@@ -2620,7 +2620,7 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                           </div>
 
                           {/* Action Buttons */}
-                          <div className="flex flex-col sm:flex-row gap-3">
+                          <div className="flex flex-wrap gap-2">
                             <Button 
                               onClick={() => {
                                 // Download PDF functionality
@@ -2630,10 +2630,11 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                 link.click()
                               }}
                               variant="outline"
-                              className="flex-1 sm:flex-none"
+                              className="flex-1 min-w-0"
                             >
                               <Download className="h-4 w-4 mr-2" />
-                              Download PDF
+                              <span className="hidden sm:inline">Download PDF</span>
+                              <span className="sm:hidden">PDF</span>
                             </Button>
                             <Button 
                               onClick={async (event) => {
@@ -2719,10 +2720,11 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                 }
                               }}
                               variant="outline"
-                              className="flex-1 sm:flex-none"
+                              className="flex-1 min-w-0"
                             >
                               <FileText className="h-4 w-4 mr-2" />
-                              Download Analysis Report
+                              <span className="hidden sm:inline">Analysis Report</span>
+                              <span className="sm:hidden">Report</span>
                             </Button>
                             <Button 
                               onClick={async (event) => {
@@ -2810,10 +2812,11 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                 }
                               }}
                               variant="outline"
-                              className="flex-1 sm:flex-none"
+                              className="flex-1 min-w-0"
                             >
                               <FileText className="h-4 w-4 mr-2" />
-                              Download Annotated Document
+                              <span className="hidden sm:inline">Annotated Document</span>
+                              <span className="sm:hidden">Annotated</span>
                             </Button>
                             <Button 
                               onClick={() => {
@@ -2831,10 +2834,11 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                 }
                               }}
                               variant="outline"
-                              className="flex-1 sm:flex-none"
+                              className="flex-1 min-w-0"
                             >
                               <Share className="h-4 w-4 mr-2" />
-                              Share
+                              <span className="hidden sm:inline">Share</span>
+                              <span className="sm:hidden">Share</span>
                             </Button>
                             <div className="relative">
                               <Button 
@@ -2847,10 +2851,10 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
                                   }
                                 }}
                                 variant="outline"
-                                className="flex-1 sm:flex-none"
+                                className="flex-1 min-w-0"
                               >
-                                <MoreHorizontal className="h-4 w-4 mr-2" />
-                                More
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="hidden sm:inline ml-2">More</span>
                               </Button>
                               <div 
                                 id={`more-dropdown-${currentDoc.id}`}
