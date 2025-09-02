@@ -2402,13 +2402,9 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
         </div>
       </div>
 
-      {/* Subscription Status - moved below header */}
+      {/* Usage Warnings - only show when approaching/reaching limits */}
       {user?.id && (
-        <div className="bg-card border-b border-border">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <UsageDisplay userId={user.id} />
-          </div>
-        </div>
+        <UsageDisplay userId={user.id} />
       )}
 
       {/* Breadcrumb Navigation */}

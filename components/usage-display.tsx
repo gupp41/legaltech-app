@@ -248,132 +248,68 @@ export function UsageDisplay({ userId }: { userId: string }) {
   const limits = getPlanLimits(usageData.current_plan)
   const planName = usageData.current_plan.charAt(0).toUpperCase() + usageData.current_plan.slice(1)
 
+  // Check if there are any warnings to show
+  const warnings = Object.entries({
+    documents: { current: usageData.documents_uploaded, max: limits.maxDocuments, name: 'Documents' },
+    analyses: { current: usageData.analyses_performed, max: limits.maxAnalyses, name: 'AI Analyses' },
+    storage: { current: usageData.storage_used_bytes, max: limits.maxStorageBytes, name: 'Storage' },
+    extractions: { current: usageData.text_extractions, max: limits.maxExtractions, name: 'Text Extractions' }
+  }).filter(([key, { current, max }]) => {
+    if (max === 2147483647) return false // Skip unlimited items
+    const percentage = (current / max) * 100
+    return percentage >= 80 // Only show warnings for 80%+ usage
+  })
+
+  // Don't render anything if there are no warnings
+  if (warnings.length === 0) {
+    return null
+  }
+
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {getPlanIcon(usageData.current_plan)}
-            <span>Subscription Status</span>
-          </div>
-          <Badge className={`${getPlanColor(usageData.current_plan)} text-white`}>
-            {planName} Plan
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Documents Usage */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Documents Uploaded</span>
-            <span className={getUsageColor(getUsageStatus(getUsagePercentage(usageData.documents_uploaded, limits.maxDocuments)))}>
-              {usageData.documents_uploaded} / {limits.maxDocuments === 2147483647 ? '∞' : limits.maxDocuments}
-            </span>
-          </div>
-          {limits.maxDocuments !== 2147483647 && (
-            <Progress 
-              value={getUsagePercentage(usageData.documents_uploaded, limits.maxDocuments)} 
-              className="h-2"
-            />
-          )}
-        </div>
+    <div className="bg-card border-b border-border">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="space-y-3">
+          {/* Usage Warnings */}
+          {warnings.map(([key, { current, max, name }]) => {
+            const percentage = (current / max) * 100
+            if (percentage >= 100) {
+              return (
+                <div key={key} className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
+                  <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                  <div>
+                    <div className="font-medium">{name} limit reached!</div>
+                    <div className="text-sm">You've used {current} of {max} {name.toLowerCase()}. Upgrade your plan to continue.</div>
+                  </div>
+                </div>
+              )
+            } else if (percentage >= 80) {
+              return (
+                <div key={key} className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-yellow-700 dark:text-yellow-300">
+                  <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                  <div>
+                    <div className="font-medium">{name} usage is at {Math.round(percentage)}%</div>
+                    <div className="text-sm">You've used {current} of {max} {name.toLowerCase()}. Consider upgrading soon.</div>
+                  </div>
+                </div>
+              )
+            }
+            return null
+          })}
 
-        {/* Analyses Usage */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>AI Analyses</span>
-            <span className={getUsageColor(getUsageStatus(getUsagePercentage(usageData.analyses_performed, limits.maxAnalyses)))}>
-              {usageData.analyses_performed} / {limits.maxAnalyses === 2147483647 ? '∞' : limits.maxAnalyses}
-            </span>
-          </div>
-          {limits.maxAnalyses !== 2147483647 && (
-            <Progress 
-              value={getUsagePercentage(usageData.analyses_performed, limits.maxAnalyses)} 
-              className="h-2"
-            />
-          )}
-        </div>
-
-        {/* Storage Usage */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Storage Used</span>
-            <span className={getUsageColor(getUsageStatus(getUsagePercentage(usageData.storage_used_bytes, limits.maxStorageBytes)))}>
-              {formatBytes(usageData.storage_used_bytes)} / {formatBytes(limits.maxStorageBytes)}
-            </span>
-          </div>
-          <Progress 
-            value={getUsagePercentage(usageData.storage_used_bytes, limits.maxStorageBytes)} 
-            className="h-2"
-          />
-        </div>
-
-        {/* Text Extractions Usage */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Text Extractions</span>
-            <span className={getUsageColor(getUsageStatus(getUsagePercentage(usageData.text_extractions, limits.maxExtractions)))}>
-              {usageData.text_extractions} / {limits.maxExtractions === 2147483647 ? '∞' : limits.maxExtractions}
-            </span>
-          </div>
-          {limits.maxExtractions !== 2147483647 && (
-            <Progress 
-              value={getUsagePercentage(usageData.text_extractions, limits.maxExtractions)} 
-              className="h-2"
-            />
-          )}
-        </div>
-
-        {/* Usage Warnings */}
-        {Object.entries({
-          documents: { current: usageData.documents_uploaded, max: limits.maxDocuments, name: 'Documents' },
-          analyses: { current: usageData.analyses_performed, max: limits.maxAnalyses, name: 'AI Analyses' },
-          storage: { current: usageData.storage_used_bytes, max: limits.maxStorageBytes, name: 'Storage' },
-          extractions: { current: usageData.text_extractions, max: limits.maxExtractions, name: 'Text Extractions' }
-        }).map(([key, { current, max, name }]) => {
-          if (max === 2147483647) return null // Skip unlimited items
-          
-          const percentage = (current / max) * 100
-          if (percentage >= 100) {
-            return (
-              <div key={key} className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-red-700 dark:text-red-300 text-sm">
-                <AlertCircle className="h-4 w-4" />
-                <span>{name} limit reached! Upgrade your plan to continue.</span>
+          {/* Upgrade CTA for Free Users approaching limits */}
+          {usageData.current_plan === 'free' && warnings.length > 0 && (
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                <Star className="h-5 w-5 flex-shrink-0" />
+                <div>
+                  <div className="font-medium">Upgrade to Plus</div>
+                  <div className="text-sm">Get 10x more capacity and advanced features!</div>
+                </div>
               </div>
-            )
-          } else if (percentage >= 80) {
-            return (
-              <div key={key} className="flex items-center gap-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-yellow-700 dark:text-yellow-300 text-sm">
-                <AlertCircle className="h-4 w-4" />
-                <span>{name} usage is at {Math.round(percentage)}%. Consider upgrading soon.</span>
-              </div>
-            )
-          }
-          return null
-        })}
-
-        {/* Upgrade CTA for Free Users */}
-        {usageData.current_plan === 'free' && (
-          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded">
-            <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm">
-              <Star className="h-4 w-4" />
-              <span>
-                <strong>Upgrade to Plus</strong> for 10x more capacity and advanced features!
-              </span>
             </div>
-          </div>
-        )}
-
-
-
-        {/* Refresh Button */}
-        <button 
-          onClick={fetchUsageData}
-          className="w-full mt-2 text-sm text-muted-foreground hover:text-foreground hover:underline"
-        >
-          Refresh usage data
-        </button>
-      </CardContent>
-    </Card>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
