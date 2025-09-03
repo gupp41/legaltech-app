@@ -59,7 +59,7 @@ export async function GET(
       // Get documents
       const { data: documents, error: docsError } = await supabase
         .from('documents')
-        .select('id, filename, file_type, file_size, created_at, updated_at, user_id')
+        .select('id, filename, file_type, file_size, created_at, user_id')
         .in('id', documentIds)
 
       if (docsError) {
@@ -104,7 +104,7 @@ export async function GET(
             fileType: document.file_type,
             fileSize: document.file_size,
             createdAt: document.created_at,
-            updatedAt: document.updated_at,
+            updatedAt: document.created_at, // Use created_at as fallback since updated_at doesn't exist
             owner: documentOwner ? {
               fullName: documentOwner.full_name,
               email: documentOwner.email
