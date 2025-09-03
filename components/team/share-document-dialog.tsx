@@ -25,10 +25,14 @@ import { Loader2, Share2, Eye, MessageSquare, Edit, FileText } from 'lucide-reac
 interface Document {
   id: string
   filename: string
-  fileType: string
-  fileSize: number
-  createdAt: string
-  updatedAt: string
+  fileType?: string
+  file_type?: string
+  fileSize?: number
+  file_size?: number
+  createdAt?: string
+  created_at?: string
+  updatedAt?: string
+  updated_at?: string
 }
 
 interface ShareDocumentDialogProps {
@@ -141,10 +145,15 @@ export function ShareDocumentDialog({ open, onOpenChange }: ShareDocumentDialogP
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
-  const getFileTypeIcon = (fileType: string) => {
-    if (fileType.includes('pdf')) {
+  const getFileTypeIcon = (fileType: string | undefined | null) => {
+    if (!fileType) {
+      return <FileText className="h-4 w-4 text-gray-500" />
+    }
+    
+    const lowerFileType = fileType.toLowerCase()
+    if (lowerFileType.includes('pdf')) {
       return <FileText className="h-4 w-4 text-red-500" />
-    } else if (fileType.includes('word') || fileType.includes('document')) {
+    } else if (lowerFileType.includes('word') || lowerFileType.includes('document')) {
       return <FileText className="h-4 w-4 text-blue-500" />
     } else {
       return <FileText className="h-4 w-4 text-gray-500" />
@@ -193,11 +202,11 @@ export function ShareDocumentDialog({ open, onOpenChange }: ShareDocumentDialogP
                       documents.map((doc) => (
                         <SelectItem key={doc.id} value={doc.id}>
                           <div className="flex items-center space-x-2">
-                            {getFileTypeIcon(doc.fileType)}
+                            {getFileTypeIcon(doc.fileType || doc.file_type)}
                             <div>
                               <div className="font-medium">{doc.filename}</div>
                               <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {formatFileSize(doc.fileSize)} • {new Date(doc.createdAt).toLocaleDateString()}
+                                {formatFileSize(doc.fileSize || doc.file_size)} • {new Date(doc.createdAt || doc.created_at).toLocaleDateString()}
                               </div>
                             </div>
                           </div>
