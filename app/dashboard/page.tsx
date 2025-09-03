@@ -10,7 +10,7 @@ import { FileUpload } from "@/components/file-upload"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Download, Trash2, BarChart3, Brain, ChevronLeft, ChevronRight, RefreshCw, Settings, Menu, X, LogOut, Share, MoreHorizontal } from "lucide-react"
+import { FileText, Download, Trash2, BarChart3, Brain, ChevronLeft, ChevronRight, RefreshCw, Settings, Menu, X, LogOut, Share, MoreHorizontal, Users } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { extractTextFromDocument, truncateText } from "@/lib/document-extractor"
 // Usage tracking is handled server-side in API routes
@@ -2410,6 +2410,16 @@ The document could not be processed. This could be due to:
               {hamburgerMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-popover rounded-md shadow-lg border border-border z-50">
                   <div className="py-1">
+                    <button
+                      onClick={() => {
+                        window.location.href = '/teams'
+                        setHamburgerMenuOpen(false)
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
+                    >
+                      <Users className="h-4 w-4 mr-3" />
+                      Team Collaboration
+                    </button>
                     <button
                       onClick={() => {
                         window.location.href = '/settings'
