@@ -2240,6 +2240,12 @@ Note: Full text extraction was not possible. For comprehensive AI analysis, plea
       console.log('Starting text extraction...')
       const extractionResult = await extractTextFromDocument(file)
       console.log('Text extraction completed:', extractionResult)
+      
+      // Debug: Check if extraction failed
+      if (!extractionResult.success) {
+        console.log('🔍 Extraction failed, error:', extractionResult.error)
+        console.log('🔍 Extraction result text:', extractionResult.text)
+      }
 
       // Call the text extraction API to track usage (only if extraction was successful)
       let apiResponse = null
@@ -2315,8 +2321,8 @@ File Size: ${document.file_size} bytes
 File Type: ${document.file_type}
 Storage Path: ${document.storage_path || 'N/A'}
 
-Extraction Status: ${extractionResult.success ? 'SUCCESS' : 'FAILED'}
-${extractionResult.error ? `Error: ${extractionResult.error}` : ''}
+Extraction Status: ${extractionResult.success ? '✅ SUCCESS' : '❌ FAILED'}
+${extractionResult.error ? `\n🚨 ERROR: ${extractionResult.error}` : ''}
       `.trim()
 
       if (extractionResult.success) {
@@ -2332,18 +2338,22 @@ ${apiResponse?.ok ? 'Text extraction saved to database!' : 'Failed to save to da
       } else {
         message += `
 
+🚨 DOCUMENT PROCESSING FAILED 🚨
+
 The document could not be processed. This could be due to:
 - File corruption or invalid structure
 - Unsupported PDF format or version
 - Browser compatibility issues
 - Network connectivity problems
 
-Please try:
+📋 WHAT TO TRY NEXT:
 1. Converting to text format (.txt) from the original source
 2. Using a different browser or device
 3. Checking if the PDF file opens correctly in other applications
 4. Re-downloading the file if it was transferred over the internet
-5. Using OCR software if the PDF contains scanned images`
+5. Using OCR software if the PDF contains scanned images
+
+💡 TIP: If this is a scanned document, try using OCR software to convert it to text first.`
       }
 
       alert(message)
