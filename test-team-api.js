@@ -49,6 +49,7 @@ async function testTeamAPI() {
       })
     });
     console.log(`   Status: ${updateTeamResponse.status}`);
+    console.log(`   Expected: 401 (Unauthorized)`);
     console.log(`   Actual: ${updateTeamResponse.status === 401 ? '✅ PASS' : '❌ FAIL'}\n`);
 
     // Test 5: Delete team (should return 401 if not authenticated)

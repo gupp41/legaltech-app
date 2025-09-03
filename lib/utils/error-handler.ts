@@ -101,6 +101,23 @@ export function createApiErrorResponse(
 }
 
 /**
+ * Create a NextResponse for API errors
+ */
+export function createApiErrorNextResponse(
+  error: unknown,
+  statusCode: number = 500,
+  context: string = 'API'
+) {
+  const { response, statusCode: code } = createApiErrorResponse(error, statusCode, context)
+  return new Response(JSON.stringify(response), {
+    status: code,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+}
+
+/**
  * Handle authentication errors
  */
 export function handleAuthError(error: unknown): { response: ApiErrorResponse; statusCode: number } {

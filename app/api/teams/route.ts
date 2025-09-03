@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { handleError, createApiErrorResponse } from '@/lib/utils/error-handler'
+import { handleError, createApiErrorNextResponse } from '@/lib/utils/error-handler'
 
 /**
  * GET /api/teams - List user's teams
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return createApiErrorResponse('Unauthorized', 401)
+      return createApiErrorNextResponse('Unauthorized', 401)
     }
 
     // Get teams where user is a member
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     if (teamsError) {
       console.error('Error fetching teams:', teamsError)
-      return createApiErrorResponse('Failed to fetch teams', 500)
+      return createApiErrorNextResponse('Failed to fetch teams', 500)
     }
 
     // Get member count for each team
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     if (memberCountError) {
       console.error('Error fetching member counts:', memberCountError)
-      return createApiErrorResponse('Failed to fetch member counts', 500)
+      return createApiErrorNextResponse('Failed to fetch member counts', 500)
     }
 
     // Group member counts by team
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return createApiErrorResponse('Unauthorized', 401)
+      return createApiErrorNextResponse('Unauthorized', 401)
     }
 
     // Parse request body
@@ -108,11 +108,11 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      return createApiErrorResponse('Team name is required', 400)
+      return createApiErrorNextResponse('Team name is required', 400)
     }
 
     if (name.length > 100) {
-      return createApiErrorResponse('Team name must be 100 characters or less', 400)
+      return createApiErrorNextResponse('Team name must be 100 characters or less', 400)
     }
 
     // Create team
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
 
     if (teamError) {
       console.error('Error creating team:', teamError)
-      return createApiErrorResponse('Failed to create team', 500)
+      return createApiErrorNextResponse('Failed to create team', 500)
     }
 
     // Add creator as admin member
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
       console.error('Error adding creator as team member:', memberError)
       // Clean up team if member creation fails
       await supabase.from('teams').delete().eq('id', team.id)
-      return createApiErrorResponse('Failed to add creator to team', 500)
+      return createApiErrorNextResponse('Failed to add creator to team', 500)
     }
 
     // Update user's current team if they don't have one

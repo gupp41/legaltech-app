@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { handleError, createApiErrorResponse } from '@/lib/utils/error-handler'
+import { handleError, createApiErrorNextResponse } from '@/lib/utils/error-handler'
 
 /**
  * GET /api/teams/[id] - Get team details
@@ -8,16 +8,16 @@ import { handleError, createApiErrorResponse } from '@/lib/utils/error-handler'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
-    const teamId = params.id
+    const { id: teamId } = await params
 
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return createApiErrorResponse('Unauthorized', 401)
+      return createApiErrorNextResponse('Unauthorized', 401)
     }
 
     // Check if user is a member of the team
@@ -30,7 +30,7 @@ export async function GET(
       .single()
 
     if (membershipError || !membership) {
-      return createApiErrorResponse('Team not found or access denied', 404)
+      return createApiErrorNextResponse('Team not found or access denied', 404)
     }
 
     // Get team details
@@ -42,7 +42,7 @@ export async function GET(
 
     if (teamError) {
       console.error('Error fetching team:', teamError)
-      return createApiErrorResponse('Failed to fetch team', 500)
+      return createApiErrorNextResponse('Failed to fetch team', 500)
     }
 
     // Get team members
@@ -55,7 +55,7 @@ export async function GET(
 
     if (membersError) {
       console.error('Error fetching team members:', membersError)
-      return createApiErrorResponse('Failed to fetch team members', 500)
+      return createApiErrorNextResponse('Failed to fetch team members', 500)
     }
 
     // Get team usage statistics (current month)
@@ -69,7 +69,7 @@ export async function GET(
 
     if (usageError && usageError.code !== 'PGRST116') { // PGRST116 = no rows returned
       console.error('Error fetching team usage:', usageError)
-      return createApiErrorResponse('Failed to fetch team usage', 500)
+      return createApiErrorNextResponse('Failed to fetch team usage', 500)
     }
 
     // Get shared documents count
@@ -80,7 +80,7 @@ export async function GET(
 
     if (sharedDocsError) {
       console.error('Error fetching shared documents count:', sharedDocsError)
-      return createApiErrorResponse('Failed to fetch shared documents count', 500)
+      return createApiErrorNextResponse('Failed to fetch shared documents count', 500)
     }
 
     return NextResponse.json({
@@ -130,16 +130,16 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
-    const teamId = params.id
+    const { id: teamId } = await params
 
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return createApiErrorResponse('Unauthorized', 401)
+      return createApiErrorNextResponse('Unauthorized', 401)
     }
 
     // Check if user is admin of the team
@@ -152,7 +152,7 @@ export async function PUT(
       .single()
 
     if (membershipError || !membership || membership.role !== 'admin') {
-      return createApiErrorResponse('Admin access required', 403)
+      return createApiErrorNextResponse('Admin access required', 403)
     }
 
     // Parse request body
@@ -162,10 +162,10 @@ export async function PUT(
     // Validate fields
     if (name !== undefined) {
       if (typeof name !== 'string' || name.trim().length === 0) {
-        return createApiErrorResponse('Team name cannot be empty', 400)
+        return createApiErrorNextResponse('Team name cannot be empty', 400)
       }
       if (name.length > 100) {
-        return createApiErrorResponse('Team name must be 100 characters or less', 400)
+        return createApiErrorNextResponse('Team name must be 100 characters or less', 400)
       }
     }
 
@@ -189,7 +189,7 @@ export async function PUT(
 
     if (teamError) {
       console.error('Error updating team:', teamError)
-      return createApiErrorResponse('Failed to update team', 500)
+      return createApiErrorNextResponse('Failed to update team', 500)
     }
 
     return NextResponse.json({
@@ -218,16 +218,16 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
-    const teamId = params.id
+    const { id: teamId } = await params
 
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return createApiErrorResponse('Unauthorized', 401)
+      return createApiErrorNextResponse('Unauthorized', 401)
     }
 
     // Check if user is the team creator
@@ -239,11 +239,11 @@ export async function DELETE(
 
     if (teamError) {
       console.error('Error fetching team:', teamError)
-      return createApiErrorResponse('Team not found', 404)
+      return createApiErrorNextResponse('Team not found', 404)
     }
 
     if (team.created_by !== user.id) {
-      return createApiErrorResponse('Only team creator can delete team', 403)
+      return createApiErrorNextResponse('Only team creator can delete team', 403)
     }
 
     // Check if team has other members
@@ -256,11 +256,11 @@ export async function DELETE(
 
     if (membersError) {
       console.error('Error checking team members:', membersError)
-      return createApiErrorResponse('Failed to check team members', 500)
+      return createApiErrorNextResponse('Failed to check team members', 500)
     }
 
     if (members && members.length > 0) {
-      return createApiErrorResponse('Cannot delete team with active members. Please remove all members first.', 400)
+      return createApiErrorNextResponse('Cannot delete team with active members. Please remove all members first.', 400)
     }
 
     // Delete team (cascade will handle related records)
@@ -271,7 +271,7 @@ export async function DELETE(
 
     if (deleteError) {
       console.error('Error deleting team:', deleteError)
-      return createApiErrorResponse('Failed to delete team', 500)
+      return createApiErrorNextResponse('Failed to delete team', 500)
     }
 
     // Update user's current team if it was the deleted team

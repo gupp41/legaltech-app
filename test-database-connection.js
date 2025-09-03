@@ -49,9 +49,9 @@ async function testDatabaseConnection() {
     }
 
     console.log('\n📝 Next Steps:');
-    console.log('1. If any tables are missing, run the database schema script');
-    console.log('2. Apply the schema: psql -h your-host -U your-user -d your-db -f scripts/006_create_team_collaboration_schema.sql');
-    console.log('3. Or use Supabase dashboard to run the SQL script');
+    console.log('1. If all tables exist, test the API endpoints');
+    console.log('2. Run: node test-team-api.js');
+    console.log('3. Check if API returns proper responses');
 
   } catch (error) {
     console.error('❌ Test failed:', error);

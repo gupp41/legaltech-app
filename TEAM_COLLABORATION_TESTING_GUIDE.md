@@ -10,7 +10,9 @@
 
 The API endpoints are returning **500 Internal Server Error** instead of **401 Unauthorized**. This indicates that the database schema hasn't been applied yet.
 
-## 🔧 Solution: Apply Database Schema
+**UPDATE**: The tables exist but there are RLS (Row Level Security) policy issues causing recursion problems.
+
+## 🔧 Solution: Apply Database Schema and Fix RLS Issues
 
 ### Option 1: Supabase Dashboard (Recommended)
 
@@ -23,7 +25,12 @@ The API endpoints are returning **500 Internal Server Error** instead of **401 U
    - Paste it into the SQL Editor
    - Click **Run** to execute
 
-3. **Verify Tables Created**
+3. **Fix RLS Issues (if tables exist but have recursion problems)**
+   - Copy the contents of `scripts/008_disable_rls_temporarily.sql`
+   - Paste it into the SQL Editor
+   - Click **Run** to execute
+
+4. **Verify Tables Created**
    - Go to **Table Editor**
    - Check that these tables exist:
      - `teams`
