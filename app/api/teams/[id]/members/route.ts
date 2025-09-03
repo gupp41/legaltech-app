@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { handleError, createApiErrorNextResponse } from '@/lib/utils/error-handler'
+import { createApiErrorNextResponse } from '@/lib/utils/error-handler'
 
 /**
  * GET /api/teams/[id]/members - Get team members
@@ -80,7 +80,7 @@ export async function GET(
 
   } catch (error) {
     console.error('Error in GET /api/teams/[id]/members:', error)
-    return handleError(error, 'Failed to fetch team members')
+    return createApiErrorNextResponse(error, 500, 'Failed to fetch team members')
   }
 }
 
@@ -208,6 +208,6 @@ export async function POST(
 
   } catch (error) {
     console.error('Error in POST /api/teams/[id]/members:', error)
-    return handleError(error, 'Failed to add team member')
+    return createApiErrorNextResponse(error, 500, 'Failed to add team member')
   }
 }

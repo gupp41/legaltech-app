@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { handleError, createApiErrorNextResponse } from '@/lib/utils/error-handler'
+import { createApiErrorNextResponse } from '@/lib/utils/error-handler'
 
 /**
  * GET /api/teams/[id]/documents - Get team documents
@@ -106,7 +106,7 @@ export async function GET(
 
   } catch (error) {
     console.error('Error in GET /api/teams/[id]/documents:', error)
-    return handleError(error, 'Failed to fetch team documents')
+    return createApiErrorNextResponse(error, 500, 'Failed to fetch team documents')
   }
 }
 
@@ -245,6 +245,6 @@ export async function POST(
 
   } catch (error) {
     console.error('Error in POST /api/teams/[id]/documents:', error)
-    return handleError(error, 'Failed to share document with team')
+    return createApiErrorNextResponse(error, 500, 'Failed to share document with team')
   }
 }
