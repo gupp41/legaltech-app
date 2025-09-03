@@ -104,12 +104,16 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log('=== TEAM INVITATION API CALLED ===')
     const supabase = await createClient()
     const { id: teamId } = await params
+    console.log('Team ID:', teamId)
 
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
+    console.log('Auth check:', { user: user?.email, error: authError })
     if (authError || !user) {
+      console.log('Authentication failed')
       return createApiErrorNextResponse('Unauthorized', 401)
     }
 
@@ -138,16 +142,26 @@ export async function POST(
       return createApiErrorNextResponse('Invalid role. Must be admin, member, or viewer.', 400)
     }
 
-    // Check if user is already a member
-    const { data: existingMember, error: memberError } = await supabase
-      .from('team_members')
-      .select('id, status')
-      .eq('team_id', teamId)
-      .eq('user_id', user.id)
+    // Check if the email being invited is already a member
+    // First, try to find a user with this email
+    const { data: targetUser, error: userError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email.toLowerCase())
       .single()
 
-    if (existingMember && existingMember.status === 'active') {
-      return createApiErrorNextResponse('User is already a member of this team', 409)
+    if (targetUser) {
+      // Check if this user is already a member of the team
+      const { data: existingMember, error: memberError } = await supabase
+        .from('team_members')
+        .select('id, status')
+        .eq('team_id', teamId)
+        .eq('user_id', targetUser.id)
+        .single()
+
+      if (existingMember && existingMember.status === 'active') {
+        return createApiErrorNextResponse('User is already a member of this team', 409)
+      }
     }
 
     // Check if there's already a pending invitation

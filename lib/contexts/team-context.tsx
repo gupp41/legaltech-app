@@ -442,7 +442,13 @@ export function TeamProvider({ children }: TeamProviderProps) {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to send invitation')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Invitation API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        })
+        throw new Error(`Failed to send invitation: ${response.status} ${response.statusText}`)
       }
 
       // Refresh team invitations
