@@ -120,20 +120,25 @@ export function TeamProvider({ children }: TeamProviderProps) {
     try {
       setLoading(true)
       setError(null)
+      console.log('Fetching teams...')
 
       const response = await fetch('/api/teams', {
         credentials: 'include'
       })
+
+      console.log('Teams API response status:', response.status)
 
       if (!response.ok) {
         throw new Error('Failed to fetch teams')
       }
 
       const data = await response.json()
+      console.log('Teams data received:', data)
       setTeams(data.teams || [])
 
       // Set current team if not already set and teams exist
       if (!currentTeam && data.teams && data.teams.length > 0) {
+        console.log('Setting current team to:', data.teams[0])
         setCurrentTeam(data.teams[0])
       }
     } catch (err) {

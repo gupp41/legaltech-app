@@ -29,6 +29,9 @@ export function TeamSelector({ className }: TeamSelectorProps) {
   const { teams, currentTeam, setCurrentTeam, loading } = useTeam()
   const [showCreateDialog, setShowCreateDialog] = useState(false)
 
+  // Debug logging
+  console.log('TeamSelector render - teams:', teams.length, 'currentTeam:', currentTeam, 'loading:', loading)
+
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'admin':
@@ -71,7 +74,10 @@ export function TeamSelector({ className }: TeamSelectorProps) {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setShowCreateDialog(true)}
+          onClick={() => {
+            console.log('Create Team button clicked')
+            setShowCreateDialog(true)
+          }}
           className="flex items-center space-x-2"
         >
           <Plus className="h-4 w-4" />
@@ -138,7 +144,10 @@ export function TeamSelector({ className }: TeamSelectorProps) {
           <DropdownMenuSeparator />
           
           <DropdownMenuItem
-            onClick={() => setShowCreateDialog(true)}
+            onClick={() => {
+              console.log('Create New Team from dropdown clicked')
+              setShowCreateDialog(true)
+            }}
             className="flex items-center space-x-2 p-2"
           >
             <Plus className="h-4 w-4" />

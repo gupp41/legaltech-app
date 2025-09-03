@@ -29,6 +29,9 @@ export function CreateTeamDialog({ open, onOpenChange }: CreateTeamDialogProps) 
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Debug logging
+  console.log('CreateTeamDialog render - open:', open)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
