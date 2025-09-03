@@ -18,25 +18,53 @@ const envSchema = z.object({
 
 // Parse environment variables with better error handling
 let env: z.infer<typeof envSchema>
-try {
-  env = envSchema.parse(process.env)
-} catch (error) {
-  console.error('Environment validation failed:', error)
-  // Fallback to process.env with defaults
+
+// Check if we're on the client side
+const isClient = typeof window !== 'undefined'
+
+if (isClient) {
+  // On client side, only use NEXT_PUBLIC_ variables
+  console.log('🔍 Client-side environment variables:')
+  console.log('🔍 NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Present' : 'Missing')
+  console.log('🔍 NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Present' : 'Missing')
+  
   env = {
-    NODE_ENV: process.env.NODE_ENV as 'development' | 'test' | 'production' || 'development',
+    NODE_ENV: (process.env.NODE_ENV as 'development' | 'test' | 'production') || 'development',
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+    SUPABASE_SERVICE_ROLE_KEY: '', // Not available on client
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-    BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN || '',
-    GROK_API_KEY: process.env.GROK_API_KEY || '',
-    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
-    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',
+    BLOB_READ_WRITE_TOKEN: '', // Not available on client
+    GROK_API_KEY: '', // Not available on client
+    STRIPE_SECRET_KEY: '', // Not available on client
+    STRIPE_WEBHOOK_SECRET: '', // Not available on client
     STRIPE_PRICE_ID_PLUS_MONTHLY: process.env.STRIPE_PRICE_ID_PLUS_MONTHLY,
     STRIPE_PRICE_ID_PLUS_YEARLY: process.env.STRIPE_PRICE_ID_PLUS_YEARLY,
     STRIPE_PRICE_ID_MAX_MONTHLY: process.env.STRIPE_PRICE_ID_MAX_MONTHLY,
     STRIPE_PRICE_ID_MAX_YEARLY: process.env.STRIPE_PRICE_ID_MAX_YEARLY,
+  }
+} else {
+  // On server side, try to parse all environment variables
+  try {
+    env = envSchema.parse(process.env)
+  } catch (error) {
+    console.error('Environment validation failed:', error)
+    // Fallback to process.env with defaults
+    env = {
+      NODE_ENV: process.env.NODE_ENV as 'development' | 'test' | 'production' || 'development',
+      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+      BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN || '',
+      GROK_API_KEY: process.env.GROK_API_KEY || '',
+      STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
+      STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',
+      STRIPE_PRICE_ID_PLUS_MONTHLY: process.env.STRIPE_PRICE_ID_PLUS_MONTHLY,
+      STRIPE_PRICE_ID_PLUS_YEARLY: process.env.STRIPE_PRICE_ID_PLUS_YEARLY,
+      STRIPE_PRICE_ID_MAX_MONTHLY: process.env.STRIPE_PRICE_ID_MAX_MONTHLY,
+      STRIPE_PRICE_ID_MAX_YEARLY: process.env.STRIPE_PRICE_ID_MAX_YEARLY,
+    }
   }
 }
 
