@@ -135,12 +135,12 @@ export function TeamDocumentsList() {
           <div className="space-y-3">
             {[...Array(2)].map((_, i) => (
               <div key={i} className="flex items-center space-x-3 p-3 border rounded-lg">
-                <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse" />
+                <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
-                  <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                  <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                 </div>
-                <div className="h-6 w-16 bg-gray-200 rounded animate-pulse" />
+                <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
               </div>
             ))}
           </div>
@@ -178,9 +178,9 @@ export function TeamDocumentsList() {
         <CardContent>
           {activeDocuments.length === 0 ? (
             <div className="text-center py-8">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Shared Documents</h3>
-              <p className="text-gray-500 mb-4">
+              <FileText className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Shared Documents</h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
                 Share documents with your team to start collaborating.
               </p>
               {canManageDocuments && (
@@ -203,7 +203,7 @@ export function TeamDocumentsList() {
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2">
-                      <h4 className="text-sm font-medium text-gray-900 truncate">
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                         {doc.document.filename}
                       </h4>
                       <Badge variant={getAccessBadgeVariant(doc.accessLevel)} className="flex items-center space-x-1">
@@ -211,7 +211,7 @@ export function TeamDocumentsList() {
                         <span>{getAccessLabel(doc.accessLevel)}</span>
                       </Badge>
                     </div>
-                    <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
+                    <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400 mt-1">
                       <div className="flex items-center space-x-1">
                         <span>{formatFileSize(doc.document.fileSize)}</span>
                       </div>
@@ -283,38 +283,38 @@ export function TeamDocumentsList() {
 
           {expiredDocuments.length > 0 && (
             <div className="mt-4 pt-4 border-t">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-medium text-gray-700">Expired Shares</h4>
-                <Badge variant="outline" className="text-xs">
-                  {expiredDocuments.length} expired
-                </Badge>
-              </div>
+                          <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Expired Shares</h4>
+              <Badge variant="outline" className="text-xs">
+                {expiredDocuments.length} expired
+              </Badge>
+            </div>
               <div className="space-y-2">
                 {expiredDocuments.slice(0, 3).map((doc) => (
                   <div
                     key={doc.shareId}
-                    className="flex items-center space-x-3 p-2 border rounded-lg bg-gray-50"
+                    className="flex items-center space-x-3 p-2 border rounded-lg bg-gray-50 dark:bg-gray-800"
                   >
-                    <div className="h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-gray-400 dark:bg-gray-600 flex items-center justify-center">
                       {getFileTypeIcon(doc.document.fileType)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-600 truncate">
+                        <span className="text-sm text-gray-600 dark:text-gray-300 truncate">
                           {doc.document.filename}
                         </span>
                         <Badge variant="outline" className="text-xs">
                           {getAccessLabel(doc.accessLevel)}
                         </Badge>
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         Expired {doc.expiresAt ? new Date(doc.expiresAt).toLocaleDateString() : 'Unknown'}
                       </div>
                     </div>
                   </div>
                 ))}
                 {expiredDocuments.length > 3 && (
-                  <div className="text-xs text-gray-500 text-center py-2">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-2">
                     +{expiredDocuments.length - 3} more expired shares
                   </div>
                 )}

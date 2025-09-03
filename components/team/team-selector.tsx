@@ -58,9 +58,9 @@ export function TeamSelector({ className }: TeamSelectorProps) {
   if (loading) {
     return (
       <div className={`flex items-center space-x-2 ${className}`}>
-        <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse" />
-        <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
-        <ChevronDown className="h-4 w-4 text-gray-400" />
+        <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+        <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+        <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
       </div>
     )
   }
@@ -106,7 +106,7 @@ export function TeamSelector({ className }: TeamSelectorProps) {
         </DropdownMenuTrigger>
         
         <DropdownMenuContent align="start" className="w-64">
-          <div className="px-2 py-1.5 text-sm font-medium text-gray-900">
+          <div className="px-2 py-1.5 text-sm font-medium text-gray-900 dark:text-gray-100">
             Switch Team
           </div>
           <DropdownMenuSeparator />
@@ -121,8 +121,8 @@ export function TeamSelector({ className }: TeamSelectorProps) {
                 <Users className="h-3 w-3 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate">{team.name}</div>
-                <div className="text-xs text-gray-500 flex items-center space-x-1">
+                <div className="text-sm font-medium truncate text-gray-900 dark:text-gray-100">{team.name}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center space-x-1">
                   {getRoleIcon(team.role)}
                   <span>{getRoleLabel(team.role)}</span>
                   <span>•</span>

@@ -12,9 +12,9 @@ import { Button } from '@/components/ui/button'
 export default function TeamsPage() {
   return (
     <TeamProvider>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Header */}
-        <div className="bg-white border-b">
+        <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center space-x-4">
@@ -24,10 +24,10 @@ export default function TeamsPage() {
                     Back to Dashboard
                   </Button>
                 </Link>
-                <div className="h-6 w-px bg-gray-300" />
+                <div className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
                 <div className="flex items-center space-x-2">
-                  <Users className="h-5 w-5 text-blue-600" />
-                  <h1 className="text-xl font-semibold text-gray-900">Team Collaboration</h1>
+                  <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Team Collaboration</h1>
                 </div>
               </div>
               

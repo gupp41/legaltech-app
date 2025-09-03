@@ -91,7 +91,7 @@ export function CreateTeamDialog({ open, onOpenChange }: CreateTeamDialogProps) 
                 disabled={isSubmitting}
                 maxLength={100}
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 {formData.name.length}/100 characters
               </p>
             </div>
@@ -107,7 +107,7 @@ export function CreateTeamDialog({ open, onOpenChange }: CreateTeamDialogProps) 
                 rows={3}
                 maxLength={500}
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 {formData.description.length}/500 characters
               </p>
             </div>

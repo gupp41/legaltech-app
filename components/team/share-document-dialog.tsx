@@ -173,7 +173,7 @@ export function ShareDocumentDialog({ open, onOpenChange }: ShareDocumentDialogP
               {loadingDocuments ? (
                 <div className="flex items-center space-x-2 p-3 border rounded-lg">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm text-gray-500">Loading documents...</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Loading documents...</span>
                 </div>
               ) : (
                 <Select
@@ -196,7 +196,7 @@ export function ShareDocumentDialog({ open, onOpenChange }: ShareDocumentDialogP
                             {getFileTypeIcon(doc.fileType)}
                             <div>
                               <div className="font-medium">{doc.filename}</div>
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
                                 {formatFileSize(doc.fileSize)} • {new Date(doc.createdAt).toLocaleDateString()}
                               </div>
                             </div>
@@ -227,7 +227,7 @@ export function ShareDocumentDialog({ open, onOpenChange }: ShareDocumentDialogP
                       {getAccessIcon('view')}
                       <div>
                         <div className="font-medium">View Only</div>
-                        <div className="text-xs text-gray-500">Can view but not edit</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Can view but not edit</div>
                       </div>
                     </div>
                   </SelectItem>
@@ -236,7 +236,7 @@ export function ShareDocumentDialog({ open, onOpenChange }: ShareDocumentDialogP
                       {getAccessIcon('comment')}
                       <div>
                         <div className="font-medium">Comment</div>
-                        <div className="text-xs text-gray-500">Can view and comment</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Can view and comment</div>
                       </div>
                     </div>
                   </SelectItem>
@@ -245,13 +245,13 @@ export function ShareDocumentDialog({ open, onOpenChange }: ShareDocumentDialogP
                       {getAccessIcon('edit')}
                       <div>
                         <div className="font-medium">Edit</div>
-                        <div className="text-xs text-gray-500">Can view, comment, and edit</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Can view, comment, and edit</div>
                       </div>
                     </div>
                   </SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 {getAccessDescription(formData.accessLevel)}
               </p>
             </div>
@@ -266,7 +266,7 @@ export function ShareDocumentDialog({ open, onOpenChange }: ShareDocumentDialogP
                 disabled={isSubmitting}
                 min={new Date().toISOString().split('T')[0]}
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 Leave empty for no expiration. The document will be automatically unshared after this date.
               </p>
             </div>

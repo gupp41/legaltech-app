@@ -143,7 +143,7 @@ export function InviteMemberDialog({ open, onOpenChange }: InviteMemberDialogPro
                       {getRoleIcon('admin')}
                       <div>
                         <div className="font-medium">Admin</div>
-                        <div className="text-xs text-gray-500">Full access</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Full access</div>
                       </div>
                     </div>
                   </SelectItem>
@@ -152,7 +152,7 @@ export function InviteMemberDialog({ open, onOpenChange }: InviteMemberDialogPro
                       {getRoleIcon('member')}
                       <div>
                         <div className="font-medium">Member</div>
-                        <div className="text-xs text-gray-500">Edit access</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Edit access</div>
                       </div>
                     </div>
                   </SelectItem>
@@ -161,13 +161,13 @@ export function InviteMemberDialog({ open, onOpenChange }: InviteMemberDialogPro
                       {getRoleIcon('viewer')}
                       <div>
                         <div className="font-medium">Viewer</div>
-                        <div className="text-xs text-gray-500">View only</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">View only</div>
                       </div>
                     </div>
                   </SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 {getRoleDescription(formData.role)}
               </p>
             </div>

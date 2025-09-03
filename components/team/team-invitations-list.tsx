@@ -93,12 +93,12 @@ export function TeamInvitationsList() {
           <div className="space-y-3">
             {[...Array(2)].map((_, i) => (
               <div key={i} className="flex items-center space-x-3 p-3 border rounded-lg">
-                <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse" />
+                <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
-                  <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                  <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                 </div>
-                <div className="h-6 w-16 bg-gray-200 rounded animate-pulse" />
+                <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
               </div>
             ))}
           </div>
@@ -147,7 +147,7 @@ export function TeamInvitationsList() {
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2">
-                  <h4 className="text-sm font-medium text-gray-900 truncate">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                     {invitation.email}
                   </h4>
                   <Badge variant={getRoleBadgeVariant(invitation.role)} className="flex items-center space-x-1">
@@ -155,7 +155,7 @@ export function TeamInvitationsList() {
                     <span>{getRoleLabel(invitation.role)}</span>
                   </Badge>
                 </div>
-                <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
+                <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400 mt-1">
                   <div className="flex items-center space-x-1">
                     <Calendar className="h-3 w-3" />
                     <span>Invited {new Date(invitation.createdAt).toLocaleDateString()}</span>
@@ -193,7 +193,7 @@ export function TeamInvitationsList() {
         {expiredInvitations.length > 0 && (
           <div className="mt-4 pt-4 border-t">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-medium text-gray-700">Expired Invitations</h4>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Expired Invitations</h4>
               <Badge variant="outline" className="text-xs">
                 {expiredInvitations.length} expired
               </Badge>
@@ -202,28 +202,28 @@ export function TeamInvitationsList() {
               {expiredInvitations.slice(0, 3).map((invitation) => (
                 <div
                   key={invitation.id}
-                  className="flex items-center space-x-3 p-2 border rounded-lg bg-gray-50"
+                  className="flex items-center space-x-3 p-2 border rounded-lg bg-gray-50 dark:bg-gray-800"
                 >
-                  <div className="h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center">
+                  <div className="h-8 w-8 rounded-full bg-gray-400 dark:bg-gray-600 flex items-center justify-center">
                     <Mail className="h-4 w-4 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600 truncate">
+                      <span className="text-sm text-gray-600 dark:text-gray-300 truncate">
                         {invitation.email}
                       </span>
                       <Badge variant="outline" className="text-xs">
                         {getRoleLabel(invitation.role)}
                       </Badge>
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
                       Expired {new Date(invitation.expiresAt).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
               ))}
               {expiredInvitations.length > 3 && (
-                <div className="text-xs text-gray-500 text-center py-2">
+                <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-2">
                   +{expiredInvitations.length - 3} more expired invitations
                 </div>
               )}

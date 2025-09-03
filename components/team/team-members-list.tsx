@@ -115,12 +115,12 @@ export function TeamMembersList() {
           <div className="space-y-3">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="flex items-center space-x-3 p-3 border rounded-lg">
-                <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse" />
+                <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
-                  <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                  <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                 </div>
-                <div className="h-6 w-16 bg-gray-200 rounded animate-pulse" />
+                <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
               </div>
             ))}
           </div>
@@ -158,9 +158,9 @@ export function TeamMembersList() {
         <CardContent>
           {activeMembers.length === 0 ? (
             <div className="text-center py-8">
-              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Members Yet</h3>
-              <p className="text-gray-500 mb-4">
+              <Users className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Members Yet</h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
                 Invite team members to start collaborating.
               </p>
               {canManageMembers && (
@@ -185,7 +185,7 @@ export function TeamMembersList() {
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2">
-                      <h4 className="text-sm font-medium text-gray-900 truncate">
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                         {member.user.fullName || member.user.email}
                       </h4>
                       <Badge variant={getRoleBadgeVariant(member.role)} className="flex items-center space-x-1">
@@ -193,7 +193,7 @@ export function TeamMembersList() {
                         <span>{getRoleLabel(member.role)}</span>
                       </Badge>
                     </div>
-                    <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
+                    <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400 mt-1">
                       <div className="flex items-center space-x-1">
                         <Mail className="h-3 w-3" />
                         <span>{member.user.email}</span>
