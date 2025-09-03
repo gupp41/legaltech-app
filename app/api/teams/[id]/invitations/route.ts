@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createApiErrorNextResponse } from '@/lib/utils/error-handler'
+import { emailService } from '@/lib/email-service'
 
 /**
  * GET /api/teams/[id]/invitations - Get team invitations
@@ -186,10 +187,40 @@ export async function POST(
       return createApiErrorNextResponse('Failed to create team invitation', 500)
     }
 
-    // TODO: Send email invitation (implement email service)
-    console.log(`Invitation created for ${email} to join team ${teamId}`)
-    console.log(`Invitation token: ${token}`)
-    console.log(`Invitation link: ${process.env.NEXT_PUBLIC_APP_URL}/teams/invite/${token}`)
+    // Send email invitation
+    const invitationLink = `${process.env.NEXT_PUBLIC_APP_URL}/teams/invite/${token}`
+    
+    // Get inviter's name for the email
+    const { data: inviterProfile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single()
+
+    const inviterName = inviterProfile?.full_name || 'A team member'
+    
+    // Get team name for the email
+    const { data: teamData } = await supabase
+      .from('teams')
+      .select('name')
+      .eq('id', teamId)
+      .single()
+
+    const teamName = teamData?.name || 'the team'
+
+    // Send email invitation
+    const emailResult = await emailService.sendTeamInvitation({
+      recipientEmail: email,
+      inviterName: inviterName,
+      teamName: teamName,
+      invitationLink: invitationLink,
+      expiresAt: invitation.expires_at
+    })
+
+    if (!emailResult.success) {
+      console.warn('Failed to send email invitation:', emailResult.error)
+      // Don't fail the request if email fails, just log it
+    }
 
     return NextResponse.json({
       success: true,
