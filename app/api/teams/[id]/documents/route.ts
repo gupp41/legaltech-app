@@ -32,33 +32,10 @@ export async function GET(
       return createApiErrorNextResponse('Access denied. You must be a member of this team.', 403)
     }
 
-    // Get all documents shared with the team
+    // Get all document shares for the team
     const { data: sharedDocuments, error: documentsError } = await supabase
       .from('team_document_shares')
-      .select(`
-        id,
-        document_id,
-        access_level,
-        expires_at,
-        created_at,
-        updated_at,
-        documents (
-          id,
-          filename,
-          file_type,
-          file_size,
-          created_at,
-          updated_at,
-          profiles!documents_user_id_fkey (
-            full_name,
-            email
-          )
-        ),
-        profiles!team_document_shares_shared_by_fkey (
-          full_name,
-          email
-        )
-      `)
+      .select('*')
       .eq('team_id', teamId)
       .order('created_at', { ascending: false })
 
@@ -73,30 +50,83 @@ export async function GET(
       !share.expires_at || new Date(share.expires_at) > now
     ) || []
 
-    // Format response
-    const formattedDocuments = activeDocuments.map(share => ({
-      shareId: share.id,
-      document: {
-        id: share.documents.id,
-        filename: share.documents.filename,
-        fileType: share.documents.file_type,
-        fileSize: share.documents.file_size,
-        createdAt: share.documents.created_at,
-        updatedAt: share.documents.updated_at,
-        owner: {
-          fullName: share.documents.profiles.full_name,
-          email: share.documents.profiles.email
+    // Get document details and user profiles
+    let formattedDocuments = []
+    if (activeDocuments.length > 0) {
+      const documentIds = activeDocuments.map(share => share.document_id)
+      const userIds = activeDocuments.map(share => share.shared_by)
+      
+      // Get documents
+      const { data: documents, error: docsError } = await supabase
+        .from('documents')
+        .select('id, filename, file_type, file_size, created_at, updated_at, user_id')
+        .in('id', documentIds)
+
+      if (docsError) {
+        console.error('Error fetching documents:', docsError)
+        return createApiErrorNextResponse('Failed to fetch documents', 500)
+      }
+
+      // Get document owner profiles
+      const documentOwnerIds = documents?.map(doc => doc.user_id) || []
+      const { data: documentOwners, error: ownersError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', documentOwnerIds)
+
+      if (ownersError) {
+        console.error('Error fetching document owners:', ownersError)
+        return createApiErrorNextResponse('Failed to fetch document owners', 500)
+      }
+
+      // Get shared by profiles
+      const { data: sharedByProfiles, error: sharedByError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', userIds)
+
+      if (sharedByError) {
+        console.error('Error fetching shared by profiles:', sharedByError)
+        return createApiErrorNextResponse('Failed to fetch shared by profiles', 500)
+      }
+
+      // Combine the data
+      formattedDocuments = activeDocuments.map(share => {
+        const document = documents?.find(doc => doc.id === share.document_id)
+        const documentOwner = documentOwners?.find(owner => owner.id === document?.user_id)
+        const sharedByProfile = sharedByProfiles?.find(profile => profile.id === share.shared_by)
+
+        return {
+          shareId: share.id,
+          document: document ? {
+            id: document.id,
+            filename: document.filename,
+            fileType: document.file_type,
+            fileSize: document.file_size,
+            createdAt: document.created_at,
+            updatedAt: document.updated_at,
+            owner: documentOwner ? {
+              fullName: documentOwner.full_name,
+              email: documentOwner.email
+            } : {
+              fullName: 'Unknown User',
+              email: 'unknown@example.com'
+            }
+          } : null,
+          accessLevel: share.access_level,
+          expiresAt: share.expires_at,
+          sharedBy: sharedByProfile ? {
+            fullName: sharedByProfile.full_name,
+            email: sharedByProfile.email
+          } : {
+            fullName: 'Unknown User',
+            email: 'unknown@example.com'
+          },
+          sharedAt: share.created_at,
+          isExpired: share.expires_at ? new Date(share.expires_at) < now : false
         }
-      },
-      accessLevel: share.access_level,
-      expiresAt: share.expires_at,
-      sharedBy: {
-        fullName: share.profiles.full_name,
-        email: share.profiles.email
-      },
-      sharedAt: share.created_at,
-      isExpired: share.expires_at ? new Date(share.expires_at) < now : false
-    }))
+      }).filter(item => item.document !== null) // Filter out shares with missing documents
+    }
 
     return NextResponse.json({
       success: true,

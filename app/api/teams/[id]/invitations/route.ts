@@ -36,19 +36,7 @@ export async function GET(
     // Get all pending invitations for the team
     const { data: invitations, error: invitationsError } = await supabase
       .from('team_invitations')
-      .select(`
-        id,
-        email,
-        role,
-        invited_by,
-        token,
-        expires_at,
-        created_at,
-        profiles!team_invitations_invited_by_fkey (
-          full_name,
-          email
-        )
-      `)
+      .select('*')
       .eq('team_id', teamId)
       .is('accepted_at', null)
       .gt('expires_at', new Date().toISOString())
@@ -59,19 +47,41 @@ export async function GET(
       return createApiErrorNextResponse('Failed to fetch team invitations', 500)
     }
 
-    // Format response
-    const formattedInvitations = invitations?.map(invitation => ({
-      id: invitation.id,
-      email: invitation.email,
-      role: invitation.role,
-      invitedBy: {
-        fullName: invitation.profiles.full_name,
-        email: invitation.profiles.email
-      },
-      expiresAt: invitation.expires_at,
-      createdAt: invitation.created_at,
-      isExpired: new Date(invitation.expires_at) < new Date()
-    })) || []
+    // Get inviter profiles
+    let formattedInvitations = []
+    if (invitations && invitations.length > 0) {
+      const inviterIds = invitations.map(inv => inv.invited_by)
+      
+      const { data: inviterProfiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', inviterIds)
+
+      if (profilesError) {
+        console.error('Error fetching inviter profiles:', profilesError)
+        return createApiErrorNextResponse('Failed to fetch inviter profiles', 500)
+      }
+
+      // Format response
+      formattedInvitations = invitations.map(invitation => {
+        const inviterProfile = inviterProfiles?.find(profile => profile.id === invitation.invited_by)
+        return {
+          id: invitation.id,
+          email: invitation.email,
+          role: invitation.role,
+          invitedBy: inviterProfile ? {
+            fullName: inviterProfile.full_name,
+            email: inviterProfile.email
+          } : {
+            fullName: 'Unknown User',
+            email: 'unknown@example.com'
+          },
+          expiresAt: invitation.expires_at,
+          createdAt: invitation.created_at,
+          isExpired: new Date(invitation.expires_at) < new Date()
+        }
+      })
+    }
 
     return NextResponse.json({
       success: true,
