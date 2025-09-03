@@ -12,86 +12,92 @@ This document outlines the step-by-step implementation of the Team Collaboration
 ## 🎯 **PHASE 1: DATABASE SCHEMA & FOUNDATION**
 
 ### 🔐 **1.1 Database Schema Updates**
-- [ ] Create `teams` table
-  - [ ] id (UUID, primary key)
-  - [ ] name (string, team name)
-  - [ ] description (text, optional team description)
-  - [ ] created_by (UUID, foreign key to users)
-  - [ ] created_at (timestamp)
-  - [ ] updated_at (timestamp)
-  - [ ] settings (JSONB, team-specific settings)
-  - [ ] billing_email (string, for team billing)
-  - [ ] subscription_id (UUID, foreign key to subscriptions)
+- [x] Create `teams` table
+  - [x] id (UUID, primary key)
+  - [x] name (string, team name)
+  - [x] description (text, optional team description)
+  - [x] created_by (UUID, foreign key to users)
+  - [x] created_at (timestamp)
+  - [x] updated_at (timestamp)
+  - [x] settings (JSONB, team-specific settings)
+  - [x] billing_email (string, for team billing)
+  - [x] subscription_id (UUID, foreign key to subscriptions)
 
-- [ ] Create `team_members` table
-  - [ ] id (UUID, primary key)
-  - [ ] team_id (UUID, foreign key to teams)
-  - [ ] user_id (UUID, foreign key to users)
-  - [ ] role (enum: 'admin', 'member', 'viewer')
-  - [ ] invited_by (UUID, foreign key to users)
-  - [ ] invited_at (timestamp)
-  - [ ] joined_at (timestamp, nullable)
-  - [ ] status (enum: 'pending', 'active', 'suspended')
-  - [ ] permissions (JSONB, role-specific permissions)
+- [x] Create `team_members` table
+  - [x] id (UUID, primary key)
+  - [x] team_id (UUID, foreign key to teams)
+  - [x] user_id (UUID, foreign key to users)
+  - [x] role (enum: 'admin', 'member', 'viewer')
+  - [x] invited_by (UUID, foreign key to users)
+  - [x] invited_at (timestamp)
+  - [x] joined_at (timestamp, nullable)
+  - [x] status (enum: 'pending', 'active', 'suspended')
+  - [x] permissions (JSONB, role-specific permissions)
 
-- [ ] Create `team_invitations` table
-  - [ ] id (UUID, primary key)
-  - [ ] team_id (UUID, foreign key to teams)
-  - [ ] email (string, invited user email)
-  - [ ] role (enum: 'admin', 'member', 'viewer')
-  - [ ] invited_by (UUID, foreign key to users)
-  - [ ] token (string, unique invitation token)
-  - [ ] expires_at (timestamp)
-  - [ ] accepted_at (timestamp, nullable)
-  - [ ] created_at (timestamp)
+- [x] Create `team_invitations` table
+  - [x] id (UUID, primary key)
+  - [x] team_id (UUID, foreign key to teams)
+  - [x] email (string, invited user email)
+  - [x] role (enum: 'admin', 'member', 'viewer')
+  - [x] invited_by (UUID, foreign key to users)
+  - [x] token (string, unique invitation token)
+  - [x] expires_at (timestamp)
+  - [x] accepted_at (timestamp, nullable)
+  - [x] created_at (timestamp)
 
-- [ ] Create `shared_documents` table
-  - [ ] id (UUID, primary key)
-  - [ ] document_id (UUID, foreign key to documents)
-  - [ ] team_id (UUID, foreign key to teams)
-  - [ ] shared_by (UUID, foreign key to users)
-  - [ ] shared_at (timestamp)
-  - [ ] access_level (enum: 'view', 'comment', 'edit')
-  - [ ] expires_at (timestamp, nullable)
+- [x] Create `team_document_shares` table
+  - [x] id (UUID, primary key)
+  - [x] document_id (UUID, foreign key to documents)
+  - [x] team_id (UUID, foreign key to teams)
+  - [x] shared_by (UUID, foreign key to users)
+  - [x] access_level (enum: 'view', 'comment', 'edit')
+  - [x] expires_at (timestamp, nullable)
+  - [x] created_at (timestamp)
+  - [x] updated_at (timestamp)
 
 ### 🔒 **1.2 Row Level Security (RLS) Policies**
-- [ ] Teams table RLS policies
-  - [ ] Users can only see teams they're members of
-  - [ ] Team admins can update team settings
-  - [ ] Only team creators can delete teams
+- [x] Teams table RLS policies
+  - [x] Users can only see teams they're members of
+  - [x] Team admins can update team settings
+  - [x] Only team creators can delete teams
 
-- [ ] Team members table RLS policies
-  - [ ] Users can only see team members of teams they belong to
-  - [ ] Team admins can manage team members
-  - [ ] Users can see their own membership status
+- [x] Team members table RLS policies
+  - [x] Users can only see team members of teams they belong to
+  - [x] Team admins can manage team members
+  - [x] Users can see their own membership status
 
-- [ ] Team invitations table RLS policies
-  - [ ] Team admins can create invitations
-  - [ ] Invited users can see their pending invitations
-  - [ ] Team admins can revoke invitations
+- [x] Team invitations table RLS policies
+  - [x] Team admins can create invitations
+  - [x] Invited users can see their pending invitations
+  - [x] Team admins can revoke invitations
 
-- [ ] Shared documents table RLS policies
-  - [ ] Team members can see shared documents
-  - [ ] Document owners can share/unshare documents
-  - [ ] Access level enforcement
+- [x] Team document shares table RLS policies
+  - [x] Team members can see shared documents
+  - [x] Document owners can share/unshare documents
+  - [x] Access level enforcement
 
 ### 📊 **1.3 Database Functions & Triggers**
-- [ ] Create team usage aggregation function
-  - [ ] Aggregate usage across all team members
-  - [ ] Calculate team-level limits and warnings
-  - [ ] Update team subscription status
+- [x] Create team usage aggregation function
+  - [x] Aggregate usage across all team members
+  - [x] Calculate team-level limits and warnings
+  - [x] Update team subscription status
 
-- [ ] Create team member management functions
-  - [ ] Add team member function
-  - [ ] Remove team member function
-  - [ ] Update team member role function
-  - [ ] Transfer team ownership function
+- [x] Create team member management functions
+  - [x] Add team member function
+  - [x] Remove team member function
+  - [x] Update team member role function
+  - [x] Transfer team ownership function
 
-- [ ] Create invitation management functions
-  - [ ] Generate invitation token function
-  - [ ] Validate invitation token function
-  - [ ] Accept invitation function
-  - [ ] Cleanup expired invitations function
+- [x] Create invitation management functions
+  - [x] Generate invitation token function
+  - [x] Validate invitation token function
+  - [x] Accept invitation function
+  - [x] Cleanup expired invitations function
+
+- [x] Create personal team auto-creation trigger
+  - [x] Auto-create personal team for new users
+  - [x] Set user as admin of personal team
+  - [x] Set as default team
 
 ---
 
