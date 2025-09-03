@@ -32,22 +32,10 @@ export async function GET(
       return createApiErrorNextResponse('Access denied. You must be a member of this team.', 403)
     }
 
-    // Get all team members with user details
+    // Get all team members first
     const { data: members, error: membersError } = await supabase
       .from('team_members')
-      .select(`
-        id,
-        role,
-        status,
-        invited_at,
-        joined_at,
-        profiles (
-          id,
-          full_name,
-          email,
-          company_name
-        )
-      `)
+      .select('*')
       .eq('team_id', teamId)
       .eq('status', 'active')
       .order('joined_at', { ascending: true })
@@ -57,20 +45,44 @@ export async function GET(
       return createApiErrorNextResponse('Failed to fetch team members', 500)
     }
 
-    // Format response
-    const formattedMembers = members?.map(member => ({
-      id: member.id,
-      role: member.role,
-      status: member.status,
-      invitedAt: member.invited_at,
-      joinedAt: member.joined_at,
-      user: {
-        id: member.profiles.id,
-        fullName: member.profiles.full_name,
-        email: member.profiles.email,
-        companyName: member.profiles.company_name
+    // Get user profiles for all members
+    let formattedMembers = []
+    if (members && members.length > 0) {
+      const userIds = members.map(m => m.user_id)
+      
+      const { data: userProfiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, company_name')
+        .in('id', userIds)
+
+      if (profilesError) {
+        console.error('Error fetching user profiles:', profilesError)
+        return createApiErrorNextResponse('Failed to fetch user profiles', 500)
       }
-    })) || []
+
+      // Combine the data
+      formattedMembers = members.map(member => {
+        const profile = userProfiles?.find(p => p.id === member.user_id)
+        return {
+          id: member.id,
+          role: member.role,
+          status: member.status,
+          invitedAt: member.invited_at,
+          joinedAt: member.joined_at,
+          user: profile ? {
+            id: profile.id,
+            fullName: profile.full_name,
+            email: profile.email,
+            companyName: profile.company_name
+          } : {
+            id: member.user_id,
+            fullName: 'Unknown User',
+            email: 'unknown@example.com',
+            companyName: null
+          }
+        }
+      })
+    }
 
     return NextResponse.json({
       success: true,
