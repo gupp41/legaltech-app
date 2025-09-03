@@ -29,8 +29,7 @@ export function TeamSelector({ className }: TeamSelectorProps) {
   const { teams, currentTeam, setCurrentTeam, loading } = useTeam()
   const [showCreateDialog, setShowCreateDialog] = useState(false)
 
-  // Debug logging
-  console.log('TeamSelector render - teams:', teams.length, 'currentTeam:', currentTeam, 'loading:', loading)
+
 
   const getRoleIcon = (role: string) => {
     switch (role) {
@@ -70,20 +69,24 @@ export function TeamSelector({ className }: TeamSelectorProps) {
 
   if (!currentTeam) {
     return (
-      <div className={`flex items-center space-x-2 ${className}`}>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            console.log('Create Team button clicked')
-            setShowCreateDialog(true)
-          }}
-          className="flex items-center space-x-2"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Create Team</span>
-        </Button>
-      </div>
+      <>
+        <div className={`flex items-center space-x-2 ${className}`}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowCreateDialog(true)}
+            className="flex items-center space-x-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Create Team</span>
+          </Button>
+        </div>
+        
+        <CreateTeamDialog
+          open={showCreateDialog}
+          onOpenChange={setShowCreateDialog}
+        />
+      </>
     )
   }
 
@@ -144,10 +147,7 @@ export function TeamSelector({ className }: TeamSelectorProps) {
           <DropdownMenuSeparator />
           
           <DropdownMenuItem
-            onClick={() => {
-              console.log('Create New Team from dropdown clicked')
-              setShowCreateDialog(true)
-            }}
+            onClick={() => setShowCreateDialog(true)}
             className="flex items-center space-x-2 p-2"
           >
             <Plus className="h-4 w-4" />
