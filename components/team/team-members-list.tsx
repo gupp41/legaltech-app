@@ -175,7 +175,7 @@ export function TeamMembersList() {
               {activeMembers.map((member) => (
                 <div
                   key={member.id}
-                  className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
                     <span className="text-white font-medium text-sm">

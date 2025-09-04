@@ -139,7 +139,7 @@ export function TeamInvitationsList() {
           {pendingInvitations.map((invitation) => (
             <div
               key={invitation.id}
-              className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               <div className="h-10 w-10 rounded-full bg-orange-500 flex items-center justify-center">
                 <Mail className="h-5 w-5 text-white" />
@@ -177,7 +177,7 @@ export function TeamInvitationsList() {
                   size="sm"
                   onClick={() => handleRevokeInvitation(invitation.id)}
                   disabled={actionLoading === invitation.id}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                 >
                   {actionLoading === invitation.id ? (
                     <RefreshCw className="h-4 w-4 animate-spin" />
@@ -202,7 +202,7 @@ export function TeamInvitationsList() {
               {expiredInvitations.slice(0, 3).map((invitation) => (
                 <div
                   key={invitation.id}
-                  className="flex items-center space-x-3 p-2 border rounded-lg bg-gray-50 dark:bg-gray-800"
+                  className="flex items-center space-x-3 p-2 border rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   <div className="h-8 w-8 rounded-full bg-gray-400 dark:bg-gray-600 flex items-center justify-center">
                     <Mail className="h-4 w-4 text-white" />

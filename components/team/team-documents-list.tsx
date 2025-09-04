@@ -195,7 +195,7 @@ export function TeamDocumentsList() {
               {activeDocuments.map((doc) => (
                 <div
                   key={doc.shareId}
-                  className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
                     {getFileTypeIcon(doc.document.fileType)}
@@ -293,7 +293,7 @@ export function TeamDocumentsList() {
                 {expiredDocuments.slice(0, 3).map((doc) => (
                   <div
                     key={doc.shareId}
-                    className="flex items-center space-x-3 p-2 border rounded-lg bg-gray-50 dark:bg-gray-800"
+                    className="flex items-center space-x-3 p-2 border rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
                     <div className="h-8 w-8 rounded-full bg-gray-400 dark:bg-gray-600 flex items-center justify-center">
                       {getFileTypeIcon(doc.document.fileType)}
