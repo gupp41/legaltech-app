@@ -76,9 +76,9 @@ export function UsageTrendsChart({ timeRange }: UsageTrendsChartProps) {
         </div>
 
         {/* Chart */}
-        <div className="ml-8 h-64 flex items-end space-x-1">
+        <div className="ml-8 h-64 flex items-end space-x-0.5 overflow-x-auto">
           {trends.map((trend, index) => (
-            <div key={trend.date} className="flex-1 flex flex-col items-center space-y-1 group">
+            <div key={trend.date} className="flex-shrink-0 w-8 flex flex-col items-center space-y-1 group">
               {/* Bars Container */}
               <div className="w-full flex items-end space-x-0.5 h-48 relative">
                 {/* Documents Bar */}
