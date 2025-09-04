@@ -64,32 +64,52 @@ export function UsageTrendsChart({ timeRange }: UsageTrendsChartProps) {
         </div>
       </div>
 
-      {/* Chart */}
-      <div className="h-64 flex items-end space-x-1">
-        {trends.map((trend, index) => (
-          <div key={trend.date} className="flex-1 flex flex-col items-center space-y-1">
-            {/* Bars */}
-            <div className="w-full flex items-end space-x-0.5 h-48">
-              {/* Documents Bar */}
-              <div 
-                className="bg-blue-500 rounded-t-sm flex-1 min-h-[2px]"
-                style={{ height: `${getBarHeight(trend.documents)}%` }}
-                title={`${trend.documents} documents`}
-              />
-              {/* Analyses Bar */}
-              <div 
-                className="bg-green-500 rounded-t-sm flex-1 min-h-[2px]"
-                style={{ height: `${getBarHeight(trend.analyses)}%` }}
-                title={`${trend.analyses} analyses`}
-              />
+      {/* Chart Container */}
+      <div className="relative">
+        {/* Y-axis labels */}
+        <div className="absolute left-0 top-0 h-48 flex flex-col justify-between text-xs text-muted-foreground">
+          <span>{maxValue}</span>
+          <span>{Math.round(maxValue * 0.75)}</span>
+          <span>{Math.round(maxValue * 0.5)}</span>
+          <span>{Math.round(maxValue * 0.25)}</span>
+          <span>0</span>
+        </div>
+
+        {/* Chart */}
+        <div className="ml-8 h-64 flex items-end space-x-1">
+          {trends.map((trend, index) => (
+            <div key={trend.date} className="flex-1 flex flex-col items-center space-y-1 group">
+              {/* Bars Container */}
+              <div className="w-full flex items-end space-x-0.5 h-48 relative">
+                {/* Documents Bar */}
+                <div 
+                  className="bg-blue-500 rounded-t-sm flex-1 min-h-[2px] hover:bg-blue-600 transition-colors cursor-pointer relative group/bar"
+                  style={{ height: `${getBarHeight(trend.documents)}%` }}
+                >
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-10">
+                    {trend.documents} documents
+                  </div>
+                </div>
+                {/* Analyses Bar */}
+                <div 
+                  className="bg-green-500 rounded-t-sm flex-1 min-h-[2px] hover:bg-green-600 transition-colors cursor-pointer relative group/bar"
+                  style={{ height: `${getBarHeight(trend.analyses)}%` }}
+                >
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-10">
+                    {trend.analyses} analyses
+                  </div>
+                </div>
+              </div>
+              
+              {/* Date Label */}
+              <div className="text-xs text-muted-foreground transform -rotate-45 origin-left whitespace-nowrap">
+                {formatDate(trend.date)}
+              </div>
             </div>
-            
-            {/* Date Label */}
-            <div className="text-xs text-muted-foreground transform -rotate-45 origin-left">
-              {formatDate(trend.date)}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Summary Stats */}

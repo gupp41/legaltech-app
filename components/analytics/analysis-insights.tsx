@@ -53,7 +53,8 @@ export function AnalysisInsights({ timeRange }: AnalysisInsightsProps) {
   const { analyses } = data
 
   const formatTime = (seconds: number) => {
-    if (seconds < 60) return `${Math.round(seconds)}s`
+    if (seconds < 1) return `${Math.round(seconds * 1000)}ms`
+    if (seconds < 60) return `${Math.round(seconds * 10) / 10}s`
     if (seconds < 3600) return `${Math.round(seconds / 60)}m`
     return `${Math.round(seconds / 3600)}h`
   }

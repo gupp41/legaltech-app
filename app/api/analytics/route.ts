@@ -367,8 +367,11 @@ async function getAnalysisInsights(supabase: any, userId: string, teamId: string
     .map(a => {
       const start = new Date(a.created_at)
       const end = new Date(a.completed_at)
-      return end.getTime() - start.getTime()
+      const diffMs = end.getTime() - start.getTime()
+      // Only include reasonable processing times (less than 1 hour)
+      return diffMs > 0 && diffMs < 3600000 ? diffMs : null
     })
+    .filter(time => time !== null) as number[]
 
   const averageProcessingTime = processingTimes.length > 0 
     ? processingTimes.reduce((sum, time) => sum + time, 0) / processingTimes.length
