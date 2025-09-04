@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { useTeam } from '@/lib/contexts/team-context'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -19,6 +19,7 @@ import {
 import { TeamMembersList } from './team-members-list'
 import { TeamInvitationsList } from './team-invitations-list'
 import { TeamDocumentsList } from './team-documents-list'
+import { TeamSettingsDialog } from './team-settings-dialog'
 
 interface TeamDashboardProps {
   className?: string
@@ -26,6 +27,7 @@ interface TeamDashboardProps {
 
 export function TeamDashboard({ className }: TeamDashboardProps) {
   const { currentTeam, teamMembers, teamInvitations, teamDocuments, loading } = useTeam()
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false)
 
   if (loading) {
     return (
@@ -166,7 +168,11 @@ export function TeamDashboard({ className }: TeamDashboardProps) {
               )}
             </div>
             {currentTeam.role === 'admin' && (
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowSettingsDialog(true)}
+              >
                 <Settings className="h-4 w-4 mr-2" />
                 Team Settings
               </Button>
@@ -209,6 +215,12 @@ export function TeamDashboard({ className }: TeamDashboardProps) {
 
       {/* Shared Documents */}
       <TeamDocumentsList />
+      
+      {/* Team Settings Dialog */}
+      <TeamSettingsDialog
+        open={showSettingsDialog}
+        onOpenChange={setShowSettingsDialog}
+      />
     </div>
   )
 }
