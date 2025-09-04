@@ -2422,6 +2422,16 @@ The document could not be processed. This could be due to:
                     </button>
                     <button
                       onClick={() => {
+                        window.location.href = '/analytics'
+                        setHamburgerMenuOpen(false)
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
+                    >
+                      <BarChart3 className="h-4 w-4 mr-3" />
+                      Analytics Dashboard
+                    </button>
+                    <button
+                      onClick={() => {
                         window.location.href = '/settings'
                         setHamburgerMenuOpen(false)
                       }}
@@ -2462,7 +2472,7 @@ The document could not be processed. This could be due to:
 
       {/* Usage Warnings - only show when approaching/reaching limits */}
       {user?.id && (
-        <UsageDisplay userId={user.id} />
+            <UsageDisplay userId={user.id} />
       )}
 
       {/* Breadcrumb Navigation */}
@@ -2712,21 +2722,21 @@ The document could not be processed. This could be due to:
                               <span className="hidden sm:inline">Share</span>
                               <span className="sm:hidden">Share</span>
                             </Button>
-                            <Button 
-                              onClick={() => {
+                              <Button 
+                                    onClick={() => {
                                 // Show confirmation dialog
                                 const confirmed = window.confirm(
                                   `Are you sure you want to delete "${currentDoc.filename}"?\n\nThis action cannot be undone.`
                                 )
                                 
                                 if (confirmed) {
-                                  handleDelete(currentDoc.id)
-                                }
-                              }}
+                                      handleDelete(currentDoc.id)
+                                      }
+                                    }}
                               variant="outline"
                               className="flex-shrink-0 min-w-0 max-w-full text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
                               <span className="hidden md:inline">Delete</span>
                               <span className="md:hidden">Delete</span>
                             </Button>
@@ -3625,7 +3635,7 @@ The document could not be processed. This could be due to:
                                                     
                                                     if (parsed.identified_clauses.key_terms && parsed.identified_clauses.key_terms.length > 0) {
                                                       formattedMarkdown += `## 🗝️ Key Terms\n\n`
-                                                                                                parsed.identified_clauses.key_terms.forEach((term: any) => {
+                                                      parsed.identified_clauses.key_terms.forEach((term: any) => {
                                             const importance = term.importance || 'unknown'
                                             const name = term.name || 'Unnamed Term'
                                             const description = term.description || 'No description available'
@@ -3635,12 +3645,12 @@ The document could not be processed. This could be due to:
                                             formattedMarkdown += `**${termEmoji} ${name}** (${importance.toUpperCase()})\n`
                                             formattedMarkdown += `- Description: ${description}\n`
                                             formattedMarkdown += `- Implications: ${implications}\n\n`
-                                          })
+                                                      })
                                                     }
                                                     
                                                     if (parsed.identified_clauses.conditions && parsed.identified_clauses.conditions.length > 0) {
                                                       formattedMarkdown += `## 📜 Conditions\n\n`
-                                                                                                parsed.identified_clauses.conditions.forEach((condition: any) => {
+                                                      parsed.identified_clauses.conditions.forEach((condition: any) => {
                                             const importance = condition.importance || 'unknown'
                                             const name = condition.name || 'Unnamed Condition'
                                             const description = condition.description || 'No description available'
@@ -3650,7 +3660,7 @@ The document could not be processed. This could be due to:
                                             formattedMarkdown += `**${conditionEmoji} ${name}** (${importance.toUpperCase()})\n`
                                             formattedMarkdown += `- Description: ${description}\n`
                                             formattedMarkdown += `- Implications: ${implications}\n\n`
-                                          })
+                                                      })
                                                     }
                                                     
                                                     if (parsed.identified_clauses.obligations && parsed.identified_clauses.obligations.length > 0) {
