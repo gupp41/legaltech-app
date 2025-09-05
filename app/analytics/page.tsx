@@ -136,7 +136,7 @@ function AnalyticsContent() {
                         }}
                         className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
                       >
-                        <BarChart3 className="h-4 w-4 mr-3" />
+                        <FileText className="h-4 w-4 mr-3" />
                         Dashboard
                       </button>
                       <button
