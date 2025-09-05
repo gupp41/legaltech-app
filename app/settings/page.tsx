@@ -27,7 +27,11 @@ import {
   Bell,
   Palette,
   Globe,
-  ArrowLeft
+  ArrowLeft,
+  Menu,
+  LogOut,
+  FileText,
+  Users
 } from "lucide-react"
 import { UsageDisplay } from "@/components/usage-display"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -118,6 +122,7 @@ export default function SettingsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [hamburgerMenuOpen, setHamburgerMenuOpen] = useState(false)
 
   const supabase = createClient()
 
@@ -615,7 +620,90 @@ export default function SettingsPage() {
             <ArrowLeft className="h-4 w-4" />
             Back to Dashboard
           </Button>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            
+            {/* Hamburger Menu */}
+            <div className="relative">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setHamburgerMenuOpen(!hamburgerMenuOpen)}
+                className="flex items-center gap-2"
+              >
+                <Menu className="h-4 w-4" />
+                Menu
+              </Button>
+            
+              {/* Dropdown Menu */}
+              {hamburgerMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-popover rounded-md shadow-lg border border-border z-50">
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        window.location.href = '/dashboard'
+                        setHamburgerMenuOpen(false)
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
+                    >
+                      <FileText className="h-4 w-4 mr-3" />
+                      Dashboard
+                    </button>
+                    <button
+                      onClick={() => {
+                        window.location.href = '/teams'
+                        setHamburgerMenuOpen(false)
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
+                    >
+                      <Users className="h-4 w-4 mr-3" />
+                      Team Collaboration
+                    </button>
+                    <button
+                      onClick={() => {
+                        window.location.href = '/analytics'
+                        setHamburgerMenuOpen(false)
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
+                    >
+                      <FileText className="h-4 w-4 mr-3" />
+                      Analytics Dashboard
+                    </button>
+                    <button
+                      onClick={() => {
+                        window.location.href = '/settings'
+                        setHamburgerMenuOpen(false)
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
+                    >
+                      <Settings className="h-4 w-4 mr-3" />
+                      Settings
+                    </button>
+                    <button
+                      onClick={async () => {
+                        setHamburgerMenuOpen(false)
+                        try {
+                          console.log('Signing out...')
+                          const { error } = await supabase.auth.signOut()
+                          if (error) {
+                            console.error('Error signing out:', error)
+                            return
+                          }
+                          window.location.href = '/auth/login'
+                        } catch (error) {
+                          console.error('Error signing out:', error)
+                        }
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-accent"
+                    >
+                      <LogOut className="h-4 w-4 mr-3" />
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
         <h1 className="text-3xl font-bold text-foreground">Settings</h1>
         <p className="text-muted-foreground mt-2">Manage your account, subscription, and preferences</p>
